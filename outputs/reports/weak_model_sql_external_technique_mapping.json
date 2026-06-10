@@ -1,0 +1,87 @@
+{
+  "diagnostic_only": true,
+  "generated_at": "2026-05-26T00:00:00+08:00",
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "packaged_runtime_changed": false,
+  "promotion_allowed": false,
+  "report_type": "weak_model_sql_external_technique_mapping",
+  "techniques": [
+    {
+      "expected_correctness_impact": "Improves table, column, timestamp, filter, and join grounding for weak semantic slots.",
+      "expected_efficiency_impact": "Small token/runtime cost because retrieval is lexical and bounded.",
+      "generalization_impact": "Uses schema roles and domain aliases instead of public-example templates.",
+      "implementation_plan": "Implemented as dashagent/weak_sql_schema_retriever.py.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Compact weak-SQL schema context with retrieved_tables, column_roles, value_links, timestamp_candidates, and join_candidates.",
+      "problem_solved": "Weak models often choose semantically valid but wrong schema fields.",
+      "robustness_risk": "Low, because outputs are advisory and still pass compiler, SQLValidator, SQL AST checks, and unit tests.",
+      "source_pattern_name": "Vanna-style schema/context retrieval"
+    },
+    {
+      "expected_correctness_impact": "Prevents syntactically unsafe or schema-invalid SQL from executing.",
+      "expected_efficiency_impact": "Low incremental cost; existing validation is local.",
+      "generalization_impact": "Applies to all generated SQL regardless of prompt family.",
+      "implementation_plan": "Kept existing SQLValidator/sql_ast_tools validation in the weak compiler path.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Compiled SQL still goes through SQLValidator and SQL AST summary before execution.",
+      "problem_solved": "Weak-model SQL plans can compile into malformed or unsafe SQL.",
+      "robustness_risk": "Low; validators are not weakened.",
+      "source_pattern_name": "SQLGlot AST validation/canonicalization"
+    },
+    {
+      "expected_correctness_impact": "Improves intent-to-SQL shape by separating schema context, skeletons, and output structure.",
+      "expected_efficiency_impact": "Bounded context avoids large prompts; deterministic skeletons are compact.",
+      "generalization_impact": "Teaches generic SQL shapes rather than memorizing public rows.",
+      "implementation_plan": "Implemented generic skeleton retrieval and structured semantic-slot compilation.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Weak model emits semantic slots; compiler receives role-aware context and skeleton families.",
+      "problem_solved": "Raw SQL prompting asks too much of weak models.",
+      "robustness_risk": "Low, because skeletons contain no query ids, gold answers, or exact public SQL.",
+      "source_pattern_name": "SQLCoder-style schema-aware prompt"
+    },
+    {
+      "expected_correctness_impact": "Reduces compound reasoning failures by decomposing prompt intent, domain, filters, relationships, SQL shape, and evidence grounding.",
+      "expected_efficiency_impact": "Moderate but bounded by one slot pass and one optional repair.",
+      "generalization_impact": "Works at the semantic decomposition layer across paraphrases.",
+      "implementation_plan": "Partially implemented through semantic slots plus enhanced compiler; deeper decomposition is a future candidate.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Weak-model flow already separates semantic slots, retrieval, compilation, validation, execution, and answer grounding.",
+      "problem_solved": "Weak models conflate table choice, aggregation, filters, and final answer wording.",
+      "robustness_risk": "Low while shadow-only; any future expansion needs token/runtime guardrails.",
+      "source_pattern_name": "DIN-SQL decomposition"
+    },
+    {
+      "expected_correctness_impact": "Rejects semantically wrong but valid SQL before execution.",
+      "expected_efficiency_impact": "Small local checks; no extra model call unless repair is enabled.",
+      "generalization_impact": "Tests are role and ontology based, not public-query based.",
+      "implementation_plan": "Implemented as dashagent/weak_sql_unit_tester.py.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Semantic unit tests check intent, table, column roles, filters, joins, aggregation, timestamp semantics, and overbroad queries.",
+      "problem_solved": "Current weak scaffold has valid SQL with wrong semantics.",
+      "robustness_risk": "Medium if too strict; mitigated by shadow-only use and repair hints.",
+      "source_pattern_name": "CHESS schema selector / unit tester"
+    },
+    {
+      "expected_correctness_impact": "Converts unit-test and validation errors into one bounded repair attempt.",
+      "expected_efficiency_impact": "Bounded cost; deterministic repair currently avoids extra model calls.",
+      "generalization_impact": "Repairs general semantic slot errors such as wrong table, missing filter, and wrong timestamp role.",
+      "implementation_plan": "Implemented as enhanced compiler repair_rounds=1 for weak SQL variants.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Repair operates on semantic slots/plans only; raw SQL is still never executed before validation.",
+      "problem_solved": "One-shot weak slot compilation can fail to produce executable or semantically valid SQL.",
+      "robustness_risk": "Low; repair cannot invent tables/columns outside SchemaIndex.",
+      "source_pattern_name": "SQL repair/revision loop"
+    },
+    {
+      "expected_correctness_impact": "Improves weak model SQL-shape priors for count/list/status/date/relationship/detail prompts.",
+      "expected_efficiency_impact": "Very low; only 1-3 small skeletons are selected.",
+      "generalization_impact": "Skeletons are schema-role based and contain no public/dev answers.",
+      "implementation_plan": "Implemented as dashagent/weak_sql_skeleton_retriever.py.",
+      "implemented_now": true,
+      "maps_to_dashagent": "Weak SQL candidates carry generic skeleton metadata for observability and future prompt use.",
+      "problem_solved": "Weak models often choose the wrong aggregation or SQL shape.",
+      "robustness_risk": "Low if skeletons remain generic.",
+      "source_pattern_name": "Dynamic SQL skeleton retrieval"
+    }
+  ]
+}

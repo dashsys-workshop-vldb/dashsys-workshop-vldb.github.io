@@ -1,0 +1,210 @@
+{
+  "answer_time": 9.916600538417697e-05,
+  "api_call_count": 1,
+  "domain_type": "DATASET_SCHEMA",
+  "errors": [],
+  "estimated_tokens": 1313,
+  "execution_time": 0.0034717920352704823,
+  "final_answer": "Based on the evidence provided, matching datasets are: hkg_adls_segment_profile_history, hkg_adls_profile_count_history, Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d, Profile Export For Destination - Merge Policy - 22a941a9-e598-45f8-846b-c9a8889f5035, BR_Segment_Destination, DIM_Destination, BR_Namespace_Destination, Segmentdefinition-Snapshot-Export-3405afd1-7c78-4aff-84e6-d2136ffcea93, weRetail: CRM, and weRetail: Customer Actions. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show recent changes in datasets.",
+  "planning_time": 0.0004784580087289214,
+  "preprocessing_time": 0.0011739999754354358,
+  "query_id": "example_013",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.004775332985445857,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "catalog_datasets",
+          "method": "GET",
+          "path": "/data/foundation/catalog/dataSets"
+        },
+        {
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+        },
+        {
+          "id": "schema_registry_schemas",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        {
+          "id": "schemas_short",
+          "method": "GET",
+          "path": "/schemas"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_collection_segment",
+        "hkg_br_source_collection"
+      ],
+      "confidence": 0.5,
+      "domain_type": "DATASET_SCHEMA",
+      "kind": "route",
+      "reason": "Keyword routing using DATASET_SCHEMA:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "audit_events",
+          "export_batch_files"
+        ],
+        "lookup_paths": [
+          "schema_dataset",
+          "audit"
+        ],
+        "tables": [
+          "dim_blueprint",
+          "dim_collection"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "schema_dataset"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 553,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/baseline/eval/example_013/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 823
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: recent_dataset_changes+dataset_audit_changes.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "recent_dataset_changes",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+        },
+        {
+          "action": "api",
+          "family": "dataset_audit_changes",
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "orderBy": "-timestamp",
+            "property": "assetType==dataset"
+          },
+          "purpose": "API parameter template: dataset_audit_changes.",
+          "url": "/audit/events"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2604,
+          "lookup_path": 12.3646
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2,
+          "lookup_path": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 37,
+        "rows": {
+          "items": [
+            {
+              "collection_id": "69c8d9c4e592a9df81deb244",
+              "collection_name": "hkg_adls_segment_profile_history",
+              "updated_time": "2026-04-14T21:08:54.000+00:00"
+            },
+            {
+              "collection_id": "69c8dad4aa7a59818543461a",
+              "collection_name": "hkg_adls_profile_count_history",
+              "updated_time": "2026-04-14T21:08:43.000+00:00"
+            },
+            {
+              "collection_id": "69c8d6c810c39fb1068f65b5",
+              "collection_name": "Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d",
+              "updated_time": "2026-04-14T20:40:04.000+00:00"
+            }
+          ],
+          "total_items": 37,
+          "truncated_items": true
+        }
+      },
+      "sql": "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "50",
+        "orderBy": "-timestamp",
+        "property": "assetType==dataset"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/audit/events",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "50",
+          "orderBy": "-timestamp",
+          "property": "assetType==dataset"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/audit/events"
+      },
+      "url": "/audit/events",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 9.916600538417697e-05,
+    "execution_time": 0.0034717920352704823,
+    "planning_time": 0.0004784580087289214,
+    "preprocessing_time": 0.0011739999754354358
+  },
+  "tool_call_count": 2
+}

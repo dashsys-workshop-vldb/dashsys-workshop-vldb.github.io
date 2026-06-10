@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-05-06T20:58:04.999003+00:00",
+  "mode": "schema_dataset_positive_repair_analysis",
+  "notes": [
+    "This analysis does not enable schema/dataset repair.",
+    "Any endpoint alias expansion must be catalog-backed and evaluated in a later explicit task."
+  ],
+  "repair_execution_enabled": false,
+  "report_only": true,
+  "rows": [
+    {
+      "behavior_changed": false,
+      "catalog_alias_gap_possible": true,
+      "current_plan": {
+        "api": [
+          {
+            "method": "GET",
+            "params": {
+              "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+              "limit": "3"
+            },
+            "path": "/data/foundation/catalog/dataSets"
+          }
+        ],
+        "sql": [
+          "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+        ]
+      },
+      "enable_schema_dataset_repair": false,
+      "failed_safety_checks": [
+        "api_validation"
+      ],
+      "failure_classification": "catalog_alias_gap_or_real_endpoint_risk",
+      "generalizable_rule_candidate": "Only consider schema/dataset endpoint alias repair when the target path is already present in endpoint catalog or explicit alias map.",
+      "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+      "query_id": "example_007",
+      "repaired_plan": {
+        "api": [
+          {
+            "endpoint_family": "schema_detail",
+            "endpoint_id": "schema_registry_schema",
+            "method": "GET",
+            "params": {},
+            "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+          }
+        ],
+        "sql": [
+          "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+        ]
+      },
+      "score_delta": 0.1148,
+      "why_api_validation_rejected": "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters.",
+      "why_repaired_plan_improved_score": "Repaired endpoint candidate better matched the offline strict API expectation."
+    }
+  ],
+  "run_id": "20260506T205804480909Z-885373750216791",
+  "summary": {
+    "catalog_alias_gap_candidate_count": 1,
+    "positive_schema_dataset_rows": 1,
+    "repair_enabled": false
+  }
+}

@@ -1,0 +1,375 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DASHSys Dataflow</title>
+  <script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs'; mermaid.initialize({startOnLoad:true});</script>
+  <style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:32px;line-height:1.45} pre{background:#f6f8fa;padding:12px;overflow:auto} table{border-collapse:collapse;width:100%} td,th{border:1px solid #d0d7de;padding:6px;vertical-align:top}</style>
+</head>
+<body>
+  <h1>DASHSys Prompt-To-Answer Dataflow</h1>
+  <div class="mermaid">flowchart TD
+  subgraph Input
+    A[&quot;User Prompt&lt;br/&gt;Is the &amp;#x27;Birthday Message&amp;#x27; journey published?&quot;]
+    B[&quot;Prompt Router&lt;br/&gt;mode=SQL_PLUS_API&lt;br/&gt;policy=unknown&quot;]
+    A --&gt;|route_prompt| B
+  end
+  subgraph QueryUnderstanding[Query Understanding]
+    C[&quot;Query Normalization&lt;br/&gt;normalized_query + rewrites&quot;]
+    D[&quot;Tokens / Entities&lt;br/&gt;names + ids + dates + metrics&quot;]
+    E[&quot;Relevance / QueryAnalysis&lt;br/&gt;tables + APIs + answer family&quot;]
+    B --&gt;|normalized text| C
+    C --&gt;|query_tokens| D
+    D --&gt;|route/domain/family| E
+  end
+  subgraph ContextPlanning[Context And Planning]
+    F[&quot;Candidate / Context Card&lt;br/&gt;selected tables + APIs&quot;]
+    G[&quot;LLM SQL or Template Plan&lt;br/&gt;candidate/full schema + fallback&quot;]
+    H[&quot;Plan Optimization&lt;br/&gt;budget + dedupe + placeholders&quot;]
+    E --&gt;|selected_metadata| F
+    F --&gt;|schema/API context| G
+    G --&gt;|draft_plan| H
+  end
+  subgraph ValidationExecution[Validation And Execution]
+    I[&quot;SQL Validation&lt;br/&gt;SELECT &amp;quot;NAME&amp;quot; AS campaign_name, &amp;quot;LASTDEPLOYEDTIME&amp;quot; AS published_time FROM &amp;quot;dim_campaign&amp;quot; L&quot;]
+    J[&quot;API Validation&lt;br/&gt;GET /ajo/journey&quot;]
+    K[&quot;Tool Results&lt;br/&gt;sql_rows + api_payload/dry_run&quot;]
+    H --&gt;|optimized_plan| I
+    H --&gt;|api_steps| J
+    I --&gt;|execute_sql| K
+    J --&gt;|call_api or dry-run| K
+  end
+  subgraph EvidenceAnswer[Evidence And Answer]
+    L[&quot;EvidenceBus&lt;br/&gt;IDs + names + counts + timestamps&quot;]
+    M[&quot;Answer Slots&lt;br/&gt;entity + count + status + dry_run&quot;]
+    N[&quot;Answer Verification&lt;br/&gt;claims + caveats + reranking&quot;]
+    O[&quot;Final Answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed bec&quot;]
+    K --&gt;|extract structured facts| L
+    L --&gt;|forward evidence_slots| M
+    M --&gt;|verify claims| N
+    N --&gt;|verified_answer| O
+  end
+  subgraph Artifacts
+    P[&quot;metadata.json&lt;br/&gt;filled_system_prompt.txt&lt;br/&gt;trajectory.json&lt;br/&gt;reports&quot;]
+    O --&gt;|write reproducible trace| P
+  end
+</div>
+  <h2>Checkpoint Effect Table</h2>
+  <pre>| Checkpoint | Technique | Input | Output | Effect on data flow | Correctness role | Efficiency role |
+| --- | --- | --- | --- | --- | --- | --- |
+| `checkpoint_01_raw_query` | raw user query capture |  | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;, &quot;query_id&quot;: &quot;is_the_birthday_message_journey_published&quot;, &quot;strategy&quot;: &quot;SQL_FIRST_API_VERIFY&quot;} | preserves the original query for reproducibility | keeps later normalization from changing the user-facing question | starts one trace without extra tool calls |
+| `checkpoint_00_prompt_router` | LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;preview&quot;: &quot;{\&quot;confidence\&quot;: 0.88, \&quot;matched_rules\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;sql_plus_api:published\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;mode\&quot;: \&quot;SQL_PLUS_API\&quot;, \&quot;reason\&quot;: \&quot;Live/status keyword(s) require SQL grounding plus...&quot;, &quot;truncated&quot;: true} | chooses whether the prompt can be answered directly or needs SQL/API evidence | routes data questions to evidence tools instead of unsupported direct answers | allows clearly conceptual prompts to avoid unnecessary SQL/API calls |
+| `checkpoint_simple_prompt_gate` | simple prompt gate | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;confidence&quot;: 0.88, &quot;is_simple&quot;: false, &quot;reason&quot;: &quot;Live/status keyword(s) require SQL grounding plus API verification: published.&quot;, &quot;suggested_action&quot;: &quot;USE_DATA_PIPELINE&quot;} | lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend | prevents direct answers for data questions that need SQL/API evidence | can skip the data pipeline only for safe conceptual prompts |
+| `checkpoint_02_query_normalization` | data cleaning / query normalization | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;matching_text&quot;: &quot;is the &#x27;birthday message&#x27; journey published?&quot;, &quot;normalized_query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | creates matching-friendly text while preserving the original query | improves template and route matching across wording variants | reduces repeated fuzzy matching work downstream |
+| `checkpoint_03_query_tokens` | domain-aware tokenization/entity extraction | {&quot;normalized_query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;preview&quot;: &quot;{\&quot;domains\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_campaign\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;quoted_entities\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;Birthday Message\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_ite...&quot;, &quot;truncated&quot;: true} | extracts reusable query fields for routing, planning, and answers | grounds names, IDs, dates, metrics, and statuses before planning | avoids reparsing the query in later modules |
+| `checkpoint_04_relevance_scoring` | attention-style relevance scoring | {&quot;preview&quot;: &quot;{\&quot;tokens\&quot;: {\&quot;domains\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_campaign\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;quoted_entities\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;Birthday Message\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false},...&quot;, &quot;truncated&quot;: true} | {&quot;preview&quot;: &quot;{\&quot;top_answer_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_published\&quot;, \&quot;inactive_journeys\&quot;], \&quot;total_items\&quot;: 2, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 2, \&quot;truncated_items\&quot;: false}, \&quot;top_apis\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_list\&quot;, \&quot;schema_registry_schema\&quot;, \&quot;unifie...&quot;, &quot;truncated&quot;: true} | selects a smaller, more relevant schema/API context | keeps high-signal tables and endpoints near the planner | reduces metadata and prompt tokens when compact metadata is enabled |
+| `checkpoint_05_query_analysis` | branch prediction / QueryAnalysis | {&quot;domain_type&quot;: &quot;JOURNEY_CAMPAIGN&quot;, &quot;route_type&quot;: &quot;SQL_THEN_API&quot;} | {&quot;preview&quot;: &quot;{\&quot;answer_family\&quot;: \&quot;journey_published\&quot;, \&quot;api_templates\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_by_name\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;confidence\&quot;: 0.8, \&quot;domain_type\&quot;: \&quot;JOURNEY_CAMPAIGN\&quot;, \&quot;fast_path\&quot;: \&quot;journ...&quot;, &quot;truncated&quot;: true} | computes shared query understanding once | aligns routing, metadata, planning, and reporting decisions | avoids repeated template and routing analysis |
+| `checkpoint_06_lookup_path` | TLB-style lookup path prediction | {&quot;answer_family&quot;: &quot;journey_published&quot;, &quot;domain_type&quot;: &quot;JOURNEY_CAMPAIGN&quot;} | {&quot;preview&quot;: &quot;{\&quot;api_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_by_name\&quot;, \&quot;journey_inactive\&quot;, \&quot;journey_list\&quot;], \&quot;total_items\&quot;: 3, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 3, \&quot;truncated_items\&quot;: false}, \&quot;api_mode\&quot;: \&quot;optional\&quot;, \&quot;family\&quot;: \&quot;journey_campaign\&quot;, \&quot;required_ids\&quot;: {\&quot;item...&quot;, &quot;truncated&quot;: true} | predicts the relevant table/join/API path | guides relationship-heavy SQL/API selection | filters unrelated schema and endpoint candidates |
+| `checkpoint_07_context_card` | huge-page-style compact context card | {&quot;broad_context&quot;: false, &quot;lookup_path&quot;: &quot;journey_campaign&quot;} | {&quot;preview&quot;: &quot;{\&quot;estimated_metadata_tokens\&quot;: 378, \&quot;prompt_tokens\&quot;: 941, \&quot;selected_apis\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_list\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;selected_card_name\&quot;: \&quot;journey_campaign\&quot;, \&quot;selected_column...&quot;, &quot;truncated&quot;: true} | packs family-relevant context into metadata.json and the filled prompt | keeps required tables, columns, joins, and API candidates visible | limits context size for non-baseline strategies |
+| `checkpoint_08_candidate_plans` | pre-execution plan ensemble | {&quot;base_step_count&quot;: 2, &quot;strategy&quot;: &quot;SQL_FIRST_API_VERIFY&quot;} | {&quot;preview&quot;: &quot;{\&quot;candidate_plan_names\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;generic_sql_first\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;reason_selected\&quot;: \&quot;highest pre-execution validation/relevance/cost score\&quot;, \&quot;scores\&quot;: {\&quot;generic_sql_fi...&quot;, &quot;truncated&quot;: true} | selects one plan before execution | prefers validated, family-matched plans | does not execute losing candidate plans |
+| `checkpoint_09_plan_optimization` | compiler-style plan optimization | {&quot;original_step_count&quot;: 2} | {&quot;preview&quot;: &quot;{\&quot;call_budget_applied\&quot;: false, \&quot;optimized_step_count\&quot;: 2, \&quot;optimizer_actions\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;ensemble selected generic_sql_first\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;original_step_count\&quot;: 2, \&quot;rem...&quot;, &quot;truncated&quot;: true} | removes duplicate, skippable, or unsafe calls before validation | drops unresolved placeholder calls unless explicitly warned | enforces a bounded plan before execution |
+| `checkpoint_10_evidence_policy` | API_REQUIRED/API_OPTIONAL/API_SKIP policy | {&quot;answer_family&quot;: &quot;journey_published&quot;, &quot;route_type&quot;: &quot;SQL_THEN_API&quot;} | {&quot;preview&quot;: &quot;{\&quot;allowed_api_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_by_name\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;max_api_calls\&quot;: 1, \&quot;mode\&quot;: \&quot;API_OPTIONAL\&quot;, \&quot;reason\&quot;: \&quot;Live/platform verification may improve the answer...&quot;, &quot;truncated&quot;: true} | decides when API evidence is required, optional, or unnecessary | keeps API calls for API-only/live families | skips or caps API calls when SQL evidence is enough |
+| `checkpoint_11_call_budget` | tool-call budgeting | {&quot;preview&quot;: &quot;{\&quot;planned_steps\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;action\&quot;: \&quot;sql\&quot;, \&quot;family\&quot;: \&quot;journey_campaign_published\&quot;, \&quot;purpose\&quot;: \&quot;Fast-path SQL grounding.\&quot;, \&quot;sql\&quot;: \&quot;SELECT \\\&quot;NAME\\\&quot; AS campaign_name, \\\&quot;LASTDEPLOYEDTIME\\\&quot; AS published_time FROM \\\&quot;dim_campaign\\\&quot; LIMIT 50\&quot;}, {\&quot;action\&quot;...&quot;, &quot;truncated&quot;: true} | {&quot;final_planned_calls&quot;: 2, &quot;max_api_calls&quot;: 1, &quot;max_sql_calls&quot;: 1, &quot;max_total_tool_calls&quot;: 2, &quot;planned_api_calls&quot;: 1, &quot;planned_sql_calls&quot;: 1} | keeps tool calls within per-family limits | preserves required grounding steps | prevents accidental extra SQL/API calls |
+| `checkpoint_12_validation` | SQL/API safety validation | {&quot;preview&quot;: &quot;{\&quot;optimized_steps\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;action\&quot;: \&quot;sql\&quot;, \&quot;family\&quot;: \&quot;journey_campaign_published\&quot;, \&quot;purpose\&quot;: \&quot;Fast-path SQL grounding.\&quot;, \&quot;sql\&quot;: \&quot;SELECT \\\&quot;NAME\\\&quot; AS campaign_name, \\\&quot;LASTDEPLOYEDTIME\\\&quot; AS published_time FROM \\\&quot;dim_campaign\\\&quot; LIMIT 50\&quot;}, {\&quot;actio...&quot;, &quot;truncated&quot;: true} | {&quot;preview&quot;: &quot;{\&quot;api_validation_status\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;errors\&quot;: {\&quot;total_items\&quot;: 0, \&quot;truncated_items\&quot;: false}, \&quot;ok\&quot;: true}], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;sql_validation_status\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;erro...&quot;, &quot;truncated&quot;: true} | records whether planned SQL/API calls were safe to execute | blocks unsafe SQL and unknown/unresolved API calls | prevents wasted execution on invalid calls |
+| `checkpoint_13_tool_execution` | SQL/API tool execution | {&quot;validated_step_count&quot;: 2} | {&quot;preview&quot;: &quot;{\&quot;api_calls_executed\&quot;: 1, \&quot;api_results\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;result_preview\&quot;: {\&quot;error\&quot;: \&quot;Adobe credentials unavailable; API call not executed.\&quot;, \&quot;result_preview\&quot;: null, \&quot;dry_run\&quot;: true, \&quot;endpoint\&quot;: \&quot;/ajo/journey\&quot;, \&quot;method\&quot;: \&quot;GET\&quot;, \&quot;ok\&quot;: false, \&quot;params\&quot;: {\&quot;f...&quot;, &quot;truncated&quot;: true} | captures the actual SQL/API evidence gathered by the backend | records row counts, dry-run state, and API status for final answer grounding | makes tool-call count and result previews explicit |
+| `checkpoint_14_evidence_bus` | operand forwarding / EvidenceBus | {&quot;tool_result_count&quot;: 2} | {&quot;evidence&quot;: {&quot;names&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;Birthday Message&quot;, &quot;Gold Tier Welcome Email&quot;], &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}}} | forwards structured facts to API params and answer slots | passes exact IDs, names, counts, timestamps, and statuses without text guessing | avoids repeated lookup or reparsing work |
+| `checkpoint_15_answer_slots` | structured answer slot extraction | {&quot;tool_result_count&quot;: 2} | {&quot;preview&quot;: &quot;{\&quot;answer_intent\&quot;: \&quot;STATUS\&quot;, \&quot;discrepancy_flags\&quot;: {\&quot;sql_api_discrepancy\&quot;: false}, \&quot;dry_run_flags\&quot;: {\&quot;dry_run\&quot;: true}, \&quot;missing_slots\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;status\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;slo...&quot;, &quot;truncated&quot;: true} | turns raw tool results into typed evidence fields | makes final response generation evidence-grounded | keeps answer context compact |
+| `checkpoint_16_answer_verification` | claim verification / groundedness checking | {&quot;claim_count&quot;: 2, &quot;slots_present&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;entity_names&quot;, &quot;counts&quot;, &quot;sql_row_count&quot;], &quot;total_items&quot;: 3, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 5, &quot;truncated_items&quot;: true}} | {&quot;errors&quot;: {&quot;total_items&quot;: 0, &quot;truncated_items&quot;: false}, &quot;rewrite_applied&quot;: false, &quot;supported_claims_count&quot;: 2, &quot;unsupported_claims_count&quot;: 0, &quot;verifier_passed&quot;: true} | checks final-answer claims against SQL/API evidence | blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation | rewrites safely without extra tool calls |
+| `checkpoint_17_answer_reranking` | deterministic answer reranking | {&quot;answer_family&quot;: &quot;journey_published&quot;} | {&quot;candidate_count&quot;: 0, &quot;selected_candidate_type&quot;: &quot;base&quot;, &quot;selection_reason&quot;: &quot;best verifier-passing answer&quot;} | selects the safest answer from same-evidence candidates | prefers verifier-passing and intent-matched answers | uses no additional SQL/API/LLM calls |
+| `checkpoint_18_final_answer` | concise grounded final response | {&quot;verifier_passed&quot;: true} | {&quot;preview&quot;: &quot;{\&quot;answer_length\&quot;: 199, \&quot;final_answer\&quot;: \&quot;The journey \\\&quot;Birthday Message\\\&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.\&quot;, \&quot;final_token_est...&quot;, &quot;truncated&quot;: true} | returns the final concise answer to the agent harness | final answer remains tied to evidence and caveats | keeps response concise |
+</pre>
+  <h2>Markdown Source</h2>
+  <pre># DASHSys Prompt-To-Answer Dataflow
+
+- Query ID: `is_the_birthday_message_journey_published`
+- Strategy: `SQL_FIRST_API_VERIFY`
+- Tool calls: `2`
+
+```mermaid
+flowchart TD
+  subgraph Input
+    A[&quot;User Prompt&lt;br/&gt;Is the &amp;#x27;Birthday Message&amp;#x27; journey published?&quot;]
+    B[&quot;Prompt Router&lt;br/&gt;mode=SQL_PLUS_API&lt;br/&gt;policy=unknown&quot;]
+    A --&gt;|route_prompt| B
+  end
+  subgraph QueryUnderstanding[Query Understanding]
+    C[&quot;Query Normalization&lt;br/&gt;normalized_query + rewrites&quot;]
+    D[&quot;Tokens / Entities&lt;br/&gt;names + ids + dates + metrics&quot;]
+    E[&quot;Relevance / QueryAnalysis&lt;br/&gt;tables + APIs + answer family&quot;]
+    B --&gt;|normalized text| C
+    C --&gt;|query_tokens| D
+    D --&gt;|route/domain/family| E
+  end
+  subgraph ContextPlanning[Context And Planning]
+    F[&quot;Candidate / Context Card&lt;br/&gt;selected tables + APIs&quot;]
+    G[&quot;LLM SQL or Template Plan&lt;br/&gt;candidate/full schema + fallback&quot;]
+    H[&quot;Plan Optimization&lt;br/&gt;budget + dedupe + placeholders&quot;]
+    E --&gt;|selected_metadata| F
+    F --&gt;|schema/API context| G
+    G --&gt;|draft_plan| H
+  end
+  subgraph ValidationExecution[Validation And Execution]
+    I[&quot;SQL Validation&lt;br/&gt;SELECT &amp;quot;NAME&amp;quot; AS campaign_name, &amp;quot;LASTDEPLOYEDTIME&amp;quot; AS published_time FROM &amp;quot;dim_campaign&amp;quot; L&quot;]
+    J[&quot;API Validation&lt;br/&gt;GET /ajo/journey&quot;]
+    K[&quot;Tool Results&lt;br/&gt;sql_rows + api_payload/dry_run&quot;]
+    H --&gt;|optimized_plan| I
+    H --&gt;|api_steps| J
+    I --&gt;|execute_sql| K
+    J --&gt;|call_api or dry-run| K
+  end
+  subgraph EvidenceAnswer[Evidence And Answer]
+    L[&quot;EvidenceBus&lt;br/&gt;IDs + names + counts + timestamps&quot;]
+    M[&quot;Answer Slots&lt;br/&gt;entity + count + status + dry_run&quot;]
+    N[&quot;Answer Verification&lt;br/&gt;claims + caveats + reranking&quot;]
+    O[&quot;Final Answer&lt;br/&gt;The journey &amp;quot;Birthday Message&amp;quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed bec&quot;]
+    K --&gt;|extract structured facts| L
+    L --&gt;|forward evidence_slots| M
+    M --&gt;|verify claims| N
+    N --&gt;|verified_answer| O
+  end
+  subgraph Artifacts
+    P[&quot;metadata.json&lt;br/&gt;filled_system_prompt.txt&lt;br/&gt;trajectory.json&lt;br/&gt;reports&quot;]
+    O --&gt;|write reproducible trace| P
+  end
+```
+
+## Prompt To SQL/API Mapping
+
+```json
+{
+  &quot;api_calls&quot;: {
+    &quot;items&quot;: {
+      &quot;items&quot;: [
+        {
+          &quot;kind&quot;: &quot;api_call&quot;,
+          &quot;method&quot;: &quot;GET&quot;,
+          &quot;params&quot;: {
+            &quot;filter&quot;: &quot;name==Birthday Message&quot;
+          },
+          &quot;result&quot;: {
+            &quot;dry_run&quot;: true,
+            &quot;endpoint&quot;: &quot;/ajo/journey&quot;,
+            &quot;error&quot;: &quot;Adobe credentials unavailable; API call not executed.&quot;,
+            &quot;method&quot;: &quot;GET&quot;,
+            &quot;ok&quot;: false,
+            &quot;params&quot;: {
+              &quot;filter&quot;: &quot;name==Birthday Message&quot;
+            },
+            &quot;result_preview&quot;: null,
+            &quot;url&quot;: &quot;https://platform.adobe.io/ajo/journey&quot;
+          },
+          &quot;url&quot;: &quot;/ajo/journey&quot;,
+          &quot;validation&quot;: {
+            &quot;errors&quot;: {
+              &quot;total_items&quot;: 0,
+              &quot;truncated_items&quot;: false
+            },
+            &quot;ok&quot;: true,
+            &quot;repaired&quot;: false
+          }
+        }
+      ],
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;total_items&quot;: 1,
+    &quot;truncated_items&quot;: false
+  },
+  &quot;candidate_or_metadata&quot;: {
+    &quot;estimated_metadata_tokens&quot;: 378,
+    &quot;prompt_tokens&quot;: 941,
+    &quot;selected_apis&quot;: {
+      &quot;items&quot;: {
+        &quot;items&quot;: [
+          &quot;journey_list&quot;
+        ],
+        &quot;total_items&quot;: 1,
+        &quot;truncated_items&quot;: false
+      },
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;selected_card_name&quot;: &quot;journey_campaign&quot;,
+    &quot;selected_columns&quot;: {
+      &quot;dim_campaign&quot;: {
+        &quot;items&quot;: {
+          &quot;items&quot;: [
+            &quot;CAMPAIGNID&quot;,
+            &quot;NAME&quot;,
+            &quot;STATE&quot;
+          ],
+          &quot;total_items&quot;: 3,
+          &quot;truncated_items&quot;: false
+        },
+        &quot;total_items&quot;: 5,
+        &quot;truncated_items&quot;: true
+      }
+    },
+    &quot;selected_tables&quot;: {
+      &quot;items&quot;: {
+        &quot;items&quot;: [
+          &quot;dim_campaign&quot;
+        ],
+        &quot;total_items&quot;: 1,
+        &quot;truncated_items&quot;: false
+      },
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    }
+  },
+  &quot;evidence_bus&quot;: {
+    &quot;evidence&quot;: {
+      &quot;names&quot;: {
+        &quot;items&quot;: {
+          &quot;items&quot;: [
+            &quot;Birthday Message&quot;,
+            &quot;Gold Tier Welcome Email&quot;
+          ],
+          &quot;total_items&quot;: 2,
+          &quot;truncated_items&quot;: false
+        },
+        &quot;total_items&quot;: 2,
+        &quot;truncated_items&quot;: false
+      }
+    }
+  },
+  &quot;normalization&quot;: {
+    &quot;matching_text&quot;: &quot;is the &#x27;birthday message&#x27; journey published?&quot;,
+    &quot;normalized_query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;
+  },
+  &quot;prompt&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;,
+  &quot;route&quot;: {
+    &quot;confidence&quot;: 0.88,
+    &quot;matched_rules&quot;: {
+      &quot;items&quot;: {
+        &quot;items&quot;: [
+          &quot;sql_plus_api:published&quot;
+        ],
+        &quot;total_items&quot;: 1,
+        &quot;truncated_items&quot;: false
+      },
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;mode&quot;: &quot;SQL_PLUS_API&quot;,
+    &quot;reason&quot;: &quot;Live/status keyword(s) require SQL grounding plus API verification: published.&quot;,
+    &quot;recommended_strategy&quot;: &quot;SQL_FIRST_API_VERIFY&quot;,
+    &quot;requires_api&quot;: true,
+    &quot;requires_database&quot;: true,
+    &quot;risk&quot;: &quot;medium&quot;,
+    &quot;truncated_fields&quot;: 1
+  },
+  &quot;sql_calls&quot;: {
+    &quot;items&quot;: {
+      &quot;items&quot;: [
+        {
+          &quot;kind&quot;: &quot;sql_call&quot;,
+          &quot;result&quot;: {
+            &quot;error&quot;: null,
+            &quot;limited&quot;: false,
+            &quot;ok&quot;: true,
+            &quot;row_count&quot;: 2,
+            &quot;rows&quot;: {
+              &quot;items&quot;: {
+                &quot;items&quot;: {
+                  &quot;items&quot;: [
+                    {
+                      &quot;campaign_name&quot;: &quot;Birthday Message&quot;
+                    },
+                    {
+                      &quot;campaign_name&quot;: &quot;Gold Tier Welcome Email&quot;
+                    }
+                  ],
+                  &quot;total_items&quot;: 2,
+                  &quot;truncated_items&quot;: false
+                },
+                &quot;total_items&quot;: 2,
+                &quot;truncated_items&quot;: false
+              },
+              &quot;total_items&quot;: 2,
+              &quot;truncated_items&quot;: false
+            }
+          },
+          &quot;sql&quot;: &quot;SELECT \&quot;NAME\&quot; AS campaign_name, \&quot;LASTDEPLOYEDTIME\&quot; AS published_time FROM \&quot;dim_campaign\&quot; LIMIT 50&quot;,
+          &quot;validation&quot;: {
+            &quot;errors&quot;: {
+              &quot;total_items&quot;: 0,
+              &quot;truncated_items&quot;: false
+            },
+            &quot;ok&quot;: true,
+            &quot;repaired&quot;: false
+          }
+        }
+      ],
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;total_items&quot;: 1,
+    &quot;truncated_items&quot;: false
+  },
+  &quot;tokens&quot;: {
+    &quot;domains&quot;: {
+      &quot;items&quot;: {
+        &quot;items&quot;: [
+          &quot;journey_campaign&quot;
+        ],
+        &quot;total_items&quot;: 1,
+        &quot;truncated_items&quot;: false
+      },
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;quoted_entities&quot;: {
+      &quot;items&quot;: {
+        &quot;items&quot;: [
+          &quot;Birthday Message&quot;
+        ],
+        &quot;total_items&quot;: 1,
+        &quot;truncated_items&quot;: false
+      },
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    },
+    &quot;statuses&quot;: {
+      &quot;items&quot;: {
+        &quot;items&quot;: [
+          &quot;published&quot;
+        ],
+        &quot;total_items&quot;: 1,
+        &quot;truncated_items&quot;: false
+      },
+      &quot;total_items&quot;: 1,
+      &quot;truncated_items&quot;: false
+    }
+  },
+  &quot;truncated_fields&quot;: 4
+}
+```
+
+## Checkpoint Effect Table
+
+| Checkpoint | Technique | Input | Output | Effect on data flow | Correctness role | Efficiency role |
+| --- | --- | --- | --- | --- | --- | --- |
+| `checkpoint_01_raw_query` | raw user query capture |  | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;, &quot;query_id&quot;: &quot;is_the_birthday_message_journey_published&quot;, &quot;strategy&quot;: &quot;SQL_FIRST_API_VERIFY&quot;} | preserves the original query for reproducibility | keeps later normalization from changing the user-facing question | starts one trace without extra tool calls |
+| `checkpoint_00_prompt_router` | LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;preview&quot;: &quot;{\&quot;confidence\&quot;: 0.88, \&quot;matched_rules\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;sql_plus_api:published\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;mode\&quot;: \&quot;SQL_PLUS_API\&quot;, \&quot;reason\&quot;: \&quot;Live/status keyword(s) require SQL grounding plus...&quot;, &quot;truncated&quot;: true} | chooses whether the prompt can be answered directly or needs SQL/API evidence | routes data questions to evidence tools instead of unsupported direct answers | allows clearly conceptual prompts to avoid unnecessary SQL/API calls |
+| `checkpoint_simple_prompt_gate` | simple prompt gate | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;confidence&quot;: 0.88, &quot;is_simple&quot;: false, &quot;reason&quot;: &quot;Live/status keyword(s) require SQL grounding plus API verification: published.&quot;, &quot;suggested_action&quot;: &quot;USE_DATA_PIPELINE&quot;} | lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend | prevents direct answers for data questions that need SQL/API evidence | can skip the data pipeline only for safe conceptual prompts |
+| `checkpoint_02_query_normalization` | data cleaning / query normalization | {&quot;query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;matching_text&quot;: &quot;is the &#x27;birthday message&#x27; journey published?&quot;, &quot;normalized_query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | creates matching-friendly text while preserving the original query | improves template and route matching across wording variants | reduces repeated fuzzy matching work downstream |
+| `checkpoint_03_query_tokens` | domain-aware tokenization/entity extraction | {&quot;normalized_query&quot;: &quot;Is the &#x27;Birthday Message&#x27; journey published?&quot;} | {&quot;preview&quot;: &quot;{\&quot;domains\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_campaign\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;quoted_entities\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;Birthday Message\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_ite...&quot;, &quot;truncated&quot;: true} | extracts reusable query fields for routing, planning, and answers | grounds names, IDs, dates, metrics, and statuses before planning | avoids reparsing the query in later modules |
+| `checkpoint_04_relevance_scoring` | attention-style relevance scoring | {&quot;preview&quot;: &quot;{\&quot;tokens\&quot;: {\&quot;domains\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_campaign\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;quoted_entities\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;Birthday Message\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false},...&quot;, &quot;truncated&quot;: true} | {&quot;preview&quot;: &quot;{\&quot;top_answer_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_published\&quot;, \&quot;inactive_journeys\&quot;], \&quot;total_items\&quot;: 2, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 2, \&quot;truncated_items\&quot;: false}, \&quot;top_apis\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_list\&quot;, \&quot;schema_registry_schema\&quot;, \&quot;unifie...&quot;, &quot;truncated&quot;: true} | selects a smaller, more relevant schema/API context | keeps high-signal tables and endpoints near the planner | reduces metadata and prompt tokens when compact metadata is enabled |
+| `checkpoint_05_query_analysis` | branch prediction / QueryAnalysis | {&quot;domain_type&quot;: &quot;JOURNEY_CAMPAIGN&quot;, &quot;route_type&quot;: &quot;SQL_THEN_API&quot;} | {&quot;preview&quot;: &quot;{\&quot;answer_family\&quot;: \&quot;journey_published\&quot;, \&quot;api_templates\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_by_name\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;confidence\&quot;: 0.8, \&quot;domain_type\&quot;: \&quot;JOURNEY_CAMPAIGN\&quot;, \&quot;fast_path\&quot;: \&quot;journ...&quot;, &quot;truncated&quot;: true} | computes shared query understanding once | aligns routing, metadata, planning, and reporting decisions | avoids repeated template and routing analysis |
+| `checkpoint_06_lookup_path` | TLB-style lookup path prediction | {&quot;answer_family&quot;: &quot;journey_published&quot;, &quot;domain_type&quot;: &quot;JOURNEY_CAMPAIGN&quot;} | {&quot;preview&quot;: &quot;{\&quot;api_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_by_name\&quot;, \&quot;journey_inactive\&quot;, \&quot;journey_list\&quot;], \&quot;total_items\&quot;: 3, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 3, \&quot;truncated_items\&quot;: false}, \&quot;api_mode\&quot;: \&quot;optional\&quot;, \&quot;family\&quot;: \&quot;journey_campaign\&quot;, \&quot;required_ids\&quot;: {\&quot;item...&quot;, &quot;truncated&quot;: true} | predicts the relevant table/join/API path | guides relationship-heavy SQL/API selection | filters unrelated schema and endpoint candidates |
+| `checkpoint_07_context_card` | huge-page-style compact context card | {&quot;broad_context&quot;: false, &quot;lookup_path&quot;: &quot;journey_campaign&quot;} | {&quot;preview&quot;: &quot;{\&quot;estimated_metadata_tokens\&quot;: 378, \&quot;prompt_tokens\&quot;: 941, \&quot;selected_apis\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_list\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;selected_card_name\&quot;: \&quot;journey_campaign\&quot;, \&quot;selected_column...&quot;, &quot;truncated&quot;: true} | packs family-relevant context into metadata.json and the filled prompt | keeps required tables, columns, joins, and API candidates visible | limits context size for non-baseline strategies |
+| `checkpoint_08_candidate_plans` | pre-execution plan ensemble | {&quot;base_step_count&quot;: 2, &quot;strategy&quot;: &quot;SQL_FIRST_API_VERIFY&quot;} | {&quot;preview&quot;: &quot;{\&quot;candidate_plan_names\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;generic_sql_first\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;reason_selected\&quot;: \&quot;highest pre-execution validation/relevance/cost score\&quot;, \&quot;scores\&quot;: {\&quot;generic_sql_fi...&quot;, &quot;truncated&quot;: true} | selects one plan before execution | prefers validated, family-matched plans | does not execute losing candidate plans |
+| `checkpoint_09_plan_optimization` | compiler-style plan optimization | {&quot;original_step_count&quot;: 2} | {&quot;preview&quot;: &quot;{\&quot;call_budget_applied\&quot;: false, \&quot;optimized_step_count\&quot;: 2, \&quot;optimizer_actions\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;ensemble selected generic_sql_first\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;original_step_count\&quot;: 2, \&quot;rem...&quot;, &quot;truncated&quot;: true} | removes duplicate, skippable, or unsafe calls before validation | drops unresolved placeholder calls unless explicitly warned | enforces a bounded plan before execution |
+| `checkpoint_10_evidence_policy` | API_REQUIRED/API_OPTIONAL/API_SKIP policy | {&quot;answer_family&quot;: &quot;journey_published&quot;, &quot;route_type&quot;: &quot;SQL_THEN_API&quot;} | {&quot;preview&quot;: &quot;{\&quot;allowed_api_families\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;journey_by_name\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;max_api_calls\&quot;: 1, \&quot;mode\&quot;: \&quot;API_OPTIONAL\&quot;, \&quot;reason\&quot;: \&quot;Live/platform verification may improve the answer...&quot;, &quot;truncated&quot;: true} | decides when API evidence is required, optional, or unnecessary | keeps API calls for API-only/live families | skips or caps API calls when SQL evidence is enough |
+| `checkpoint_11_call_budget` | tool-call budgeting | {&quot;preview&quot;: &quot;{\&quot;planned_steps\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;action\&quot;: \&quot;sql\&quot;, \&quot;family\&quot;: \&quot;journey_campaign_published\&quot;, \&quot;purpose\&quot;: \&quot;Fast-path SQL grounding.\&quot;, \&quot;sql\&quot;: \&quot;SELECT \\\&quot;NAME\\\&quot; AS campaign_name, \\\&quot;LASTDEPLOYEDTIME\\\&quot; AS published_time FROM \\\&quot;dim_campaign\\\&quot; LIMIT 50\&quot;}, {\&quot;action\&quot;...&quot;, &quot;truncated&quot;: true} | {&quot;final_planned_calls&quot;: 2, &quot;max_api_calls&quot;: 1, &quot;max_sql_calls&quot;: 1, &quot;max_total_tool_calls&quot;: 2, &quot;planned_api_calls&quot;: 1, &quot;planned_sql_calls&quot;: 1} | keeps tool calls within per-family limits | preserves required grounding steps | prevents accidental extra SQL/API calls |
+| `checkpoint_12_validation` | SQL/API safety validation | {&quot;preview&quot;: &quot;{\&quot;optimized_steps\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;action\&quot;: \&quot;sql\&quot;, \&quot;family\&quot;: \&quot;journey_campaign_published\&quot;, \&quot;purpose\&quot;: \&quot;Fast-path SQL grounding.\&quot;, \&quot;sql\&quot;: \&quot;SELECT \\\&quot;NAME\\\&quot; AS campaign_name, \\\&quot;LASTDEPLOYEDTIME\\\&quot; AS published_time FROM \\\&quot;dim_campaign\\\&quot; LIMIT 50\&quot;}, {\&quot;actio...&quot;, &quot;truncated&quot;: true} | {&quot;preview&quot;: &quot;{\&quot;api_validation_status\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;errors\&quot;: {\&quot;total_items\&quot;: 0, \&quot;truncated_items\&quot;: false}, \&quot;ok\&quot;: true}], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;sql_validation_status\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;erro...&quot;, &quot;truncated&quot;: true} | records whether planned SQL/API calls were safe to execute | blocks unsafe SQL and unknown/unresolved API calls | prevents wasted execution on invalid calls |
+| `checkpoint_13_tool_execution` | SQL/API tool execution | {&quot;validated_step_count&quot;: 2} | {&quot;preview&quot;: &quot;{\&quot;api_calls_executed\&quot;: 1, \&quot;api_results\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [{\&quot;result_preview\&quot;: {\&quot;error\&quot;: \&quot;Adobe credentials unavailable; API call not executed.\&quot;, \&quot;result_preview\&quot;: null, \&quot;dry_run\&quot;: true, \&quot;endpoint\&quot;: \&quot;/ajo/journey\&quot;, \&quot;method\&quot;: \&quot;GET\&quot;, \&quot;ok\&quot;: false, \&quot;params\&quot;: {\&quot;f...&quot;, &quot;truncated&quot;: true} | captures the actual SQL/API evidence gathered by the backend | records row counts, dry-run state, and API status for final answer grounding | makes tool-call count and result previews explicit |
+| `checkpoint_14_evidence_bus` | operand forwarding / EvidenceBus | {&quot;tool_result_count&quot;: 2} | {&quot;evidence&quot;: {&quot;names&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;Birthday Message&quot;, &quot;Gold Tier Welcome Email&quot;], &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 2, &quot;truncated_items&quot;: false}}} | forwards structured facts to API params and answer slots | passes exact IDs, names, counts, timestamps, and statuses without text guessing | avoids repeated lookup or reparsing work |
+| `checkpoint_15_answer_slots` | structured answer slot extraction | {&quot;tool_result_count&quot;: 2} | {&quot;preview&quot;: &quot;{\&quot;answer_intent\&quot;: \&quot;STATUS\&quot;, \&quot;discrepancy_flags\&quot;: {\&quot;sql_api_discrepancy\&quot;: false}, \&quot;dry_run_flags\&quot;: {\&quot;dry_run\&quot;: true}, \&quot;missing_slots\&quot;: {\&quot;items\&quot;: {\&quot;items\&quot;: [\&quot;status\&quot;], \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;total_items\&quot;: 1, \&quot;truncated_items\&quot;: false}, \&quot;slo...&quot;, &quot;truncated&quot;: true} | turns raw tool results into typed evidence fields | makes final response generation evidence-grounded | keeps answer context compact |
+| `checkpoint_16_answer_verification` | claim verification / groundedness checking | {&quot;claim_count&quot;: 2, &quot;slots_present&quot;: {&quot;items&quot;: {&quot;items&quot;: [&quot;entity_names&quot;, &quot;counts&quot;, &quot;sql_row_count&quot;], &quot;total_items&quot;: 3, &quot;truncated_items&quot;: false}, &quot;total_items&quot;: 5, &quot;truncated_items&quot;: true}} | {&quot;errors&quot;: {&quot;total_items&quot;: 0, &quot;truncated_items&quot;: false}, &quot;rewrite_applied&quot;: false, &quot;supported_claims_count&quot;: 2, &quot;unsupported_claims_count&quot;: 0, &quot;verifier_passed&quot;: true} | checks final-answer claims against SQL/API evidence | blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation | rewrites safely without extra tool calls |
+| `checkpoint_17_answer_reranking` | deterministic answer reranking | {&quot;answer_family&quot;: &quot;journey_published&quot;} | {&quot;candidate_count&quot;: 0, &quot;selected_candidate_type&quot;: &quot;base&quot;, &quot;selection_reason&quot;: &quot;best verifier-passing answer&quot;} | selects the safest answer from same-evidence candidates | prefers verifier-passing and intent-matched answers | uses no additional SQL/API/LLM calls |
+| `checkpoint_18_final_answer` | concise grounded final response | {&quot;verifier_passed&quot;: true} | {&quot;preview&quot;: &quot;{\&quot;answer_length\&quot;: 199, \&quot;final_answer\&quot;: \&quot;The journey \\\&quot;Birthday Message\\\&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.\&quot;, \&quot;final_token_est...&quot;, &quot;truncated&quot;: true} | returns the final concise answer to the agent harness | final answer remains tied to evidence and caveats | keeps response concise |
+</pre>
+</body>
+</html>

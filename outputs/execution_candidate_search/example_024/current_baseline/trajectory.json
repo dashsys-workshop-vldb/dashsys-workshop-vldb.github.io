@@ -1,0 +1,137 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 522,
+      "estimated_tokens_before": 522,
+      "expected_savings": 0,
+      "packaged_execution_changed": false,
+      "reduced_fields": []
+    }
+  ],
+  "domain_type": "segment_definitions",
+  "errors": [],
+  "estimated_tokens": 522,
+  "execution_time": 0.0,
+  "final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Which segment definitions were updated most recently?",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "example_024",
+  "route_type": "TARGETED_CANDIDATE_SEARCH",
+  "runtime": 0.0008180000586435199,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_search": {
+        "candidate_id": "current_baseline",
+        "diagnostic_only": true,
+        "generation_reason": "Current SQL_FIRST_API_VERIFY plan."
+      },
+      "kind": "metadata",
+      "query": "Which segment definitions were updated most recently?",
+      "query_id": "example_024",
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "candidate": {
+        "api_call": {
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "path": "/data/core/ups/segment/definitions"
+        },
+        "candidate_family": "baseline",
+        "candidate_id": "current_baseline",
+        "dependency_requirements": [],
+        "endpoint_family": "segment_definitions",
+        "estimated_tool_calls": 1,
+        "expected_answer_shape": "list_or_detail",
+        "generalizable_family": "segment_definitions",
+        "generation_reason": "Current SQL_FIRST_API_VERIFY plan.",
+        "leakage_check_passed": true,
+        "leakage_reasons": [],
+        "local_index_hits": [],
+        "risk_flags": [
+          "baseline_plan"
+        ],
+        "rule_source": "reusable_domain_schema_endpoint_rule",
+        "schema_family": "segment_definitions",
+        "source_signals": [
+          "domain_tokens",
+          "current_plan"
+        ],
+        "sql": null,
+        "trigger_features": [
+          "domain_tokens",
+          "current_plan"
+        ]
+      },
+      "candidate_id": "current_baseline",
+      "kind": "plan"
+    },
+    {
+      "kind": "validation",
+      "result": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "target": "api"
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "orderBy": "updateTime:desc"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/segment/definitions",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "3",
+          "orderBy": "updateTime:desc"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+      },
+      "url": "/data/core/ups/segment/definitions",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "segment_definitions",
+      "answer_intent": "WHEN",
+      "completeness_missing_fields": [
+        "timestamp"
+      ],
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "base",
+      "slots_present": [
+        "dry_run"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {},
+  "tool_call_count": 1
+}

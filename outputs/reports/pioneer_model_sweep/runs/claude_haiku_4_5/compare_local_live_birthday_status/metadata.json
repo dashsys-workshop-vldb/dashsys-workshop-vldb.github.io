@@ -1,0 +1,265 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "Combine T1 (local data) + T2 (live data) through T4 (detailed comparison) framework, contextualized by T3 (conceptual dimensions), to produce unified status assessment showing",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "active_task_count": 5,
+      "api_candidate_cards": 2,
+      "api_candidate_success_count": 2,
+      "atomic_candidate_slots_used": true,
+      "atomic_checklist_used": true,
+      "atomic_weak_protocol_used": true,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "backend_semantic_routing_used": false,
+      "candidate_card_latency_ms": 6253,
+      "candidate_card_max_tokens": 220,
+      "candidate_card_success": 4,
+      "candidate_repair_attempts": 0,
+      "candidate_repair_max_tokens": 220,
+      "checklist_bits": {
+        "COUNT": 0,
+        "DATE": 0,
+        "LIST": 0,
+        "LIVE_CURRENT": 1,
+        "LOCAL_SNAPSHOT": 1,
+        "MIXED_CONCEPT_DATA": 1,
+        "PURE_CONCEPT": 0,
+        "RECORDS": 1,
+        "SHOW_ITEMS": 0,
+        "STATUS": 1
+      },
+      "checklist_latency_ms": 1893,
+      "checklist_parse_success": true,
+      "checklist_repair_attempted": false,
+      "checklist_route": "EVIDENCE_PIPELINE",
+      "dependency_edges": [
+        [
+          "T1",
+          "T3"
+        ],
+        [
+          "T2",
+          "T3"
+        ],
+        [
+          "T1",
+          "T4"
+        ],
+        [
+          "T2",
+          "T4"
+        ],
+        [
+          "T1",
+          "T5"
+        ],
+        [
+          "T2",
+          "T5"
+        ],
+        [
+          "T3",
+          "T5"
+        ],
+        [
+          "T4",
+          "T5"
+        ]
+      ],
+      "direct_route_challenge_needs_evidence": null,
+      "direct_route_challenge_repair_attempted": false,
+      "direct_route_challenge_used": false,
+      "evidence_planner_called": true,
+      "final_answer_max_tokens": 500,
+      "fixed_task_slots_used": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 4,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "atomic_weak_protocol",
+      "planner_provider_latency_ms": 12190,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_card_max_tokens": 80,
+      "route_card_repair_attempted": false,
+      "route_card_route": "EVIDENCE",
+      "route_card_success": true,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true,
+      "slot_count": 5,
+      "sql_candidate_cards": 2,
+      "sql_candidate_success_count": 2,
+      "task_count": 5,
+      "task_ledger_latency_ms": 4043,
+      "task_ledger_max_tokens": 300,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "SQL",
+        "API",
+        "DIRECT",
+        "SQL_AND_API",
+        "AGGREGATE"
+      ],
+      "task_slot_repair_attempted": false,
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "claude-haiku-4-5",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Retrieve local snapshot of Birthday Message configuration from database (stored settings, templates, scheduling rules)",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT dc.CAMPAIGNID, dc.NAME, dc.CAMPAIGNTYPE, dc.STATE, dc.ISSCHEDULED, dc.ISRECURRING, dc.STARTDATE, dc.LASTDEPLOYEDTIME, dc.UPDATEDTIME, dc.LABELSCAMPAIGN FROM dim_campaign dc WHERE dc.CAMPAIGNTYPE = 'Birthday Message' AND dc.STATE IN ('active', 'scheduled', 'paused')"
+        },
+        "subtask": "Retrieve local snapshot of Birthday Message configuration from database (stored settings, templates, scheduling rules)"
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "filter": "name==*Birthday*",
+            "limit": 10
+          },
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Fetch live/current Birthday Message status from platform API (active state, recent sends, current configuration)",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T2",
+        "path": "API",
+        "sql": null,
+        "subtask": "Fetch live/current Birthday Message status from platform API (active state, recent sends, current configuration)"
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1",
+          "T2"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Conceptual framework for comparison (identify key dimensions: enabled status, template content, scheduling, delivery method, last execution)",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T3",
+        "path": "DIRECT",
+        "sql": null,
+        "subtask": "Conceptual framework for comparison (identify key dimensions: enabled status, template content, scheduling, delivery method, last execution)"
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "includeDetails": true,
+            "name": "Birthday Message"
+          },
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1",
+          "T2"
+        ],
+        "evidence_order": "PARALLEL",
+        "expected_result": "Detailed comparison of local vs live discrepancies (config drift, version mismatches, pending changes, sync status)",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T4",
+        "path": "SQL_AND_API",
+        "sql": {
+          "params": [],
+          "query": "SELECT c.NAME, c.STATE, c.LASTDEPLOYEDTIME, c.UPDATEDTIME, c.ISSCHEDULED, c.ISRECURRING, c.CAMPAIGNTYPE, c.LABELSCAMPAIGN FROM dim_campaign c WHERE c.NAME = 'Birthday Message' AND c.STATE IS NOT NULL"
+        },
+        "subtask": "Detailed comparison of local vs live discrepancies (config drift, version mismatches, pending changes, sync status)"
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Synthesize findings into comprehensive status report with alignment assessment and recommendations for reconciliation",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T5",
+        "path": "AGGREGATION_ONLY",
+        "sql": null,
+        "subtask": "Synthesize findings into comprehensive status report with alignment assessment and recommendations for reconciliation"
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "atomic_api_candidate_T2": "METHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS_JSON={\"filter\":\"name==*Birthday*\",\"limit\":10}",
+      "atomic_api_candidate_T4": "METHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS_JSON={\"name\":\"Birthday Message\",\"includeDetails\":true}",
+      "atomic_checklist": "RECORDS=1\nLIST=0\nCOUNT=0\nSTATUS=1\nDATE=0\nLOCAL_SNAPSHOT=1\nLIVE_CURRENT=1\nSHOW_ITEMS=0\nMIXED_CONCEPT_DATA=1\nPURE_CONCEPT=0\nDIRECT_ANSWER=",
+      "atomic_sql_candidate_T1": "SQL_QUERY=SELECT dc.CAMPAIGNID, dc.NAME, dc.CAMPAIGNTYPE, dc.STATE, dc.ISSCHEDULED, dc.ISRECURRING, dc.STARTDATE, dc.LASTDEPLOYEDTIME, dc.UPDATEDTIME, dc.LABELSCAMPAIGN FROM dim_campaign dc WHERE dc.CAMPAIGNTYPE = 'Birthday Message' AND dc.STATE IN ('active', 'scheduled', 'paused')\nPARAMS_JSON=[]",
+      "atomic_sql_candidate_T4": "SQL_QUERY=SELECT c.NAME, c.STATE, c.LASTDEPLOYEDTIME, c.UPDATEDTIME, c.ISSCHEDULED, c.ISRECURRING, c.CAMPAIGNTYPE, c.LABELSCAMPAIGN FROM dim_campaign c WHERE c.NAME = 'Birthday Message' AND c.STATE IS NOT NULL\nPARAMS_JSON=[]",
+      "fixed_task_slots": "# Task Configuration: Compare Local and Live Birthday Message Status\n\n```\nT1_PATH=SQL\nT1_DEPS=[]\nT1_DESC=Retrieve local snapshot of Birthday Message configuration from database (stored settings, templates, scheduling rules)\n\nT2_PATH=API\nT2_DEPS=[]\nT2_DESC=Fetch live/current Birthday Message status from platform API (active state, recent sends, current configuration)\n\nT3_PATH=DIRECT\nT3_DEPS=[T1, T2]\nT3_DESC=Conceptual framework for comparison (identify key dimensions: enabled status, template content, scheduling, delivery method, last execution)\n\nT4_PATH=SQL_AND_API\nT4_DEPS=[T1, T2]\nT4_DESC=Detailed comparison of local vs live discrepancies (config drift, version mismatches, pending changes, sync status)\n\nT5_PATH=AGGREGATE\nT5_DEPS=[T1, T2, T3, T4]\nT5_DESC=Synthesize findings into comprehensive status report with alignment assessment and recommendations for reconciliation\n\nAGGREGATE=Combine T1 (local data) + T2 (live data) through T4 (detailed comparison) framework, contextualized by T3 (conceptual dimensions), to produce unified status assessment showing"
+    },
+    "reason": "Atomic checklist selected evidence; fixed task slots supplied LLM-owned tasks.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT dc.CAMPAIGNID, dc.NAME, dc.CAMPAIGNTYPE, dc.STATE, dc.ISSCHEDULED, dc.ISRECURRING, dc.STARTDATE, dc.LASTDEPLOYEDTIME, dc.UPDATEDTIME, dc.LABELSCAMPAIGN FROM dim_campaign dc WHERE dc.CAMPAIGNTYPE = 'Birthday Message' AND dc.STATE IN ('active', 'scheduled', 'paused')"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Compare local and live status of Birthday Message if both are available.",
+  "query_id": "pioneer_sweep_claude_haiku_4_5_compare_local_live_birthday_status",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T20:11:47.891117+00:00",
+    "deadline_at": "2026-06-01T20:12:17.891117+00:00",
+    "evidence_bus_id": "evidence_run_a07342b6ee0841898988fa48c7c2e539",
+    "original_prompt": "Compare local and live status of Birthday Message if both are available.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_claude_haiku_4_5_compare_local_live_birthday_status",
+    "result_bundle_id": "bundle_run_a07342b6ee0841898988fa48c7c2e539",
+    "run_id": "run_a07342b6ee0841898988fa48c7c2e539",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

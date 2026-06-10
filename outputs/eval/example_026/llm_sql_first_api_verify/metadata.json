@@ -1,0 +1,165 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Name audience/destination rows from SQL; only use API to verify live audience/flow evidence.",
+    "api_families": [
+      "audience_by_destination_id",
+      "destination_flows"
+    ],
+    "api_mode": "optional",
+    "family": "segment_destination",
+    "join_path": [
+      "dim_segment.segmentid = hkg_br_segment_target.segmentid",
+      "hkg_br_segment_target.targetid = dim_target.targetid"
+    ],
+    "required_ids": [
+      "segment_id",
+      "destination_id",
+      "target_id"
+    ],
+    "tables": [
+      "dim_segment",
+      "hkg_br_segment_target",
+      "dim_target"
+    ]
+  },
+  "domain_type": "SEGMENT_AUDIENCE",
+  "known_example_patterns": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "3"
+      },
+      "path": "/data/core/ups/segment/jobs"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "segment_destination",
+        "audit"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "How many segment jobs are currently processing?",
+  "query_id": "example_026",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "id": "segment_jobs",
+      "method": "GET",
+      "path": "/data/core/ups/segment/jobs"
+    }
+  ],
+  "selected_columns": {
+    "dim_segment": [
+      "SEGMENTID",
+      "CREATEDTIME",
+      "EVALUATIONCOMPLETEDTIME",
+      "LIFECYCLESTATUS",
+      "MERGEPOLICYID",
+      "NAME",
+      "UPDATEDTIME",
+      "ISACCOUNTSEGMENT",
+      "ISPEOPLESEGMENT",
+      "LABELSSEGMENT",
+      "SEGMENTBLUEPRINTCLASS"
+    ],
+    "dim_target": [
+      "CONNECTIONSPECID",
+      "CREATEDTIME",
+      "DATAFLOWNAME",
+      "NAME",
+      "STATE",
+      "TARGETID",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID",
+      "LABELSSEGMENT"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.75,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Foreign-key-looking column references table root.",
+      "right_column": "DEPENDENTSEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    }
+  ],
+  "selected_tables": [
+    "dim_segment",
+    "hkg_br_segment_target",
+    "dim_target"
+  ],
+  "strategy": "LLM_SQL_FIRST_API_VERIFY"
+}

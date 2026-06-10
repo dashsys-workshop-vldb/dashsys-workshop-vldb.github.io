@@ -1,0 +1,985 @@
+{
+  "answer_time": 0.02408629236742854,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Show me the IDs of failed dataflow runs",
+        "query_id": "example_004",
+        "strategy": "LLM_FREE_AGENT_BASELINE"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-27T16:23:26.699311+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "confidence": 0.88,
+        "matched_rules": {
+          "items": [
+            "sql_plus_api:failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: failed.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": true,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-27T16:23:26.699345+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "confidence": 0.88,
+        "is_simple": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: failed.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-27T16:23:26.699361+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATAFLOW",
+            "FLOW"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "entity": {
+          "items": [
+            "ID_LIKE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "fields": {
+          "items": [
+            "ID"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "show me the ids of failed dataflow runs",
+        "p": "Show me the IDs of failed dataflow runs",
+        "retr": {
+          "items": [
+            "SHOW"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [
+            "FAILED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "truncated_fields": 5
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-27T16:23:26.699417+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "matching_text": "show me the ids of failed dataflow runs",
+        "normalized_query": "Show me the IDs of failed dataflow runs"
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-27T16:23:26.699453+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "destination_dataflow"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-27T16:23:26.699487+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "failed"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "failed_dataflow_runs"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "flowservice_runs",
+            "audit_events",
+            "export_batch_failed"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID",
+            "dim_target.TARGETID->hkg_br_segment_target.TARGETID",
+            "dim_target.TARGETID->hkg_br_target_property.TARGETID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector",
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-27T16:23:26.700043+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "status",
+              "text": "failed"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 9.493
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "213f3d553413a550",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_213f3d553413a550.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-27T16:23:26.700375+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "DESTINATION_DATAFLOW",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "answer_family": "failed_dataflow_runs",
+        "api_templates": {
+          "items": [
+            "failed_dataflow_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.75,
+        "domain_type": "DESTINATION_DATAFLOW",
+        "fast_path": "failed_dataflow_flows",
+        "route_type": "SQL_THEN_API",
+        "strategy": "LLM_FREE_AGENT_BASELINE"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-27T16:23:26.700383+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "failed_dataflow_runs",
+        "domain_type": "DESTINATION_DATAFLOW"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "destination_flows",
+            "recent_destination_flows",
+            "failed_dataflow_flows"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "destination_dataflow",
+        "required_ids": {
+          "items": [
+            "target_id",
+            "dataflow_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target",
+            "dim_connector"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-27T16:23:26.700386+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": true,
+        "lookup_path": "destination_dataflow"
+      },
+      "output": {
+        "preview": "{\"selected_tables\": {\"items\": [\"br_campaign_segment\", \"dim_blueprint\", \"dim_campaign\"], \"total_items\": 18, \"truncated_items\": true}, \"selected_columns\": {\"br_campaign_segment\": {\"items\": [\"SEGMENTID\", \"CAMPAIGNID\", \"LABELSSEGMENT\"], \"total_items\": 4, \"truncated_items\": true}, \"dim_blueprint\": {\"items\": [\"BLUEPRINTTYPE\", \"EXTENDS\", \"UPDATEDCLIENTID\"], \"total_items\": 8, \"truncated_items\": true}, \"dim_campaign\": {\"items\": [\"_ACP_SYSTEM_METADATA\", \"UPDATEDTIME\", \"STARTDATE\"], \"total_items\": 8, \"truncated_items\": true}, \"dim_collection\": {\"items\": [\"ISIDENTITYENABLED\", \"ROWCOUNT\", \"UPDATEDTIME\"], \"total_items\": 8, \"truncated_items\": true}, \"dim_connector\": {\"items\": [\"CONNECTIONSPECNAME\", \"CREATEDTIME\", \"DATAFLOWID\"], \"total_items\": 8, \"truncated_items\": true}, \"dim_property\": {\"items\": [\"PROPERTY\", \"ALTDISPLAYDESC\", \"UPDATEDTIME\"], \"total_items\": 8, \"truncated_items\": true}, \"dim_segment\": {\"items\": [\"DEFINITION\", \"SEGMENTID\", \"UPDATEDTIME\"], \"total_items\": 8, \"truncated_items\": true}, \"di...",
+        "truncated": true
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-27T16:23:26.708155+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 2,
+        "strategy": "LLM_FREE_AGENT_BASELINE"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "strategy_plan"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "strategy does not use ensemble selection",
+        "scores": {
+          "strategy_plan": 1.0
+        },
+        "selected_plan": "strategy_plan"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-27T16:23:26.708239+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 2
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-27T16:23:26.708246+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "failed_dataflow_runs",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "failed_dataflow_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 2,
+        "mode": "API_OPTIONAL",
+        "reason": "Baseline strategy keeps broad API probes."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-27T16:23:26.708250+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "purpose": "Broad-context baseline SQL attempt.",
+              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+            },
+            {
+              "action": "api",
+              "family": "failed_dataflow_flows",
+              "method": "GET",
+              "params": {
+                "filter": "state eq 'failed'",
+                "limit": "50"
+              },
+              "purpose": "Broad-context baseline API probe.",
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 2,
+        "max_api_calls": 2,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 3,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-27T16:23:26.708271+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "purpose": "Broad-context baseline SQL attempt.",
+              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+            },
+            {
+              "action": "api",
+              "family": "failed_dataflow_flows",
+              "method": "GET",
+              "params": {
+                "filter": "state eq 'failed'",
+                "limit": "50"
+              },
+              "purpose": "Broad-context baseline API probe.",
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-27T16:23:27.996847+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CONNECTIONSPECID",
+            "DATAFLOWNAME",
+            "NAME"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS TEXT)) LIKE LOWER('%failed%') LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "DATAFLOWNAME",
+                  "STATE",
+                  "TARGETID"
+                ],
+                "total_items": 5,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_target"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-27T16:23:27.996865+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 2
+      },
+      "output": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": false,
+              "method": "GET",
+              "ok": true,
+              "result_preview": {
+                "dry_run": false,
+                "endpoint_family": "flowservice_flows",
+                "error_category": "live_evidence",
+                "evidence_state": "live_evidence",
+                "live_success": false,
+                "ok": true,
+                "status_code": 200,
+                "truncated_fields": 1,
+                "usable_evidence": false
+              },
+              "status_code": 200,
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_status_codes": {
+          "items": [
+            200
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-27T16:23:27.996958+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "preview": "{\"evidence\": {\"names\": {\"items\": [\"Flow for datasetId = a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\", \"weRetail Events - May 2026\", \"weRetail CRM - May 2026\"], \"total_items\": 3, \"truncated_items\": false}, \"ids\": {\"id\": \"a51ac2ea-f3f6-4d7e-965b-792cd1050913\"}, \"timestamps\": {\"items\": [\"1779898905494\", \"acp_foundation_connectors@AdobeID\", \"acp_foundation_connectors\"], \"total_items\": 3, \"truncated_items\": false}, \"counts\": {\"items\": [{\"items\": 35}], \"total_items\": 1, \"truncated_items\": false}, \"statuses\": {\"items\": [\"enabled\"], \"total_items\": 1, \"truncated_items\": false}, \"api_ids\": {\"items\": [\"a51ac2ea-f3f6-4d7e-965b-792cd1050913\", \"[REDACTED]\", \"65b03347-a49f-41b5-905a-4e3af924a8fb\"], \"total_items\": 5, \"truncated_items\": true}, \"api_names\": {\"items\": [\"Flow for datasetId = a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\", \"weRetail Events - May 2026\", \"Mapping\"], \"total_items\": 5, \"truncated_items\": true}, \"api_statuses\": {\"items\": [\"enabled\", \"inProgress\", \"failed\"], \"total_items\": 5, \"truncated_items\":...",
+        "truncated": true
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-27T16:23:27.996962+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer_intent": "STATUS",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "failed_dataflow_runs",
+          "api_error": false,
+          "api_item_count": 35,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "Flow for datasetId = a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "weRetail Events - May 2026",
+              "Mapping"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "entity_ids",
+              "counts"
+            ],
+            "total_items": 12,
+            "truncated_items": true
+          },
+          "sql_row_count": 0,
+          "truncated_fields": 10
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-27T16:23:28.020707+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 3,
+        "slots_present": {
+          "items": [
+            "entity_names",
+            "entity_ids",
+            "counts"
+          ],
+          "total_items": 12,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 3,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-27T16:23:28.020721+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "failed_dataflow_runs"
+      },
+      "output": {
+        "candidate_count": 0,
+        "selected_candidate_type": "base",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-27T16:23:28.020724+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 159,
+        "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+        "final_token_estimate": 31
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-27T16:23:28.020777+00:00"
+    }
+  ],
+  "domain_type": "DESTINATION_DATAFLOW",
+  "errors": [],
+  "estimated_tokens": 1186,
+  "execution_time": 1.282415458932519,
+  "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+  "original_query": "Show me the IDs of failed dataflow runs",
+  "planning_time": 0.00012320885434746742,
+  "preprocessing_time": 0.008743917103856802,
+  "query_id": "example_004",
+  "route_type": "SQL_THEN_API",
+  "runtime": 1.3295900826342404,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "dim_connector",
+        "dim_target",
+        "hkg_br_segment_target",
+        "hkg_br_target_property"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DESTINATION_DATAFLOW",
+      "kind": "route",
+      "reason": "Keyword routing using DESTINATION_DATAFLOW:2, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "flowservice_runs",
+          "audit_events"
+        ],
+        "lookup_paths": [
+          "destination_dataflow"
+        ],
+        "tables": [
+          "dim_connector",
+          "dim_target"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "destination_dataflow"
+        ],
+        "statuses": [
+          "failed"
+        ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 9.493
+      }
+    },
+    {
+      "estimated_tokens": 6031,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/eval/example_004/llm_free_agent_baseline/metadata.json",
+      "prompt_tokens": 8043
+    },
+    {
+      "kind": "plan",
+      "rationale": "Reproducible stand-in for a freer agent: broader metadata and extra API probes.",
+      "steps": [
+        {
+          "action": "sql",
+          "purpose": "Broad-context baseline SQL attempt.",
+          "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+        },
+        {
+          "action": "api",
+          "family": "failed_dataflow_flows",
+          "method": "GET",
+          "params": {
+            "filter": "state eq 'failed'",
+            "limit": "50"
+          },
+          "purpose": "Broad-context baseline API probe.",
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "strategy": "LLM_FREE_AGENT_BASELINE"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 0
+      },
+      "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "state eq 'failed'",
+        "limit": "50"
+      },
+      "result": {
+        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"{\\\"items\\\": {\\\"items\\\": [{\\\"id\\\": \\\"a51ac2ea-f3f6-4d7e-965b-792cd1050913\\\", \\\"name\\\": \\\"Flow for datasetId = a30a9c4e-327a-4d60-8a9c-4e327a6d60dd\\\", \\\"state\\\": \\\"enabled\\\", \\\"createdAt\\\": 1774771241774, \\\"updatedAt\\\": 1779898905494, \\\"createdBy\\\": \\\"acp_foundation_connectors@AdobeID\\\", \\\"updatedBy\\\": \\\"acp_foundation_connectors@AdobeID\\\", \\\"createdClient\\\": \\\"acp_foundation_connectors\\\", \\\"truncated_fields\\\": 18}, {\\\"id\\\": \\\"a18b8831-2b89-4a0f-bdfe-5d5f66555d43\\\", \\\"name\\\": \\\"weRetail Events - May 2026\\\", \\\"state\\\": \\\"enabled\\\", \\\"createdAt\\\": 1774771038458, \\\"updatedAt\\\": 1779898586769, \\\"createdBy\\\": \\\"CCBE21E6693750D80A495FBC@techacct.adobe.com\\\", \\\"updatedBy\\\": \\\"acp_foundation_connectors@AdobeID\\\", \\\"createdClient\\\": \\\"6c4ddfb5459c477ba86b3790550fa592\\\", \\\"truncated_fields\\\": 17}, {\\\"id\\\": \\\"5a776f0c-3e68-45de-a14e-1713df4ab980\\\", \\\"name\\\": \\\"weRetail CRM - May 2026\\\", \\\"state\\\": \\\"enabled\\\", \\\"createdAt\\\": 1774771027820, \\\"updatedAt\\...",
+        "truncated": true
+      },
+      "url": "/data/foundation/flowservice/flows",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "failed_dataflow_runs",
+      "answer_intent": "STATUS",
+      "completeness_missing_fields": [],
+      "kind": "answer_diagnostics",
+      "rewrite_applied": false,
+      "selected_candidate_type": "base",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "statuses",
+        "timestamps",
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_pagination",
+        "api_parser_modes",
+        "api_items"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "LLM_FREE_AGENT_BASELINE",
+  "timings": {
+    "answer_time": 0.02408629236742854,
+    "execution_time": 1.282415458932519,
+    "planning_time": 0.00012320885434746742,
+    "preprocessing_time": 0.008743917103856802
+  },
+  "tool_call_count": 2
+}

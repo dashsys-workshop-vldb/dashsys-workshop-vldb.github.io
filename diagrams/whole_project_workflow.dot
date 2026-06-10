@@ -1,0 +1,52 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.10, nodesep=0.48, ranksep=0.62, splines=ortho];
+  node [shape=rect, style="rounded,filled", fontname="Aptos", fontsize=19, margin="0.16,0.10", penwidth=2.0];
+  edge [fontname="Aptos", fontsize=12.5, color="#687386", fontcolor="#425466", penwidth=1.7, arrowsize=0.72];
+  subgraph cluster_0 {
+    label="Query Frontend"; labelloc=t; fontsize=22; fontname="Aptos";
+    color="#6D5BD0"; fillcolor="#EFE7FF"; style="rounded,filled";
+  raw [label="RawQuery\n• text\n• query_id\n• strategy", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  norm [label="NormalizedQuery\n• original_text\n• normalized_text\n• rewrites[]", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  tok [label="QueryTokens\n• entities[]\n• ids[]\n• dates[]\n• metrics[]\n• statuses[]", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  }
+  subgraph cluster_1 {
+    label="Planning / Control"; labelloc=t; fontsize=22; fontname="Aptos";
+    color="#6D5BD0"; fillcolor="#EFE7FF"; style="rounded,filled";
+  qa [label="QueryAnalysis\n• route_type\n• domain_type\n• answer_family\n• sql_template\n• api_templates\n• confidence", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  meta [label="SelectedMetadata\n• tables[]\n• columns[]\n• join_hints[]\n• api_candidates[]\n• context_card", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  draft [label="DraftPlan\n• sql_steps[]\n• api_steps[]\n• dependencies[]", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  budget [label="BudgetedPlan\n• required_calls[]\n• optional_calls[]\n• skipped_calls[]\n• max_tool_calls", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  opt [label="OptimizedPlan\n• steps[]\n• optimizer_actions[]\n• unresolved_placeholders[]", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  valid [label="ValidatedPlan\n• valid_sql_steps[]\n• valid_api_steps[]\n• validation_warnings[]", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  }
+  subgraph cluster_2 {
+    label="Execution / Evidence"; labelloc=t; fontsize=22; fontname="Aptos";
+    color="#0B8F8A"; fillcolor="#E8FAF8"; style="rounded,filled";
+  results [label="ToolResults\n• sql_rows[]\n• api_payloads[]\n• dry_run_flags[]\n• errors[]", shape=rect, fillcolor="#E8FAF8", color="#0B8F8A"];
+  bus [label="EvidenceBus\n• entity_ids{}\n• names[]\n• counts{}\n• timestamps[]\n• statuses[]\n• sql_rows[]\n• api_items[]", shape=rect, fillcolor="#E8FAF8", color="#0B8F8A"];
+  }
+  subgraph cluster_3 {
+    label="Answer / Artifacts"; labelloc=t; fontsize=22; fontname="Aptos";
+    color="#1A7F52"; fillcolor="#E8F7ED"; style="rounded,filled";
+  slots [label="AnswerSlots\n• entity_name\n• entity_id\n• count\n• status\n• timestamp\n• metric_value\n• dry_run\n• discrepancy", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  ans [label="VerifiedAnswer\n• final_text\n• verifier_passed\n• unsupported_claims_count\n• caveats[]", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  art [label="Artifacts\n• metadata.json\n• filled_system_prompt.txt\n• trajectory.json\n• eval reports", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  }
+  { rank=same; raw; norm; tok; }
+  { rank=same; qa; meta; draft; budget; opt; valid; }
+  { rank=same; results; bus; }
+  { rank=same; slots; ans; art; }
+  raw -> norm [label="normalize: clean text;\npreserve original"];
+  norm -> tok [label="tokenize: names, IDs, dates,\nmetrics"];
+  tok -> qa [label="classify: domain + templates"];
+  qa -> meta [label="select compact schema/API\ncontext"];
+  meta -> draft [label="plan: generate SQL/API steps"];
+  draft -> budget [label="policy: REQUIRED/OPTIONAL/SKIP"];
+  budget -> opt [label="optimize: dedupe + drop\nplaceholders"];
+  opt -> valid [label="validate SQL safety + API\ncatalog"];
+  valid -> results [label="execute_sql + call_api/dry-run"];
+  results -> bus [label="extract structured facts"];
+  bus -> slots [label="forward exact evidence"];
+  slots -> ans [label="verify claims + rerank"];
+  ans -> art [label="write reproducible trace"];
+}

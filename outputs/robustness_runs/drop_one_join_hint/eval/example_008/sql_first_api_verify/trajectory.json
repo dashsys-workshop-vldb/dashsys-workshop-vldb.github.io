@@ -1,0 +1,129 @@
+{
+  "answer_time": 1.3416982255876064e-05,
+  "api_call_count": 0,
+  "domain_type": "PROPERTY_FIELD",
+  "errors": [],
+  "estimated_tokens": 681,
+  "execution_time": 0.0002507090102881193,
+  "final_answer": "The field for \"Person: Birthday Today 001\" is person.birthDate. This is the birth date property from the SQL evidence. This field captures when a person was born and is used to identify birthday-related audiences.",
+  "original_query": "show me the field for Person: Birthday Today 001",
+  "planning_time": 0.00023683399194851518,
+  "preprocessing_time": 0.0008684589993208647,
+  "query_id": "example_008",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0014835000038146973,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+        }
+      ],
+      "candidate_tables": [
+        "dim_property",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_property_property",
+        "hkg_br_segment_property",
+        "hkg_br_target_property"
+      ],
+      "confidence": 0.5,
+      "domain_type": "PROPERTY_FIELD",
+      "kind": "route",
+      "reason": "Keyword routing using PROPERTY_FIELD:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "audit_events",
+          "audit_events_short"
+        ],
+        "lookup_paths": [
+          "property_field"
+        ],
+        "tables": [
+          "dim_collection",
+          "dim_segment"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "property_field"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 870,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_one_join_hint/eval/example_008/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1191
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_SKIP. No API template matched and SQL/local evidence is preferred.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "segment_property_fields",
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3662
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "property_name": "person.birthDate",
+              "segment_name": "Person: Birthday Today 001"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.3416982255876064e-05,
+    "execution_time": 0.0002507090102881193,
+    "planning_time": 0.00023683399194851518,
+    "preprocessing_time": 0.0008684589993208647
+  },
+  "tool_call_count": 1
+}

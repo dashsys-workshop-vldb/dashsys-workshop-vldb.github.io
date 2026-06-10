@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-05-06T23:24:53.174724+00:00",
+  "mode": "autonomous_research_notes",
+  "notes": [
+    "Sources are used to guide offline candidate generation and validation only.",
+    "No external source is used to justify gold/public-query memorization."
+  ],
+  "sources": [
+    {
+      "how_it_applies": "Use strict eval, hidden-style eval, packaging readiness, and metric deltas as blocking gates before accepting any score075 branch.",
+      "implemented_or_rejected": "implemented",
+      "reason_kept_or_rejected": "Directly matches the need to compare candidate behavior before promotion.",
+      "result": "Encoded as promotion gates and integration validation protocol.",
+      "source_url": "https://platform.openai.com/docs/guides/evaluation-best-practices",
+      "technique_name": "Eval-driven regression gates"
+    },
+    {
+      "how_it_applies": "Separate workers generate candidate families while the selector/integration workers perform pairwise evaluation and selection.",
+      "implemented_or_rejected": "implemented_as_gated_scaffolding",
+      "reason_kept_or_rejected": "Useful pattern, but adapted to deterministic local validation rather than multi-agent runtime execution.",
+      "result": "Candidate generation and execution selector branches are isolated and blocked behind validation.",
+      "source_url": "https://arxiv.org/abs/2410.01943",
+      "technique_name": "CHASE-SQL multi-path candidate generation and selection"
+    },
+    {
+      "how_it_applies": "Local-index and endpoint-routing workers focus on Parquet-derived value grounding and safe schema relation preservation.",
+      "implemented_or_rejected": "implemented_as_candidate_direction",
+      "reason_kept_or_rejected": "Potentially improves grounding without gold labels if evidence provenance is enforced.",
+      "result": "Assigned to local-index, endpoint-routing, and candidate-generation workers.",
+      "source_url": "https://arxiv.org/pdf/2405.16755",
+      "technique_name": "CHESS schema/value retrieval and schema pruning"
+    },
+    {
+      "how_it_applies": "Backlog classification decomposes failures into endpoint, schema, SQL, answer-shape, and dry-run evidence tasks.",
+      "implemented_or_rejected": "implemented_as_report_scaffolding",
+      "reason_kept_or_rejected": "Fits the coordinator role without adding runtime multi-agent complexity.",
+      "result": "Improvement backlog separates targeted failure types and worker ownership.",
+      "source_url": "https://arxiv.org/abs/2304.11015",
+      "technique_name": "DIN-SQL task decomposition and self-correction"
+    },
+    {
+      "how_it_applies": "Used only as a caution to rank and organize candidates; no public-example prompt examples are introduced.",
+      "implemented_or_rejected": "partially_rejected",
+      "reason_kept_or_rejected": "Example selection can overfit this benchmark, so only ranking discipline is kept.",
+      "result": "No runtime few-shot public-example mechanism is added by coordinator.",
+      "source_url": "https://arxiv.org/abs/2308.15363",
+      "technique_name": "DAIL-SQL prompt/example organization"
+    },
+    {
+      "how_it_applies": "Schema-routing workers must preserve recall and hidden-style stability; schema pruning cannot weaken robustness.",
+      "implemented_or_rejected": "implemented_as_gate",
+      "reason_kept_or_rejected": "Prevents score gains from brittle schema omissions.",
+      "result": "Hidden-style 48/48 and no reduced candidate diversity are merge requirements.",
+      "source_url": "https://arxiv.org/abs/2411.00073",
+      "technique_name": "RSL-SQL robust schema linking"
+    },
+    {
+      "how_it_applies": "Execution-selector worker validates and scores isolated candidates before any integration trial.",
+      "implemented_or_rejected": "implemented_as_gated_scaffolding",
+      "reason_kept_or_rejected": "Execution feedback is valuable as long as it remains offline/scored and not gold-driven at runtime.",
+      "result": "Assigned to execution selector and autonomous packaged trial workflow.",
+      "source_url": "https://arxiv.org/abs/1807.03100",
+      "technique_name": "Execution-guided SQL generation"
+    },
+    {
+      "how_it_applies": "Candidate workers must parse SQL, identify tables/columns, and reject destructive or unknown-schema candidates.",
+      "implemented_or_rejected": "implemented_as_gate",
+      "reason_kept_or_rejected": "Keeps generated candidates structurally safe before execution.",
+      "result": "Included in worker and selector safety requirements.",
+      "source_url": "https://sqlglot.com/sqlglot.html",
+      "technique_name": "SQLGlot AST validation"
+    }
+  ],
+  "web_access_available": true,
+  "worker_branch": "codex/score075-dryrun-answer"
+}

@@ -1,0 +1,146 @@
+{
+  "answer_time": 6.082991603761911e-06,
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 731,
+  "execution_time": 0.00021608395036309958,
+  "final_answer": "Batch details and files require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+  "planning_time": 0.00013287499314174056,
+  "preprocessing_time": 0.0012945000198669732,
+  "query_id": "example_031",
+  "route_type": "API_ONLY",
+  "runtime": 0.0015763340052217245,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "export_batch_files",
+          "export_batch_failed"
+        ],
+        "lookup_paths": [
+          "batch"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "audit",
+          "batch"
+        ],
+        "ids": 1
+      }
+    },
+    {
+      "estimated_tokens": 1000,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/baseline/eval/example_031/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1354
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "batch_export_files",
+          "method": "GET",
+          "purpose": "API parameter template: batch_export_files.",
+          "url": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3847
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"
+      },
+      "url": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 6.082991603761911e-06,
+    "execution_time": 0.00021608395036309958,
+    "planning_time": 0.00013287499314174056,
+    "preprocessing_time": 0.0012945000198669732
+  },
+  "tool_call_count": 1
+}

@@ -1,0 +1,135 @@
+{
+  "answer_time": 4.62500611320138e-06,
+  "api_call_count": 1,
+  "domain_type": "COUNT_AGGREGATION",
+  "errors": [],
+  "estimated_tokens": 574,
+  "execution_time": 0.00026308296946808696,
+  "final_answer": "Batch details and files require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many batches have status 'success'?",
+  "planning_time": 0.00013366597704589367,
+  "preprocessing_time": 0.0007484580273739994,
+  "query_id": "example_029",
+  "route_type": "API_ONLY",
+  "runtime": 0.0014678750303573906,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "COUNT_AGGREGATION",
+      "kind": "route",
+      "reason": "Keyword routing using COUNT_AGGREGATION:1, STATUS_MONITORING:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "export_batch_failed",
+          "audit_events"
+        ],
+        "lookup_paths": [
+          "batch"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "batch"
+        ],
+        "quoted_entities": [
+          "success"
+        ],
+        "statuses": [
+          "success"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 980,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_api_fallback_templates/eval/example_029/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1334
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: successful_batch_count.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "successful_batch_count",
+          "method": "GET",
+          "params": {
+            "limit": "10",
+            "status": "success"
+          },
+          "purpose": "API parameter template: successful_batch_count.",
+          "url": "/data/foundation/catalog/batches"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3817
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "10",
+        "status": "success"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/batches",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "10",
+          "status": "success"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/batches"
+      },
+      "url": "/data/foundation/catalog/batches",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 4.62500611320138e-06,
+    "execution_time": 0.00026308296946808696,
+    "planning_time": 0.00013366597704589367,
+    "preprocessing_time": 0.0007484580273739994
+  },
+  "tool_call_count": 1
+}

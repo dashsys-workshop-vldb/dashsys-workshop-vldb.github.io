@@ -1,0 +1,229 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "Combine the results from T3 and T4, presenting a unified view of schemas with their status (expected, present in local, present in live, or missing).",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "active_task_count": 5,
+      "api_candidate_cards": 2,
+      "api_candidate_success_count": 2,
+      "atomic_candidate_slots_used": true,
+      "atomic_checklist_used": true,
+      "atomic_weak_protocol_used": true,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "backend_semantic_routing_used": false,
+      "candidate_card_latency_ms": 5577,
+      "candidate_card_max_tokens": 220,
+      "candidate_card_success": 4,
+      "candidate_repair_attempts": 0,
+      "candidate_repair_max_tokens": 220,
+      "checklist_bits": {},
+      "checklist_latency_ms": 1521,
+      "checklist_parse_success": false,
+      "checklist_repair_attempted": true,
+      "checklist_repair_latency_ms": 1583,
+      "checklist_route": "EVIDENCE_PIPELINE",
+      "dependency_edges": [
+        [
+          "T1",
+          "T3"
+        ],
+        [
+          "T2",
+          "T3"
+        ],
+        [
+          "T3",
+          "T5"
+        ],
+        [
+          "T4",
+          "T5"
+        ]
+      ],
+      "direct_route_challenge_needs_evidence": null,
+      "direct_route_challenge_repair_attempted": false,
+      "direct_route_challenge_used": false,
+      "evidence_planner_called": true,
+      "final_answer_max_tokens": 500,
+      "fixed_task_slots_used": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 4,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "atomic_weak_protocol",
+      "planner_provider_latency_ms": 12686,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_card_max_tokens": 80,
+      "route_card_repair_attempted": true,
+      "route_card_route": null,
+      "route_card_success": false,
+      "route_gate_repair_attempted": true,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": false,
+      "slot_count": 5,
+      "sql_candidate_cards": 2,
+      "sql_candidate_success_count": 2,
+      "task_count": 5,
+      "task_ledger_latency_ms": 4004,
+      "task_ledger_max_tokens": 300,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "SQL",
+        "API",
+        "SQL_AND_API",
+        "DIRECT",
+        "AGGREGATE"
+      ],
+      "task_slot_repair_attempted": false,
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "mistralai/Mistral-Nemo-Instruct-2407",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Execute a SQL query to retrieve a list of all schemas in the local database.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'sys');"
+        },
+        "subtask": "Execute a SQL query to retrieve a list of all schemas in the local database."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Use the platform's API to fetch a list of all schemas currently available.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T2",
+        "path": "API",
+        "sql": null,
+        "subtask": "Use the platform's API to fetch a list of all schemas currently available."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {},
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1",
+          "T2"
+        ],
+        "evidence_order": "PARALLEL",
+        "expected_result": "Compare the schemas retrieved from the local database (T1) and the live platform (T2). Identify any discrepancies.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T3",
+        "path": "SQL_AND_API",
+        "sql": {
+          "params": [],
+          "query": "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'sys');"
+        },
+        "subtask": "Compare the schemas retrieved from the local database (T1) and the live platform (T2). Identify any discrepancies."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Conceptually, list the expected schemas based on the system's design and user roles.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T4",
+        "path": "DIRECT",
+        "sql": null,
+        "subtask": "Conceptually, list the expected schemas based on the system's design and user roles."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "T3",
+          "T4"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Aggregate the results from T3 (comparison) and T4 (conceptual list). Highlight any missing, extra, or mismatched schemas between the local database, live platform, and expected schemas.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T5",
+        "path": "AGGREGATION_ONLY",
+        "sql": null,
+        "subtask": "Aggregate the results from T3 (comparison) and T4 (conceptual list). Highlight any missing, extra, or mismatched schemas between the local database, live platform, and expected schemas."
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "atomic_api_candidate_T2": "METHOD=GET\nAPI_PATH=/data/foundation/schemaregistry/tenant/schemas\nPARAMS_JSON={}",
+      "atomic_api_candidate_T3": "METHOD=GET\nAPI_PATH=/data/foundation/schemaregistry/tenant/schemas\nPARAMS_JSON={}",
+      "atomic_checklist": "0|0|0|0|0|0|0|0|1|0",
+      "atomic_checklist_repair": "Here's the repaired Atomic Evidence Need Checklist with all fields output exactly once and using 1 or 0. I've also set a data flag to 1 for uncertain fields and ensured that PURE_CONCEPT is 0 when any data flag is 1.\n\n```\nUSER_PROMPT=What schemas do I have?\nPREVIOUS_RESPONSE=0|0|0|",
+      "atomic_sql_candidate_T1": "SQL_QUERY=SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'sys');\nPARAMS_JSON=[]",
+      "atomic_sql_candidate_T3": "SQL_QUERY=SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'sys');\nPARAMS_JSON=[]",
+      "fixed_task_slots": "**Updated Task Slots:**\n\nT1_PATH=B\nT1_DEPS=[]\nT1_DESC=Execute a SQL query to retrieve a list of all schemas in the local database.\n\nT2_PATH=C\nT2_DEPS=[]\nT2_DESC=Use the platform's API to fetch a list of all schemas currently available.\n\nT3_PATH=D\nT3_DEPS=[T1, T2]\nT3_DESC=Compare the schemas retrieved from the local database (T1) and the live platform (T2). Identify any discrepancies.\n\nT4_PATH=A\nT4_DEPS=[]\nT4_DESC=Conceptually, list the expected schemas based on the system's design and user roles.\n\nT5_PATH=E\nT5_DEPS=[T3, T4]\nT5_DESC=Aggregate the results from T3 (comparison) and T4 (conceptual list). Highlight any missing, extra, or mismatched schemas between the local database, live platform, and expected schemas.\n\nAGGREGATE=Combine the results from T3 and T4, presenting a unified view of schemas with their status (expected, present in local, present in live, or missing)."
+    },
+    "reason": "Atomic checklist selected evidence; fixed task slots supplied LLM-owned tasks.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'sys');"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "What schemas do I have?",
+  "query_id": "pioneer_sweep_mistral_nemo_instruct_2407_ambiguous_user_schemas",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T20:13:30.208549+00:00",
+    "deadline_at": "2026-06-01T20:14:00.208549+00:00",
+    "evidence_bus_id": "evidence_run_11b3ffd0b09f4f30848fd2086bf894ff",
+    "original_prompt": "What schemas do I have?",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_mistral_nemo_instruct_2407_ambiguous_user_schemas",
+    "result_bundle_id": "bundle_run_11b3ffd0b09f4f30848fd2086bf894ff",
+    "run_id": "run_11b3ffd0b09f4f30848fd2086bf894ff",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

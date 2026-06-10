@@ -1,0 +1,12 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad=0.10, nodesep=0.48, ranksep=0.62, splines=ortho];
+  node [shape=rect, style="rounded,filled", fontname="Aptos", fontsize=19, margin="0.16,0.10", penwidth=2.0];
+  edge [fontname="Aptos", fontsize=12.5, color="#687386", fontcolor="#425466", penwidth=1.7, arrowsize=0.72];
+  input [label="NormalizedQuery +\nQueryTokens\n• normalized_text\n• entities[]\n• ids[]\n• metrics[]", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  internal [label="QueryAnalysis Internals\n• route classifier\n• domain classifier\n• answer family\n• template selector\n• confidence scoring", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  qa [label="QueryAnalysis\n• route_type\n• domain_type\n• answer_family\n• sql_template\n• api_templates\n• confidence", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  users [label="Shared By\n• MetadataSelector\n• Planner\n• EvidencePolicy\n• Reporting", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  input -> internal [label="decode once"];
+  internal -> qa [label="analysis object"];
+  qa -> users [label="reuse same decision"];
+}

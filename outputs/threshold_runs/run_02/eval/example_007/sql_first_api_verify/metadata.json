@@ -1,0 +1,117 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
+    "api_families": [
+      "datasets_by_schema",
+      "schema_registry_by_id",
+      "schema_by_name",
+      "schema_list"
+    ],
+    "api_mode": "required",
+    "family": "schema_dataset",
+    "join_path": [
+      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+    ],
+    "required_ids": [
+      "schema_id",
+      "blueprint_id",
+      "collection_id"
+    ],
+    "tables": [
+      "dim_blueprint",
+      "hkg_br_blueprint_collection",
+      "dim_collection"
+    ]
+  },
+  "domain_type": "DATASET_SCHEMA",
+  "known_example_patterns": [],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "schema_dataset",
+        "audit"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+  "query_id": "example_007",
+  "route_type": "SQL_ONLY",
+  "selected_apis": [
+    {
+      "id": "catalog_datasets",
+      "method": "GET",
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "selected_columns": {
+    "dim_blueprint": [
+      "BLUEPRINTID",
+      "NAME",
+      "CLASS",
+      "ISPROFILEENABLED",
+      "UPDATEDTIME"
+    ],
+    "dim_collection": [
+      "COLLECTIONID",
+      "NAME",
+      "ROWCOUNT",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_blueprint_collection": [
+      "BLUEPRINTID",
+      "COLLECTIONID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    }
+  ],
+  "selected_tables": [
+    "dim_blueprint",
+    "hkg_br_blueprint_collection",
+    "dim_collection"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

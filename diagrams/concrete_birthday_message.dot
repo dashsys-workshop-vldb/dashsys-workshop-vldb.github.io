@@ -1,0 +1,30 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.10, nodesep=0.48, ranksep=0.62, splines=ortho];
+  node [shape=rect, style="rounded,filled", fontname="Aptos", fontsize=19, margin="0.16,0.10", penwidth=2.0];
+  edge [fontname="Aptos", fontsize=12.5, color="#687386", fontcolor="#425466", penwidth=1.7, arrowsize=0.72];
+  raw [label="RawQuery\n• When was \"Birthday Message\"\npublished?", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  tokens [label="QueryTokens\n• entity = Birthday Message\n• intent = WHEN / STATUS", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  analysis [label="QueryAnalysis\n• domain = JOURNEY_CAMPAIGN\n• table = dim_campaign\n• api = /ajo/journey", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  sql [label="SQL Step\n• SELECT name, lastdeployedtime\n• FROM dim_campaign\n• WHERE name = Birthday Message", shape=rect, fillcolor="#EAF3FF", color="#1769AA"];
+  sqlres [label="SQL Result\n• lastdeployedtime = null", shape=rect, fillcolor="#EAF3FF", color="#1769AA"];
+  api [label="API Dry-Run\n• GET /ajo/journey\n• filter=name==Birthday Message\n• dry_run = true", shape=rect, fillcolor="#FFF3E0", color="#D97706"];
+  gold [label="Gold API Comparison\n• method/path/params match", shape=rect, fillcolor="#FFF3E0", color="#D97706"];
+  slots [label="AnswerSlots\n• entity_name = Birthday Message\n• published_time = null\n• dry_run = true", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  verifier [label="Verifier\n• API confirmation blocked\n• dry-run caveat required", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  answer [label="FinalAnswer\n• not published\n• live API verification not\nexecuted", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  traj [label="Artifact\n• trajectory.json records SQL,\nAPI dry-run, diagnostics", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  { rank=same; raw; tokens; analysis; }
+  { rank=same; sql; sqlres; }
+  { rank=same; api; gold; }
+  { rank=same; slots; verifier; answer; traj; }
+  raw -> tokens [label="extract entity + intent"];
+  tokens -> analysis [label="route journey/status"];
+  analysis -> sql [label="generate SQL"];
+  sql -> sqlres [label="execute_sql"];
+  sqlres -> api [label="plan verification API"];
+  api -> gold [label="dry-run scoring"];
+  gold -> slots [label="store evidence"];
+  slots -> verifier [label="check claims"];
+  verifier -> answer [label="safe final text"];
+  answer -> traj [label="log trace"];
+}

@@ -1,0 +1,677 @@
+{
+  "available_trajectory_index": {
+    "final_submission_trajectory_count": 73,
+    "live_api_candidates": [
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_000/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_001/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_002/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_003/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_004/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_005/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_006/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_007/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_008/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_009/trajectory.json"
+    ],
+    "live_api_evidence_pipeline_trajectory_count": 10,
+    "sql_only_candidates": [
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_001/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_006/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_007/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_011/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_012/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_013/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_014/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_015/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_017/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_018/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_044/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_050/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_051/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_053/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_058/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_062/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_064/trajectory.json",
+      "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_066/trajectory.json"
+    ]
+  },
+  "diagnostic_only": true,
+  "examples": [
+    {
+      "answer_family": "property_field",
+      "answer_intent": "DETAIL",
+      "answer_slots": {
+        "answer_intent": "DETAIL",
+        "slot_values": {
+          "api_outcomes": [],
+          "slots_present": [
+            "entity_names",
+            "counts",
+            "sql_row_count",
+            "first_rows"
+          ],
+          "sql_row_counts": [
+            1
+          ]
+        },
+        "source_tracking": {
+          "uses_api_error_state": false,
+          "uses_dry_run": false,
+          "uses_live_api": false,
+          "uses_sql": true
+        }
+      },
+      "confidence": 0.5,
+      "domain_type": "PROPERTY_FIELD",
+      "evidence_bus": {
+        "evidence_sources": [
+          "SQL"
+        ],
+        "evidence_state": {
+          "api": [],
+          "sql": [
+            "sql_success"
+          ]
+        },
+        "selected_evidence": {
+          "api_outcomes": [],
+          "slots_present": [
+            "entity_names",
+            "counts",
+            "sql_row_count",
+            "first_rows"
+          ],
+          "sql_row_counts": [
+            1
+          ]
+        }
+      },
+      "final_answer": "The field for \"Person: Birthday Today 001\" is person.birthDate. This is the birth date property from the SQL evidence. This field captures when a person was born and is used to identify birthday-related audiences.",
+      "label": "sql_only_path",
+      "metrics": {
+        "answer_time": 0.0014844168908894062,
+        "api_calls": 0,
+        "estimated_tokens": 639,
+        "execution_time": 0.0010502079967409372,
+        "planning_time": 0.0013838338200002909,
+        "preprocessing_time": 0.011615416035056114,
+        "runtime": 0.03695195890031755,
+        "sql_calls": 1,
+        "timings": {
+          "answer_time": 0.0014844168908894062,
+          "execution_time": 0.0010502079967409372,
+          "planning_time": 0.0013838338200002909,
+          "preprocessing_time": 0.011615416035056114
+        },
+        "tool_count": 1
+      },
+      "plan_steps": [
+        {
+          "action": "sql",
+          "family": "segment_property_fields",
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+        }
+      ],
+      "planning": {
+        "evidence_policy": "SQL-first evidence policy: API_SKIP. No API template matched and SQL/local evidence is preferred.",
+        "optimizer_actions": [
+          "ensemble selected generic_sql_first"
+        ],
+        "plan_steps": [
+          {
+            "action": "sql",
+            "family": "segment_property_fields",
+            "purpose": "Ground names/IDs in local snapshot before API verification.",
+            "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+          }
+        ],
+        "selected_strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "prompt": "show me the field for Person: Birthday Today 001",
+      "query_id": "example_008",
+      "redaction_applied": true,
+      "route_type": "SQL_ONLY",
+      "routing": {
+        "nlp_step": {
+          "kind": "nlp",
+          "relevance": {
+            "apis": [
+              "audit_events",
+              "audit_events_short"
+            ],
+            "lookup_paths": [
+              "property_field"
+            ],
+            "tables": [
+              "dim_collection",
+              "dim_segment"
+            ]
+          },
+          "tokens": {
+            "domains": [
+              "property_field"
+            ]
+          }
+        },
+        "route_step": {
+          "candidate_apis": [
+            {
+              "id": "schema_registry_schema",
+              "method": "GET",
+              "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+            }
+          ],
+          "candidate_tables": [
+            "dim_property",
+            "hkg_br_blueprint_property",
+            "hkg_br_collection_property",
+            "hkg_br_property_property",
+            "hkg_br_segment_property"
+          ],
+          "confidence": 0.5,
+          "domain_type": "PROPERTY_FIELD",
+          "kind": "route",
+          "reason": "Keyword routing using PROPERTY_FIELD:1.",
+          "route_type": "SQL_ONLY"
+        },
+        "selected_apis": [
+          {
+            "id": "audit_events",
+            "method": "GET",
+            "path": "/data/foundation/audit/events"
+          },
+          {
+            "id": "audit_events_short",
+            "method": "GET",
+            "path": "/audit/events"
+          },
+          {
+            "id": "export_batch_failed",
+            "method": "GET",
+            "path": "/data/foundation/export/batches/{batch_id}/failed"
+          },
+          {
+            "id": "export_batch_files",
+            "method": "GET",
+            "path": "/data/foundation/export/batches/{batch_id}/files"
+          }
+        ],
+        "selected_tables": [
+          "hkg_br_segment_property",
+          "dim_segment"
+        ]
+      },
+      "source_metadata_file": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_012/metadata.json",
+      "source_trajectory_file": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_012/trajectory.json",
+      "strategy": "SQL_FIRST_API_VERIFY",
+      "tool_calls": [
+        {
+          "purpose": "validated local DuckDB/parquet evidence query",
+          "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+          "status": "ok",
+          "tool_name": "execute_sql",
+          "validation_result": true
+        }
+      ],
+      "tool_results": [
+        {
+          "error": null,
+          "limited": false,
+          "ok": true,
+          "outcome": "sql_success",
+          "result_summary": {
+            "items": [
+              {
+                "property_name": "person.birthDate",
+                "segment_name": "Person: Birthday Today 001"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "row_count": 1,
+          "tool_name": "execute_sql"
+        }
+      ],
+      "verification": {
+        "completeness_missing_fields": [],
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      }
+    },
+    {
+      "answer_family": "segment_destination",
+      "answer_intent": "WHEN",
+      "answer_slots": {
+        "answer_intent": "WHEN",
+        "slot_values": {
+          "api_outcomes": [
+            "unavailable",
+            "live_success"
+          ],
+          "slots_present": [
+            "entity_names",
+            "entity_ids",
+            "counts",
+            "statuses",
+            "timestamps",
+            "api_item_count",
+            "api_error",
+            "live_api_evidence_available",
+            "api_evidence_state",
+            "answer_slot_source",
+            "api_errors",
+            "api_pagination",
+            "api_parser_modes",
+            "api_items"
+          ],
+          "sql_row_counts": [
+            0
+          ]
+        },
+        "source_tracking": {
+          "uses_api_error_state": false,
+          "uses_dry_run": false,
+          "uses_live_api": true,
+          "uses_sql": true
+        }
+      },
+      "confidence": 0.95,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "evidence_bus": {
+        "evidence_sources": [
+          "SQL",
+          "API",
+          "API"
+        ],
+        "evidence_state": {
+          "api": [
+            "unavailable",
+            "live_success"
+          ],
+          "sql": [
+            "sql_success"
+          ]
+        },
+        "selected_evidence": {
+          "api_outcomes": [
+            "unavailable",
+            "live_success"
+          ],
+          "slots_present": [
+            "entity_names",
+            "entity_ids",
+            "counts",
+            "statuses",
+            "timestamps",
+            "api_item_count",
+            "api_error",
+            "live_api_evidence_available",
+            "api_evidence_state",
+            "answer_slot_source",
+            "api_errors",
+            "api_pagination",
+            "api_parser_modes",
+            "api_items"
+          ],
+          "sql_row_counts": [
+            0
+          ]
+        }
+      },
+      "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+      "label": "sql_plus_live_api_path",
+      "metrics": {
+        "answer_time": 0.006863208021968603,
+        "api_calls": 2,
+        "estimated_tokens": 1972,
+        "execution_time": 0.7697420413605869,
+        "planning_time": 0.005749375093728304,
+        "preprocessing_time": 0.004432917106896639,
+        "runtime": 0.7971201250329614,
+        "sql_calls": 1,
+        "timings": {
+          "answer_time": 0.006863208021968603,
+          "execution_time": 0.7697420413605869,
+          "planning_time": 0.005749375093728304,
+          "preprocessing_time": 0.004432917106896639
+        },
+        "tool_count": 3
+      },
+      "plan_steps": [
+        {
+          "action": "sql",
+          "allow_full_result": true,
+          "family": "segment_destination_relationship",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+        },
+        {
+          "action": "api",
+          "family": "audience_by_destination_id",
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "destinationId==<destination_id>"
+          },
+          "purpose": "API parameter template: audience_by_destination_id.",
+          "url": "/data/core/ups/audiences",
+          "warnings": [
+            "unresolved_parameter: destination_id"
+          ]
+        },
+        {
+          "action": "api",
+          "family": "destination_flows",
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "purpose": "API parameter template: destination_flows.",
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "planning": {
+        "evidence_policy": "SQL-first evidence policy: API_OPTIONAL. Known multi-call verification family. Fast path: segment_destination_relationship+audience_by_destination_id+destination_flows.",
+        "optimizer_actions": [
+          "ensemble selected generic_sql_first"
+        ],
+        "plan_steps": [
+          {
+            "action": "sql",
+            "allow_full_result": true,
+            "family": "segment_destination_relationship",
+            "purpose": "Fast-path SQL grounding.",
+            "sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+          },
+          {
+            "action": "api",
+            "family": "audience_by_destination_id",
+            "method": "GET",
+            "params": {
+              "limit": "5",
+              "property": "destinationId==<destination_id>"
+            },
+            "purpose": "API parameter template: audience_by_destination_id.",
+            "url": "/data/core/ups/audiences",
+            "warnings": [
+              "unresolved_parameter: destination_id"
+            ]
+          },
+          {
+            "action": "api",
+            "family": "destination_flows",
+            "method": "GET",
+            "params": {
+              "limit": "5",
+              "property": "inheritedAttributes.properties.isDestinationFlow==true"
+            },
+            "purpose": "API parameter template: destination_flows.",
+            "url": "/data/foundation/flowservice/flows"
+          }
+        ],
+        "selected_strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "redaction_applied": true,
+      "route_type": "SQL_ONLY",
+      "routing": {
+        "nlp_step": {
+          "decomposition": {
+            "expected_answer_shape": "scalar_count",
+            "sub_questions": [
+              "Ground named entities and identifiers.",
+              "Compute requested aggregation or time-range result."
+            ]
+          },
+          "kind": "nlp",
+          "relevance": {
+            "apis": [
+              "merge_policies",
+              "segment_jobs"
+            ],
+            "lookup_paths": [
+              "segment_destination",
+              "audit"
+            ],
+            "tables": [
+              "dim_segment",
+              "hkg_br_segment_target"
+            ]
+          },
+          "rewrites": [
+            "\\bsegment\\s+audiences?\\b->segments",
+            "important_plurals->singular"
+          ],
+          "tokens": {
+            "domains": [
+              "audit",
+              "batch",
+              "destination_dataflow",
+              "segment_audience"
+            ],
+            "quoted_entities": [
+              "SMS Opt-In"
+            ]
+          },
+          "value_retrieval": {
+            "budget_exceeded": true,
+            "match_count": 1,
+            "matches": [
+              {
+                "confidence": 1.0,
+                "kind": "quoted_entity",
+                "match_type": "exact",
+                "matched_column": "NAME",
+                "matched_table": "dim_segment",
+                "matched_value": "SMS Opt-In",
+                "mention": "SMS Opt-In",
+                "retrieval_cost": {
+                  "budget_exceeded": true,
+                  "cache_hit": true,
+                  "cache_key": "573ae10238226eac",
+                  "cache_key_algorithm": "sha256",
+                  "cache_reproducible": true,
+                  "retrieval_ms": 11.232
+                },
+                "used_for": "sql_filter"
+              }
+            ],
+            "retrieval_ms": 11.232
+          }
+        },
+        "route_step": {
+          "candidate_apis": [
+            {
+              "id": "ups_audiences",
+              "method": "GET",
+              "path": "/data/core/ups/audiences"
+            },
+            {
+              "id": "segment_definitions",
+              "method": "GET",
+              "path": "/data/core/ups/segment/definitions"
+            },
+            {
+              "id": "merge_policies",
+              "method": "GET",
+              "path": "/data/core/ups/config/mergePolicies"
+            }
+          ],
+          "candidate_tables": [
+            "br_campaign_segment",
+            "dim_connector",
+            "dim_segment",
+            "dim_target",
+            "hkg_br_base_segment_used_by_dependent_segment"
+          ],
+          "confidence": 0.95,
+          "domain_type": "SEGMENT_AUDIENCE",
+          "kind": "route",
+          "reason": "Keyword routing using SEGMENT_AUDIENCE:3, DESTINATION_DATAFLOW:1, RELATIONSHIP_TRAVERSAL:1, COUNT_AGGREGATION:2.",
+          "route_type": "SQL_ONLY"
+        },
+        "selected_apis": [
+          {
+            "id": "ups_audiences",
+            "method": "GET",
+            "path": "/data/core/ups/audiences"
+          },
+          {
+            "id": "flowservice_flows",
+            "method": "GET",
+            "path": "/data/foundation/flowservice/flows"
+          }
+        ],
+        "selected_tables": [
+          "dim_segment",
+          "hkg_br_segment_target",
+          "dim_target"
+        ]
+      },
+      "source_metadata_file": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_003/metadata.json",
+      "source_trajectory_file": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_003/trajectory.json",
+      "strategy": "SQL_FIRST_API_VERIFY",
+      "tool_calls": [
+        {
+          "purpose": "validated local DuckDB/parquet evidence query",
+          "sql": "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\"",
+          "status": "ok",
+          "tool_name": "execute_sql",
+          "validation_result": true
+        },
+        {
+          "header_names": [],
+          "header_values_redacted": true,
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "destinationId==<destination_id>"
+          },
+          "path": "/data/core/ups/audiences",
+          "purpose": "validated Adobe API evidence call",
+          "status": "unavailable",
+          "tool_name": "call_api",
+          "validation_result": true
+        },
+        {
+          "header_names": [],
+          "header_values_redacted": true,
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "path": "/data/foundation/flowservice/flows",
+          "purpose": "validated Adobe API evidence call",
+          "status": "live_success",
+          "tool_name": "call_api",
+          "validation_result": true
+        }
+      ],
+      "tool_results": [
+        {
+          "error": null,
+          "limited": false,
+          "ok": true,
+          "outcome": "sql_success",
+          "result_summary": null,
+          "row_count": 0,
+          "tool_name": "execute_sql"
+        },
+        {
+          "dry_run": false,
+          "endpoint": "/data/core/ups/audiences",
+          "ok": false,
+          "outcome": "unavailable",
+          "params": {
+            "limit": "5",
+            "property": "destinationId==<destination_id>"
+          },
+          "result_summary": {
+            "errors": {
+              "400": {
+                "items": {
+                  "items": [
+                    {
+                      "code": "NEBULA-100058-400",
+                      "message": "Unknown operator: ==<",
+                      "value": "==<"
+                    }
+                  ],
+                  "total_items": 1,
+                  "truncated_items": false
+                },
+                "total_items": 1,
+                "truncated_items": false
+              }
+            },
+            "instance": "/audiences",
+            "request-id": "[REDACTED]",
+            "status": 400,
+            "title": "Unknown operator",
+            "type": "https://ns.adobe.com/aep/errors/NEBULA-100058-400"
+          },
+          "status_code": null,
+          "tool_name": "call_api"
+        },
+        {
+          "dry_run": false,
+          "endpoint": "/data/foundation/flowservice/flows",
+          "ok": true,
+          "outcome": "live_success",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "result_summary": {
+            "items": {
+              "items": {
+                "items": [
+                  {
+                    "createdAt": 1774770853226,
+                    "createdBy": "[REDACTED]",
+                    "createdClient": "[REDACTED]",
+                    "id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                    "name": "Activate segments to S3 Feed",
+                    "state": "enabled",
+                    "truncated_fields": 1,
+                    "updatedAt": 1779639138370,
+                    "updatedBy": "[REDACTED]"
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "status_code": null,
+          "tool_name": "call_api"
+        }
+      ],
+      "verification": {
+        "completeness_missing_fields": [],
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      }
+    }
+  ],
+  "generated_at": "2026-05-25T03:41:35.581415+00:00",
+  "official_score_claim": false,
+  "promotion_allowed": false,
+  "redaction_applied": true,
+  "source_trajectory_files": [
+    "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_012/filled_system_prompt.txt",
+    "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_012/metadata.json",
+    "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/final_submission/query_012/trajectory.json",
+    "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_003/filled_system_prompt.txt",
+    "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_003/metadata.json",
+    "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/live_api_evidence_pipeline_trial/example_003/trajectory.json"
+  ],
+  "warnings": []
+}

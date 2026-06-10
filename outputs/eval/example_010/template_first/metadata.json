@@ -1,0 +1,96 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Use blueprint/collection joins for local schema-dataset evidence; API may validate catalog/schema registry.",
+    "api_families": [
+      "datasets_by_schema",
+      "schema_registry_by_id",
+      "schema_by_name",
+      "schema_list"
+    ],
+    "api_mode": "required",
+    "family": "schema_dataset",
+    "join_path": [
+      "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+      "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+    ],
+    "required_ids": [
+      "schema_id",
+      "blueprint_id",
+      "collection_id"
+    ],
+    "tables": [
+      "dim_blueprint",
+      "hkg_br_blueprint_collection",
+      "dim_collection"
+    ]
+  },
+  "domain_type": "SEGMENT_AUDIENCE",
+  "known_example_patterns": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "class==ExperienceEvent;isProfileEnabled==true",
+        "limit": "25"
+      },
+      "path": "/data/foundation/schemaregistry/tenant/schemas"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "schema_dataset",
+        "batch"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+  "query_id": "example_010",
+  "route_type": "SQL_ONLY",
+  "selected_apis": [
+    {
+      "id": "schema_registry_schemas",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas"
+    }
+  ],
+  "selected_columns": {
+    "dim_blueprint": [
+      "BLUEPRINTID",
+      "CLASS",
+      "ISPROFILEENABLED"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    }
+  ],
+  "selected_tables": [
+    "dim_blueprint"
+  ],
+  "strategy": "TEMPLATE_FIRST"
+}

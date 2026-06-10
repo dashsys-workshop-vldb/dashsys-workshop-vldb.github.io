@@ -1,0 +1,1138 @@
+{
+  "answer_time": 1.8364511248655617,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "When was the journey \"Birthday Message\" published?",
+        "query_id": "pioneer_sweep_mistral_nemo_instruct_2407_birthday_message_published",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-06-01T18:41:04.459223+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-06-01T18:41:04.459236+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-06-01T18:41:04.459240+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner",
+      "correctness_role": "keeps backend deterministic logic limited to compile/request gates and execution",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+      "efficiency_role": "uses one compact planner call before any SQL/API execution",
+      "input_summary": {
+        "query": "When was the journey \"Birthday Message\" published?"
+      },
+      "metrics": {
+        "api_candidate_cards": 0,
+        "backend_route_inference_used": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "candidate_card_success": 0,
+        "candidate_repair_attempts": 0,
+        "evidence_planner_called": true,
+        "llm_route_gate_used": true,
+        "pass_candidate_cards": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "weak_model_line_protocol",
+        "planner_provider_latency_ms": 3967,
+        "planner_repair_attempted": true,
+        "planner_success": false,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": false,
+        "planner_toolcall_supported": false,
+        "provider_capabilities": {
+          "requires_json_prompting": true,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": false
+        },
+        "route_card_latency_ms": 1584,
+        "route_card_repair_attempted": false,
+        "route_card_route": "EVIDENCE",
+        "route_card_success": true,
+        "route_gate_repair_attempted": false,
+        "route_gate_route": "EVIDENCE_PIPELINE",
+        "route_gate_success": true,
+        "sql_candidate_cards": 0,
+        "task_ledger_error": "missing_executable_evidence_task",
+        "task_ledger_latency_ms": 1247,
+        "task_ledger_repair_attempted": true,
+        "task_ledger_repair_latency_ms": 1136,
+        "task_ledger_success": false,
+        "weak_model_stable_protocol_used": true,
+        "weak_protocol_route_card_used": true,
+        "weak_protocol_task_ledger_used": true
+      },
+      "output": {
+        "backend_unavailable": false,
+        "evidence_order": "SQL_FIRST",
+        "model": "[REDACTED]",
+        "parse_error": true,
+        "provider": "[REDACTED]",
+        "raw_preview": {
+          "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON: The prompt asks for specific data about a journey's publication date.",
+          "task_ledger": "TASK t1 | DIRECT | [] | The journey \"Birthday Message\" was published on January 1, 2022.",
+          "task_ledger_repair": "TASK t1 | DIRECT | [] | The journey \"Birthday Message\" was published on January 1, 2022."
+        },
+        "reason": "Task Ledger failed shape gate: missing_executable_evidence_task",
+        "route": "EVIDENCE_PIPELINE",
+        "truncated_fields": 6
+      },
+      "stage": "llm-owned planning",
+      "technique": "single unified LLM route/evidence/sql/api planner",
+      "timestamp": "2026-06-01T18:41:08.432824+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+      "correctness_role": "blocks malformed dependency graphs before execution",
+      "duration_ms": 0.0,
+      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_count": 0,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passed": false
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate",
+      "timestamp": "2026-06-01T18:41:08.433596+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
+      "correctness_role": "backend supplies only graph-shape errors and no replacement subtasks or SQL/API",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM repair its own pass graph after shape-only feedback",
+      "efficiency_role": "caps pass graph repair to one attempt",
+      "input_summary": {
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan"
+      },
+      "output": {
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_repair_attempted": true,
+        "pass_graph_repair_success": false,
+        "repair_plan": {
+          "backend_unavailable": false,
+          "evidence_order": "SQL_FIRST",
+          "model": "[REDACTED]",
+          "parse_error": true,
+          "provider": "[REDACTED]",
+          "raw_preview": {
+            "generic_repair": "Based on the provided failure context, the V2 LLM-owned plan failed due to an empty evidence pipeline plan. The error message states that at least one pass must be declared in the evidence pipeline plan. Since the backend will not add semantic tasks, we need to repair the plan by adding a pass to the evidence pipeline plan.\n\nHere's the repaired weak line protocol card:\n\n```\nROUTE=EVIDENCE\nDIRECT_ANSWER=\nPASS=EXTRACT_PUBLISH_DATE\nEXTRACT_PUBLISH_DATE=The journey \"Birthday Message\" was published on January 1, 2022.\nREASON: The prompt asks for specific data about a journey's publication date.\n```",
+            "repair_context": {
+              "failed_component": "pass_graph_gate",
+              "graph_gate_error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+              "graph_gate_error_type": "empty_evidence_plan",
+              "previous_plan": {
+                "backend_unavailable": false,
+                "evidence_order": "SQL_FIRST",
+                "model": "[REDACTED]",
+                "parse_error": true,
+                "provider": "[REDACTED]",
+                "raw_preview": {
+                  "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON: The prompt asks for specific data about a journey's publication date.",
+                  "task_ledger": "TASK t1 | DIRECT | [] | The journey \"Birthday Message\" was published on January 1, 2022.",
+                  "task_ledger_repair": "TASK t1 | DIRECT | [] | The journey \"Birthday Message\" was published on January 1, 2022."
+                },
+                "reason": "Task Ledger failed shape gate: missing_executable_evidence_task",
+                "route": "EVIDENCE_PIPELINE",
+                "truncated_fields": 1
+              }
+            }
+          },
+          "reason": "Unsupported repair context for weak protocol.",
+          "route": "EVIDENCE_PIPELINE",
+          "truncated_fields": 6
+        },
+        "repaired_pass_count": 0
+      },
+      "stage": "llm-owned pass graph repair",
+      "technique": "single LLM-owned pass graph repair",
+      "timestamp": "2026-06-01T18:41:10.650880+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
+      "correctness_role": "does not add missing passes or choose SQL/API paths",
+      "duration_ms": 0.0,
+      "effect": "executes repaired plan only if the LLM supplied a valid graph",
+      "efficiency_role": "stops after one graph repair attempt",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_count": 0,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passed": false
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate on repaired plan",
+      "timestamp": "2026-06-01T18:41:10.650915+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_v2_execution_optimizer",
+      "correctness_role": "does not split prompts, choose SQL/API paths, rewrite SQL/API, or generate answers",
+      "duration_ms": 0.0,
+      "effect": "optimizes resource order, exact duplicate work, cache reuse, and budgets without changing LLM semantics",
+      "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
+      "input_summary": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "model_cascade_used": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 1,
+        "v2_execution_optimizer_used": true
+      },
+      "stage": "llm-owned execution optimization",
+      "technique": "backend-only scheduling/cache/budget optimizer",
+      "timestamp": "2026-06-01T18:41:10.651014+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
+      "correctness_role": "keeps backend responsibility limited to scheduling, gates, execution, and result storage",
+      "duration_ms": 0.0,
+      "effect": "moves LLM-declared passes through fixed execution stages without changing pass semantics",
+      "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
+      "input_summary": {
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 4,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm-owned pipeline scheduling",
+      "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
+      "timestamp": "2026-06-01T18:41:10.651034+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "separates LLM ownership from compile/request/runtime safety checks",
+      "duration_ms": 0.0,
+      "effect": "records that backend did not replace LLM semantic or SQL/API generation",
+      "efficiency_role": "bounds repair attempts before execution",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "route": "EVIDENCE_PIPELINE"
+      },
+      "output": {
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_8fdd1478aa3e4e57a76d061ed4a0fb72",
+        "hidden_eval_gold_used": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_owned_generation": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 0,
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_gate_passed": false,
+        "pass_graph_repair_attempted": true,
+        "pass_graph_repair_success": false,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_8fdd1478aa3e4e57a76d061ed4a0fb72",
+        "run_id": "run_8fdd1478aa3e4e57a76d061ed4a0fb72",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 2,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm/backend boundary",
+      "technique": "LLM-owned candidate generation with backend-only gates",
+      "timestamp": "2026-06-01T18:41:10.653738+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records runtime evidence or compile/request failures without fabricating data",
+      "duration_ms": 0.0,
+      "effect": "executes only LLM-proposed candidates that pass backend gates",
+      "efficiency_role": "does not execute alternative backend-generated candidates",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "sql_calls_executed": 0
+      },
+      "stage": "execution",
+      "technique": "LLM-owned SQL/API tool execution",
+      "timestamp": "2026-06-01T18:41:10.656253+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+      "correctness_role": "prevents pure direct answer routing from masking evidence-required prompts",
+      "duration_ms": 0.0,
+      "effect": "records that data/mixed/ambiguous prompts continued into evidence-backed answer grounding",
+      "efficiency_role": "makes EvidenceBus construction explicit",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "tool_result_count": 0
+      },
+      "output": {
+        "evidence_bus_built": true,
+        "evidence_pipeline_bypassed": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_final_answer_composer_ran": true,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "pass_results_count": 1,
+        "post_evidence_answer_router_ran": false
+      },
+      "stage": "evidence forwarding",
+      "technique": "V2 evidence boundary",
+      "timestamp": "2026-06-01T18:41:10.656259+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "keeps exact values and scoped caveats in existing EvidenceBus semantics",
+      "duration_ms": 0.0,
+      "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
+      "efficiency_role": "uses collected evidence without extra tool calls",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "evidence": {
+          "pass_ids": {
+            "items": [
+              "pass_graph_gate"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "pass_result_count": 1,
+          "run_id": "run_8fdd1478aa3e4e57a76d061ed4a0fb72"
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "EvidenceBus",
+      "timestamp": "2026-06-01T18:41:10.656340+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_result_bundle",
+      "correctness_role": "keeps pass-level runtime evidence separate from backend answer generation",
+      "duration_ms": 0.0,
+      "effect": "stores all LLM-declared pass results before final LLM aggregation",
+      "efficiency_role": "reuses executed pass results without extra tools",
+      "input_summary": {
+        "pass_results_count": 1,
+        "tool_result_count": 0
+      },
+      "output": {
+        "append_events": {
+          "items": [
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "pass_graph_gate"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "run_id": "run_8fdd1478aa3e4e57a76d061ed4a0fb72",
+        "runtime_passes": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "cached_sources": null,
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true
+              },
+              "global_pass_id": "run_8fdd1478aa3e4e57a76d061ed4a0fb72:pass_graph_gate",
+              "pass_id": "pass_graph_gate",
+              "plan_version": 1,
+              "run_id": "run_8fdd1478aa3e4e57a76d061ed4a0fb72",
+              "status": "ERROR",
+              "truncated_fields": 7
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "ResultBundle",
+      "timestamp": "2026-06-01T18:41:10.656362+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "prevents API_ERROR as no-data and LIVE_EMPTY as global absence",
+      "duration_ms": 0.0,
+      "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
+      "efficiency_role": "uses existing payloads only",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-06-01T18:41:10.656365+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "provides runtime facts to the LLM-owned final answer composer",
+      "duration_ms": 0.0,
+      "effect": "turns runtime evidence into typed answer fields",
+      "efficiency_role": "uses existing slot extraction",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "journey_published",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "Birthday Message"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-06-01T18:41:10.658795+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer",
+      "correctness_role": "backend does not render deterministic templates or select competing answers",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own final answer composition from runtime evidence",
+      "efficiency_role": "uses one final-answer LLM call after evidence execution",
+      "input_summary": {
+        "runtime_pass_count": 1,
+        "slot_counts": {
+          "answer_family": "journey_published",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "Birthday Message"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "backend_unavailable": false,
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "model": "[REDACTED]",
+        "parse_error": false,
+        "provider": "[REDACTED]",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "LLMFinalAnswerComposer",
+      "timestamp": "2026-06-01T18:41:12.491971+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
+      "correctness_role": "does not rewrite, shorten, or score the answer",
+      "duration_ms": 0.0,
+      "effect": "checks only answer existence and wrapper serialization",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "composer": "LLMFinalAnswerComposer"
+      },
+      "output": {
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
+      },
+      "stage": "answer gate",
+      "technique": "minimal final-answer syntax gate",
+      "timestamp": "2026-06-01T18:41:12.491984+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
+      "correctness_role": "blocks unsupported facts, missing requested facts, and scope/caveat errors without generating an answer",
+      "duration_ms": 0.0,
+      "effect": "checks whether LLM final answer claims are supported by runtime evidence",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "syntax_gate_passed": true
+      },
+      "output": {
+        "passed": true,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": {
+              "items": [
+                "API_ERROR",
+                "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "evidence_strings": {
+              "items": [
+                "birthday message"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "names": {
+              "items": [
+                "birthday message"
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": {
+              "items": [
+                {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_matcher": {
+            "matches": {
+              "items": [
+                {
+                  "claim": {
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
+                  },
+                  "reason": "soft_text",
+                  "status": "SUPPORTED"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "stage": "answer gate",
+      "technique": "runtime-evidence semantic grounding gate",
+      "timestamp": "2026-06-01T18:41:12.492220+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
+      "correctness_role": "keeps backend responsible only for syntax/semantic gates after LLM answer generation",
+      "duration_ms": 0.0,
+      "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
+      "efficiency_role": "no extra tool calls",
+      "input_summary": {
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
+        "answer_syntax_gate_passed": true,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": true,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 2,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer ownership boundary",
+      "technique": "LLM-owned final answer with backend gates",
+      "timestamp": "2026-06-01T18:41:12.492243+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "keeps final answer generation LLM-owned while preserving runtime evidence grounding",
+      "duration_ms": 0.0,
+      "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
+      "efficiency_role": "no additional SQL/API calls",
+      "input_summary": {
+        "answer_semantic_gate_passed": true
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
+        "answer_syntax_gate_passed": true,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": true,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 3,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "final response",
+      "technique": "LLM-owned final response",
+      "timestamp": "2026-06-01T18:41:12.492282+00:00"
+    }
+  ],
+  "diagnostics": {
+    "model_sweep_run_id": "mistral_nemo_instruct_2407",
+    "pioneer_model": "[REDACTED]",
+    "pioneer_model_id": "[REDACTED]",
+    "pioneer_model_sweep": true
+  },
+  "domain_type": "LLM_OWNED_V2",
+  "errors": [],
+  "estimated_tokens": 866,
+  "execution_time": 0.0,
+  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+  "model_sweep_run_id": "mistral_nemo_instruct_2407",
+  "original_query": "When was the journey \"Birthday Message\" published?",
+  "pioneer_model": "[REDACTED]",
+  "pioneer_model_id": "[REDACTED]",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "pioneer_sweep_mistral_nemo_instruct_2407_birthday_message_published",
+  "route_type": "EVIDENCE_PIPELINE",
+  "runtime": 1.8520227917470038,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "estimated_tokens": 939,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/v2_non_gpt_model_benchmark/weak_model_stable_protocol_smoke/runs/mistral_nemo_instruct_2407/birthday_message_published/metadata.json",
+      "prompt_tokens": 1490
+    },
+    {
+      "aggregation_instruction": "",
+      "api_request": null,
+      "backend_unavailable": false,
+      "diagnostics": {
+        "api_candidate_cards": 0,
+        "backend_route_inference_used": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "candidate_card_success": 0,
+        "candidate_repair_attempts": 0,
+        "evidence_planner_called": true,
+        "llm_route_gate_used": true,
+        "pass_candidate_cards": 0,
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_parse_source": "weak_model_line_protocol",
+        "planner_provider_latency_ms": 3967,
+        "planner_repair_attempted": true,
+        "planner_success": false,
+        "planner_timeout": false,
+        "planner_toolcall_attempted": false,
+        "planner_toolcall_supported": false,
+        "provider_capabilities": {
+          "requires_json_prompting": true,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": false
+        },
+        "route_card_latency_ms": 1584,
+        "route_card_repair_attempted": false,
+        "route_card_route": "EVIDENCE",
+        "route_card_success": true,
+        "route_gate_repair_attempted": false,
+        "route_gate_route": "EVIDENCE_PIPELINE",
+        "route_gate_success": true,
+        "sql_candidate_cards": 0,
+        "task_ledger_error": "missing_executable_evidence_task",
+        "task_ledger_latency_ms": 1247,
+        "task_ledger_repair_attempted": true,
+        "task_ledger_repair_latency_ms": 1136,
+        "task_ledger_success": false,
+        "weak_model_stable_protocol_used": true,
+        "weak_protocol_route_card_used": true,
+        "weak_protocol_task_ledger_used": true
+      },
+      "direct_answer": null,
+      "evidence_order": "SQL_FIRST",
+      "kind": "llm_unified_planner",
+      "model": "[REDACTED]",
+      "parse_error": true,
+      "passes": [],
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON: The prompt asks for specific data about a journey's publication date.",
+        "task_ledger": "TASK t1 | DIRECT | [] | The journey \"Birthday Message\" was published on January 1, 2022.",
+        "task_ledger_repair": "TASK t1 | DIRECT | [] | The journey \"Birthday Message\" was published on January 1, 2022."
+      },
+      "reason": "Task Ledger failed shape gate: missing_executable_evidence_task",
+      "route": "EVIDENCE_PIPELINE",
+      "sql": null
+    },
+    {
+      "evidence_bus_built": true,
+      "evidence_pipeline_bypassed": false,
+      "kind": "evidence_boundary",
+      "llm_evidence_order": "SQL_FIRST",
+      "llm_final_answer_composer_ran": true,
+      "llm_route": "EVIDENCE_PIPELINE",
+      "pass_results_count": 1,
+      "post_evidence_answer_router_ran": false
+    },
+    {
+      "answered_subtasks": [],
+      "backend_unavailable": false,
+      "caveats_included": [],
+      "claimed_facts": [],
+      "error_message": null,
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "kind": "llm_final_answer_composer",
+      "model": "[REDACTED]",
+      "parse_error": false,
+      "provider": "[REDACTED]",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "unanswered_subtasks": [],
+      "used_pass_ids": []
+    },
+    {
+      "answer_composer_used": "LLMFinalAnswerComposer",
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
+      "answer_syntax_gate_passed": true,
+      "deterministic_answer_template_used": false,
+      "final_answer_supported_by_evidence": true,
+      "hidden_eval_gold_used": false,
+      "kind": "answer_diagnostics",
+      "llm_owned_final_answer": true,
+      "semantic_gate": {
+        "error_message": null,
+        "error_type": null,
+        "missing_required_fields": [],
+        "passed": true,
+        "scope_errors": [],
+        "unsupported_claims": [],
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [
+              "API_ERROR",
+              "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+            ],
+            "api_error_scopes": [],
+            "counts": [],
+            "dates": [],
+            "evidence_strings": [
+              "birthday message"
+            ],
+            "ids": [],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "birthday message"
+            ],
+            "relationships": [],
+            "statuses": []
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT",
+                "value": ""
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
+                },
+                "reason": "soft_text",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "SOFT",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "type": "SOFT_TEXT",
+              "value": ""
+            }
+          ],
+          "unsupported_claims": []
+        }
+      },
+      "syntax_gate": {
+        "error_message": null,
+        "error_type": null,
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
+      },
+      "used_pass_ids": []
+    }
+  ],
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "timings": {
+    "answer_time": 1.8364511248655617
+  },
+  "tool_call_count": 0
+}

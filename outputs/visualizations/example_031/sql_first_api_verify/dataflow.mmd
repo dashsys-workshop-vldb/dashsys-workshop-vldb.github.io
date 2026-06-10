@@ -1,0 +1,54 @@
+flowchart TD
+  subgraph Input
+    input_prompt["User Prompt<br/>Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?"]
+  end
+  subgraph Routing
+    router["Prompt Router<br/>mode=API_ONLY<br/>api=n/a - no API policy recorded"]
+    input_prompt -->|route_prompt| router
+  end
+  subgraph QueryUnderstanding["Query Understanding"]
+    normalizer["Query Normalizer<br/>normalized query"]
+    tokens["Query Tokens<br/>domains=audit,batch&lt;br/&gt;entities=1"]
+    router -->|clean + extract| normalizer --> tokens
+  end
+  subgraph ContextSelection["Context Selection"]
+    context["Context Mode<br/>candidate"]
+    candidates["Context<br/>tables=none&lt;br/&gt;apis=export_batch_files,export_batch_failed+1"]
+    tokens -->|score relevance| context --> candidates
+  end
+  subgraph Planning
+    planner["Planner<br/>SQL_FIRST_API_VERIFY"]
+    optimizer["Plan Optimizer<br/>selected=generic_sql_first"]
+    candidates -->|metadata + policy| planner --> optimizer
+  end
+  subgraph SQLPath["SQL Path"]
+    sqlgen["SQL Generator<br/>source=none"]
+    sqlval["SQL Validator<br/>n/a - no validation step recorded"]
+    optimizer -->|SQL step if needed| sqlgen --> sqlval
+  end
+  subgraph APIPath["API Path"]
+    apisel["API Selector<br/>endpoint=/data/foundation/export/batches/69de8a0e0cc6102b5d11f0..."]
+    apival["API Validator<br/>ok<br/>dry_run=True"]
+    optimizer -->|API policy| apisel --> apival
+  end
+  subgraph ToolExecution["Tool Execution"]
+    tools["Tool Calls<br/>sql=0 api=1<br/>invalid=n/a - no invalid-call metric recorded"]
+    sqlval -->|execute_sql| tools
+    apival -->|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence["EvidenceBus<br/>SQL evidence: n/a&lt;br/&gt;Live API evidence: no&lt;br/&gt;Dry-run API: yes"]
+    tools -->|extract facts| evidence
+  end
+  subgraph AnswerVerification["Answer Verification"]
+    verifier["Verifier<br/>passed=yes&lt;br/&gt;unsupported=0"]
+    evidence -->|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer["Final Answer"]
+    answer["Final Answer<br/>Batch file details require live API evidence. Live API verification was not executed because Ado"]
+    verifier -->|safe answer| answer
+  end
+  subgraph Metrics
+    metrics["Metrics<br/>tools=1<br/>tokens=758<br/>runtime=0.010335583938285708"]
+    answer -->|record trajectory| metrics
+  end

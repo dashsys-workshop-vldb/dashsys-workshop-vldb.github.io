@@ -1,0 +1,575 @@
+{
+  "gates": {
+    "hidden_style": {
+      "failed_cases": 0,
+      "family_stability_rate": 1.0,
+      "passed_cases": 48,
+      "schema_stability_rate": 1.0,
+      "top_failure_categories": [],
+      "total_cases": 48
+    },
+    "integrated_robustness_gate": {
+      "promotion_allowed": true,
+      "recommendation": "promote_efficiency_recovery_fix"
+    },
+    "sdk_usage_audit": {
+      "classification_documentation_only": 11,
+      "classification_generated_output_stale_copy": 5,
+      "classification_sdk_client_allowed": 8,
+      "classification_test_fixture_allowed": 20,
+      "documentation_hits": 11,
+      "generated_output_hits": 5,
+      "runtime_hits": 8,
+      "runtime_llm_direct_http_hits": 0,
+      "source_code_hits": 14,
+      "total_hits": 44
+    },
+    "semantic_route_promotion_gate": {
+      "gates": {
+        "broad_semantic_router_promotion_blocked": true,
+        "check_submission_ready_passes": true,
+        "conceptual_keyword_prompts_skip_tools_safely": true,
+        "endpoint_matrix_clean": true,
+        "final_submission_format_unchanged": true,
+        "generated_prompt_unsupported_claims_zero": true,
+        "hidden_style_passes": true,
+        "no_concrete_data_plain_llm_direct": true,
+        "no_increase_false_no_tool_risk": true,
+        "packaged_runtime_unchanged": true,
+        "public_dev_strict_no_regression": true,
+        "shadow_false_positive_reduction": true,
+        "tool_runtime_token_cost_improves_or_stable": true
+      },
+      "promotion_allowed": false,
+      "recommendation": "keep_shadow_only"
+    }
+  },
+  "implemented_fixes": [
+    "Count claim extractor ignores prompt time windows such as last 90 days.",
+    "Count claim extractor ignores interval values such as interval of 0.",
+    "Safe fallback treats local zero-row SQL evidence as scoped runtime evidence instead of global unavailable.",
+    "Semantic gate allows scoped no-match wording for empty local filtered list evidence.",
+    "Numeric value matching accepts sentence-final values such as 0. without matching decimal values such as 0.026."
+  ],
+  "local_provider": "openai-compatible local Qwen3.6 path redacted in prose; env used by commands",
+  "objective_adjudication": {
+    "counts": {
+      "FAIL": 4,
+      "PASS": 26,
+      "PASS_WITH_VERIFIER_FALSE_POSITIVE": 1,
+      "SAFE_CAVEAT_ONLY": 3,
+      "UNCLEAR_TIMEOUT": 1
+    },
+    "method": "Audit-only semantic adjudication after execution; no hidden/gold wording closeness used as truth.",
+    "root_cause_counts": {
+      "answer_contains_entities_and_dates": 1,
+      "api_unavailable_caveat": 3,
+      "incomplete_relationship_filter": 1,
+      "missing_default_merge_policy_filter": 1,
+      "semantic_gate_passed_or_no_objective_issue": 26,
+      "timeout": 1,
+      "true_missing_or_wrong_required_data": 1,
+      "wrong_status_or_object_scope": 1
+    },
+    "rows": [
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "When was the journey 'Birthday Message' published?",
+        "query_id": "example_000",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Returned 0 inactive journeys with API caveat; prompt required inactive journeys and evidence path selected wrong/incomplete data.",
+        "objective_verdict": "FAIL",
+        "prompt": "Give me inactive journeys",
+        "query_id": "example_001",
+        "root_cause": "true_missing_or_wrong_required_data"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "List all journeys",
+        "query_id": "example_002",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Per-query timeout at dependency resolution; no fresh final answer evidence.",
+        "objective_verdict": "UNCLEAR_TIMEOUT",
+        "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "query_id": "example_003",
+        "root_cause": "timeout"
+      },
+      {
+        "note": "Asked for failed dataflow run IDs; answer includes enabled status/name examples, so object/status grounding remains suspect.",
+        "objective_verdict": "FAIL",
+        "prompt": "Show me the IDs of failed dataflow runs",
+        "query_id": "example_004",
+        "root_cause": "wrong_status_or_object_scope"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+        "query_id": "example_005",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Previously noisy/failing grounding case now passes or is materially improved by the targeted fix.",
+        "objective_verdict": "PASS",
+        "prompt": "How many datasets have been ingested using the same schema in the prod sandbox?",
+        "query_id": "example_006",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Previously noisy/failing grounding case now passes or is materially improved by the targeted fix.",
+        "objective_verdict": "PASS",
+        "prompt": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+        "query_id": "example_007",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "show me the field for Person: Birthday Today 001",
+        "query_id": "example_008",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
+        "query_id": "example_009",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Previously noisy/failing grounding case now passes or is materially improved by the targeted fix.",
+        "objective_verdict": "PASS",
+        "prompt": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+        "query_id": "example_010",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "How many schemas do I have?",
+        "query_id": "example_011",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Answer lists segments/target/mapping evidence but does not cleanly answer audiences mapped to new destinations in last 3 months.",
+        "objective_verdict": "FAIL",
+        "prompt": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        "query_id": "example_012",
+        "root_cause": "incomplete_relationship_filter"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "Show recent changes in datasets.",
+        "query_id": "example_013",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "Show me all entities created by download",
+        "query_id": "example_014",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "How many tags exist in this sandbox?",
+        "query_id": "example_015",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "List all tags in this sandbox.",
+        "query_id": "example_016",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "API evidence unavailable; no unsupported data claim, but answer is low-information.",
+        "objective_verdict": "SAFE_CAVEAT_ONLY",
+        "prompt": "Which tags belong to the category 'Uncategorized'?",
+        "query_id": "example_017",
+        "root_cause": "api_unavailable_caveat"
+      },
+      {
+        "note": "API evidence unavailable; no unsupported data claim, but answer is low-information.",
+        "objective_verdict": "SAFE_CAVEAT_ONLY",
+        "prompt": "Show me the details of the tag named 'cool'.",
+        "query_id": "example_018",
+        "root_cause": "api_unavailable_caveat"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "List all merge policies in this sandbox.",
+        "query_id": "example_019",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "How many merge policies are configured in this sandbox?",
+        "query_id": "example_020",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Answer lists merge-policy-like rows but does not establish default policy for the requested schema class.",
+        "objective_verdict": "FAIL",
+        "prompt": "Show the default merge policy for schema class '_xdm.context.profile'.",
+        "query_id": "example_021",
+        "root_cause": "missing_default_merge_policy_filter"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "How many segment definitions exist in this sandbox?",
+        "query_id": "example_022",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "List all segment definitions.",
+        "query_id": "example_023",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Answer provides recent segment definition examples and dates; semantic gate still flags entity_names too strictly.",
+        "objective_verdict": "PASS_WITH_VERIFIER_FALSE_POSITIVE",
+        "prompt": "Which segment definitions were updated most recently?",
+        "query_id": "example_024",
+        "root_cause": "answer_contains_entities_and_dates"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "List all segment evaluation jobs.",
+        "query_id": "example_025",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "How many segment jobs are currently processing?",
+        "query_id": "example_026",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "API evidence unavailable for segment jobs; no unsupported data claim, but answer is low-information.",
+        "objective_verdict": "SAFE_CAVEAT_ONLY",
+        "prompt": "Show all segment jobs with status 'QUEUED'.",
+        "query_id": "example_027",
+        "root_cause": "api_unavailable_caveat"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "List the most recently created batches.",
+        "query_id": "example_028",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "How many batches have status 'success'?",
+        "query_id": "example_029",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Previously noisy/failing grounding case now passes or is materially improved by the targeted fix.",
+        "objective_verdict": "PASS",
+        "prompt": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
+        "query_id": "example_030",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+        "query_id": "example_031",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "No objective unsupported claim or missing-info issue identified in this triage.",
+        "objective_verdict": "PASS",
+        "prompt": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+        "query_id": "example_032",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Previously noisy/failing grounding case now passes or is materially improved by the targeted fix.",
+        "objective_verdict": "PASS",
+        "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+        "query_id": "example_033",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      },
+      {
+        "note": "Previously noisy/failing grounding case now passes or is materially improved by the targeted fix.",
+        "objective_verdict": "PASS",
+        "prompt": "Show ingestion record counts and batch success counts for the last 90 days.",
+        "query_id": "example_034",
+        "root_cause": "semantic_gate_passed_or_no_objective_issue"
+      }
+    ]
+  },
+  "packaged_default_unchanged": "SQL_FIRST_API_VERIFY",
+  "post_fix_final_semantic_gate": {
+    "claim_extractor_false_positive_count_after_fix": 1,
+    "failure_counts": {
+      "contradiction": 1,
+      "missing_required_info": 6,
+      "scope_error": 1
+    },
+    "final_failure_count_excluding_timeout": 8,
+    "real_unsupported_claims_objective_count": 0,
+    "rows": [
+      {
+        "error_type": "missing_required_info",
+        "final_answer": "Local snapshot evidence shows T1/SQL/LOCAL_SNAPSHOT: count: 0 | T3/SQL_AND_API/LOCAL_SNAPSHOT: count: 0. Live API evidence was unavailable, so a live comparison cannot be completed.",
+        "missing_required_fields": {
+          "items": [
+            "status"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt": "Give me inactive journeys",
+        "query_id": "example_001",
+        "unsupported_claims": null
+      },
+      {
+        "error_type": "contradiction",
+        "final_answer": "Local snapshot evidence shows t1_failed_dataflow_runs/SQL/LOCAL_SNAPSHOT: count: 16; examples include weRetail Events - Apr 2026; weRetail CRM - Apr 2026; weRetail Events - Mar 2026; id: d02b782b-e586-454a-82df-7927d4d27a7c; id: ad0f30ac-1d5b-45bb-88db-7ce357b59dc0; id: 96dbf952-6ecd-4728-ab92-188a2e77abb0; status: enabled.",
+        "missing_required_fields": null,
+        "prompt": "Show me the IDs of failed dataflow runs",
+        "query_id": "example_004",
+        "unsupported_claims": {
+          "items": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "success",
+                "text": "success",
+                "type": "STATUS",
+                "value": "success"
+              },
+              "message": "Status claim 'success' contradicts available status evidence."
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      {
+        "error_type": "scope_error",
+        "final_answer": "Local snapshot evidence shows t2_segments_list/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: 2fdfefe1-04d0-46ce-9fbd-7611e311dd26; id: 574372f1-7b74-489c-b77f-139024b083a5; id: 7e7b3d71-ae29-4c97-8b24-99905ea6bf68 | t3_targets_list/SQL/LOCAL_SNAPSHOT: count: 1; examples include amazon-s3; id: 139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; TARGETID:139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; NAME:amazon-s3; LABELSTARGET:[] | t4_segment_target_mapping/SQL/LOCAL_SNAPSHOT: count: 1; id: f6b93428-c021-4058-a1a2-77c277aab564; id: 139bece0-5266-46bd-8ed3-fc1dd5eb5dd4; SEGMENTID:f6b93428-c021-4058-a1a2-77c277aab564; LABELSSEGMENT:[]; TARGETID:139bece0-5266-46bd-8ed3-fc1dd5eb5dd4. Live API evidence was unavailable, so a live comparison cannot be completed.",
+        "missing_required_fields": null,
+        "prompt": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        "query_id": "example_012",
+        "unsupported_claims": null
+      },
+      {
+        "error_type": "missing_required_info",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "missing_required_fields": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt": "Which tags belong to the category 'Uncategorized'?",
+        "query_id": "example_017",
+        "unsupported_claims": null
+      },
+      {
+        "error_type": "missing_required_info",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "missing_required_fields": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt": "Show me the details of the tag named 'cool'.",
+        "query_id": "example_018",
+        "unsupported_claims": null
+      },
+      {
+        "error_type": "missing_required_info",
+        "final_answer": "Local snapshot evidence shows t1_merge_policies/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; id: 22a941a9-e598-45f8-846b-c9a8889f5035; NAME:Person: Birthday Today 001; MERGEPOLICYID:22a941a9-e598-45f8-846b-c9a8889f5035; NAME:Campaign: 25% Off Purchase Offer Reminder. Live API evidence was unavailable, so a live comparison cannot be completed.",
+        "missing_required_fields": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt": "Show the default merge policy for schema class '_xdm.context.profile'.",
+        "query_id": "example_021",
+        "unsupported_claims": null
+      },
+      {
+        "error_type": "missing_required_info",
+        "final_answer": "Local snapshot evidence shows t1_segment_defs/SQL/LOCAL_SNAPSHOT: count: 13; examples include Person: Birthday Today 001; Campaign: 25% Off Purchase Offer Reminder; Campaign: New Application Credit Card Offer; date: 2026-04-05T04:33:25.000+00:00; date: 2026-03-29T07:52:25.000+00:00; date: 2026-03-29T07:52:17.000+00:00.",
+        "missing_required_fields": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt": "Which segment definitions were updated most recently?",
+        "query_id": "example_024",
+        "unsupported_claims": null
+      },
+      {
+        "error_type": "missing_required_info",
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "missing_required_fields": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt": "Show all segment jobs with status 'QUEUED'.",
+        "query_id": "example_027",
+        "unsupported_claims": null
+      }
+    ],
+    "unsupported_claim_gate_failure_rows": [
+      "example_004"
+    ]
+  },
+  "previous_adjudication_source": {
+    "final_semantic_gate_failure_root_cause_counts": {
+      "claim_extractor_false_positive": 5,
+      "evidence_shape_not_answer_friendly": 1,
+      "global_unavailable_with_runtime_facts": 2,
+      "timeout_or_empty_answer": 1,
+      "true_missing_required_info": 2
+    },
+    "generated_at": "2026-06-02T11:56:11.038707+00:00",
+    "notes": [
+      "Objective verdicts are based on runtime evidence consistency, missing required information, unsupported claims, and scope/caveat handling, not gold wording closeness."
+    ],
+    "raw_scores_are_raw_score_only": true,
+    "row_count": 35,
+    "source": "latest local Qwen V2 strict trajectories before objective grounding targeted rerun",
+    "unsupported_claim_classification_counts": {
+      "claim_extractor_false_positive": 3,
+      "numeric/list marker false positive": 2
+    },
+    "verdict_counts": {
+      "FAIL": 4,
+      "PASS": 28,
+      "UNCLEAR_NEEDS_MANUAL_REVIEW": 3
+    }
+  },
+  "raw_score_delta_v2_minus_sql_first": {
+    "answer": -0.1365,
+    "api": -0.5254,
+    "correctness": -0.4135,
+    "final": -0.4489,
+    "runtime": 14.2033,
+    "sql": -0.9333,
+    "tokens": 1287.9429,
+    "tool_calls": -0.0857
+  },
+  "recommendation": {
+    "reason": "Targeted answer-grounding fixes are narrow and validated, but V2 strict eval still has one timeout and residual objective grounding failures; keep V2 shadow-only.",
+    "safe_to_commit": true,
+    "safe_to_keep": true,
+    "safe_to_promote_v2": false
+  },
+  "report_type": "objective_grounding_fix_summary",
+  "smoke_summary": {
+    "api_calls": 1,
+    "atomic_protocol_fallback_count": 0,
+    "caveat_or_error_only_count": 3,
+    "compiled_api_count": 1,
+    "compiled_sql_count": 5,
+    "error_count": 0,
+    "failed_count": 0,
+    "final_answer_repair_attempts": 2,
+    "final_semantic_gate_final_failures": 0,
+    "final_semantic_gate_initial_failures": 2,
+    "final_unavailable_with_runtime_facts": 0,
+    "live_api_fact_count": 0,
+    "local_snapshot_fact_count": 8,
+    "no_tool_fp": 0,
+    "passed_count": 7,
+    "raw_sql_fallback_used_count": 0,
+    "repaired_success_count": 0,
+    "row_count": 7,
+    "runtime_fact_count": 8,
+    "sql_calls": 5,
+    "timeout_count": 0,
+    "unsupported_claims": 0
+  },
+  "sql_first_raw_score_only": {
+    "avg_answer_score": 0.3223,
+    "avg_answer_time": 0.0008,
+    "avg_api_score": 0.9791,
+    "avg_correctness_score": 0.6812,
+    "avg_estimated_tokens": 796.8571,
+    "avg_execution_time": 0.0012,
+    "avg_final_score": 0.6563,
+    "avg_metadata_tokens": 817.5429,
+    "avg_planning_time": 0.0024,
+    "avg_preprocessing_time": 0.0052,
+    "avg_prompt_tokens": 1459.6286,
+    "avg_runtime": 0.0176,
+    "avg_sql_score": 0.9333,
+    "avg_tool_call_count": 1.4571
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "v2_eval": {
+    "api_calls": 25,
+    "failed_query_ids": [
+      "example_003"
+    ],
+    "raw_sql_fallback_used_count_from_checkpoints": 0,
+    "row_count": 35,
+    "runtime_fact_count_approx_rows_or_successful_calls": 74,
+    "runtime_fact_count_approx_successful_tool_steps": 22,
+    "sql_calls": 23,
+    "timeout_count": 1,
+    "timeout_query_ids": [
+      "example_003"
+    ],
+    "tool_calls": 48
+  },
+  "v2_strict_raw_score_only": {
+    "avg_answer_score": 0.1858,
+    "avg_answer_time": 8.9132,
+    "avg_api_score": 0.4537,
+    "avg_correctness_score": 0.2677,
+    "avg_estimated_tokens": 2084.8,
+    "avg_execution_time": 0.0,
+    "avg_final_score": 0.2074,
+    "avg_metadata_tokens": 1791.5143,
+    "avg_planning_time": 0.0,
+    "avg_preprocessing_time": 0.0,
+    "avg_prompt_tokens": 2469.8571,
+    "avg_runtime": 14.2209,
+    "avg_sql_score": 0.0,
+    "avg_tool_call_count": 1.3714
+  },
+  "validation": {
+    "check_submission_ready": "ok true; packaged default SQL_FIRST_API_VERIFY; secret scan ok",
+    "focused_tests": "106 passed in earlier focused run",
+    "full_pytest": "1176 passed, 1 skipped",
+    "git_diff_check": "passed",
+    "plain_python3_note": "plain python3 in this environment lacks pytest; .venv/bin/python was used for tests and scripts."
+  }
+}

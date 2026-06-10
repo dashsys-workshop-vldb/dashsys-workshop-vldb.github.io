@@ -1,0 +1,243 @@
+{
+  "context7_found_count": 8,
+  "context7_unavailable_count": 0,
+  "created_at": "2026-05-17T03:00:00+00:00",
+  "ctx7_command": "npx -y ctx7@latest",
+  "dependencies": [
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/openai/openai-python",
+      "context7_result": "found",
+      "dependency": "OpenAI Python SDK",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 10411,
+      "docs_query_used": "chat completions tool calling usage token usage fields",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "Chat completions are invoked through the SDK client method, with tools supplied as function definitions.",
+        "Tool calls are returned on message tool call fields and arguments are JSON strings that need defensive parsing.",
+        "Usage metadata is optional response metadata and should be read defensively.",
+        "SDK exceptions can expose request metadata; reports should store only redacted compact error text."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "chat completions tool calling usage",
+      "observed_markers": {
+        "chat.completions.create": true,
+        "tool_choice": true,
+        "tools": true,
+        "usage": true
+      },
+      "repo_files_affected": [
+        "dashagent/llm_client.py",
+        "scripts/check_llm_sdk_backend.py"
+      ],
+      "risk_level": "medium"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/anthropics/anthropic-sdk-python",
+      "context7_result": "found",
+      "dependency": "Anthropic Python SDK",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 2957,
+      "docs_query_used": "messages tool use usage fields",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "Messages API calls use the SDK client's messages.create method.",
+        "Anthropic tools use name, description, and input_schema fields, and tool_use blocks return structured input.",
+        "Tool results are sent back as user content with a tool_result block.",
+        "Usage includes input/output token fields and should be normalized defensively."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "messages tool use",
+      "observed_markers": {
+        "input_schema": true,
+        "messages.create": true,
+        "tool_use": true,
+        "usage": true
+      },
+      "repo_files_affected": [
+        "dashagent/llm_client.py"
+      ],
+      "risk_level": "medium"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/websites/developer_adobe_experience-platform-apis_references",
+      "context7_result": "found",
+      "dependency": "Adobe Experience Platform API",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 5580,
+      "docs_query_used": "headers x-api-key x-gw-ims-org-id sandbox authorization",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "AEP requests require Authorization, x-api-key, and x-gw-ims-org-id headers; sandbox-scoped endpoints also use x-sandbox-name.",
+        "Header names can be reported, but values must remain fully redacted or represented as constructible booleans only.",
+        "Endpoint-level permission, sandbox, and path errors are separate from global credential readiness.",
+        "Data endpoint diagnostics must stay GET-only unless explicitly limited to OAuth token acquisition."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "headers sandbox x-api-key x-gw-ims-org-id",
+      "observed_markers": {
+        "Authorization": "[REDACTED]",
+        "x-api-key": "[REDACTED]",
+        "x-gw-ims-org-id": "[MA***",
+        "x-sandbox-name": "[MA***"
+      },
+      "repo_files_affected": [
+        "dashagent/api_client.py",
+        "dashagent/adobe_env.py",
+        "dashagent/api_outcome_classifier.py",
+        "scripts/check_adobe_env_local.py",
+        "scripts/audit_live_adobe_api_readiness.py",
+        "scripts/run_live_api_readiness_smoke.py",
+        "scripts/run_post_permission_live_api_verification.py"
+      ],
+      "risk_level": "high"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/duckdb/duckdb-python",
+      "context7_result": "found",
+      "dependency": "DuckDB Python",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 3515,
+      "docs_query_used": "execute query parameters read only python result fetch",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "DuckDB Python executes SQL through connection execute/sql APIs and fetches rows through fetch methods.",
+        "The client can execute multiple statements, so repository validation must block multi-statement and write statements before execution.",
+        "Parameter binding is available for values, but repository-generated SQL remains read-only validated text."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "execute query parameter usage",
+      "observed_markers": {
+        "Multiple statements": true,
+        "execute": true,
+        "fetchall": true,
+        "parameters": true
+      },
+      "repo_files_affected": [
+        "dashagent/db.py",
+        "dashagent/validators.py"
+      ],
+      "risk_level": "medium"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/websites/sqlglot",
+      "context7_result": "found",
+      "dependency": "SQLGlot",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 4829,
+      "docs_query_used": "parse_one sql dialect validation read only expression",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "parse_one parses a SQL string into a syntax tree for a chosen dialect.",
+        "Multiple statements can parse into a Block expression; repo validation should still block multi-statement SQL explicitly.",
+        "Parse errors should be warnings or validation failures, not uncontrolled crashes."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "parse_one read-only validation",
+      "observed_markers": {
+        "ParseError": true,
+        "dialect": true,
+        "parse_one": true,
+        "read": true
+      },
+      "repo_files_affected": [
+        "dashagent/sql_ast_tools.py",
+        "dashagent/validators.py"
+      ],
+      "risk_level": "medium"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/pydantic/pydantic",
+      "context7_result": "found",
+      "dependency": "Pydantic v2",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 2935,
+      "docs_query_used": "model_dump BaseModel JSON serialization",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "Pydantic v2 SDK response models support model_dump for dictionary serialization.",
+        "JSON-safe output may require mode=json or model_dump_json when serializing datetime-like values.",
+        "Validation errors should be caught and reported safely where user-facing diagnostics are written."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "model_dump BaseModel validation",
+      "observed_markers": {
+        "BaseModel": true,
+        "model_dump": true,
+        "model_dump_json": true,
+        "validation": true
+      },
+      "repo_files_affected": [
+        "dashagent/llm_client.py"
+      ],
+      "risk_level": "low"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/fastapi/typer",
+      "context7_result": "found",
+      "dependency": "Typer",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 3289,
+      "docs_query_used": "cli option argparse testing",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "Typer documents explicit CLI options and help output, but this repo primarily uses argparse for diagnostics.",
+        "CLI override flags should remain explicit user inputs rather than implicit environment behavior.",
+        "Required options and callbacks should fail clearly in help/error paths."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "cli options testing",
+      "observed_markers": {
+        "Options": true,
+        "callback": false,
+        "help": true,
+        "required": true
+      },
+      "repo_files_affected": [
+        "scripts/run_live_api_readiness_smoke.py",
+        "scripts/run_dev_eval.py"
+      ],
+      "risk_level": "low"
+    },
+    {
+      "code_audit_needed": true,
+      "context7_library_id": "/pytest-dev/pytest",
+      "context7_result": "found",
+      "dependency": "pytest",
+      "docs_command_exit_code": 0,
+      "docs_output_char_count": 6631,
+      "docs_query_used": "tmp_path monkeypatch capsys fixtures",
+      "fallback": "not_needed",
+      "key_docs_findings": [
+        "pytest fixtures such as tmp_path, monkeypatch, and capsys are function-scoped tools for isolated tests.",
+        "monkeypatch changes are automatically undone after the test or fixture scope.",
+        "tmp_path provides per-test filesystem isolation for generated reports.",
+        "capsys supports output-redaction tests without printing secret values."
+      ],
+      "library_command_exit_code": 0,
+      "library_query_used": "tmp_path monkeypatch capsys",
+      "observed_markers": {
+        "capsys": true,
+        "fixture": true,
+        "monkeypatch": true,
+        "tmp_path": true
+      },
+      "repo_files_affected": [
+        "tests"
+      ],
+      "risk_level": "low"
+    }
+  ],
+  "dependency_count": 8,
+  "purpose": "Short Context7 documentation lookup summary for SDK/API/code-alignment auditing.",
+  "raw_docs_stored": false,
+  "report_type": "context7_dependency_docs_summary",
+  "sensitive_values_stored": false
+}

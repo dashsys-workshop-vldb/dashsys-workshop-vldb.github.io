@@ -1,0 +1,246 @@
+{
+  "objective": "Stabilize V2 after schema-binding experiment regressed focused smoke by disabling schema-binding toolcall by default and using repair cards instead.",
+  "packaged_default_unchanged": true,
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "v2_promoted": false,
+  "strict_dev_eval_ran": false,
+  "strict_dev_eval_skip_reason": "Focused smoke failed required 7/7 gate.",
+  "schema_binding": {
+    "default_enabled": false,
+    "default_mode": "repair_hint_only",
+    "experimental_env_flag": "V2_ENABLE_SCHEMA_BINDING=1",
+    "experimental_toolcall_path_available": true,
+    "backend_semantic_table_or_field_selection": false,
+    "backend_rewrites_local_query_ir": false
+  },
+  "files_changed": {
+    "runtime": [
+      "dashagent/v2_semantic_ir_planner.py",
+      "scripts/run_hermes_v2_toolcall_smoke.py"
+    ],
+    "tests": [
+      "tests/test_v2_semantic_ir.py",
+      "tests/test_hermes_v2_toolcall_smoke.py"
+    ],
+    "reports": [
+      "outputs/reports/local_qwen_v2_benchmark/schema_binding_stabilization.md",
+      "outputs/reports/local_qwen_v2_benchmark/schema_binding_stabilization.json"
+    ]
+  },
+  "implementation": {
+    "env_gate_added": true,
+    "default_schema_binding_toolcall_disabled": true,
+    "flag_on_schema_binding_toolcall_enabled": true,
+    "answer_contract_remains_active": true,
+    "repair_prompt_includes_allowed_tables": true,
+    "repair_prompt_includes_allowed_fields_for_error_table": true,
+    "repair_prompt_includes_table_role_cards": true,
+    "repair_prompt_includes_field_role_cards": true,
+    "repair_prompt_includes_relationship_cards": true,
+    "actual_record_evidence_rule_added": true,
+    "prompt_budget_preserved": true
+  },
+  "validation": {
+    "targeted_semantic_ir": {
+      "command": ".venv/bin/python -m pytest -q tests/test_v2_semantic_ir.py",
+      "passed": 42,
+      "failed": 0,
+      "ok": true
+    },
+    "focused_affected": {
+      "command": ".venv/bin/python -m pytest -q tests/test_v2_semantic_ir.py tests/test_hermes_v2_toolcall_smoke.py",
+      "passed": 55,
+      "failed": 0,
+      "ok": true
+    },
+    "full_pytest": {
+      "command": ".venv/bin/python -m pytest -q",
+      "passed": 1223,
+      "skipped": 1,
+      "failed": 0,
+      "ok": true
+    },
+    "check_submission_ready": {
+      "command": ".venv/bin/python scripts/check_submission_ready.py",
+      "ok": true,
+      "default_strategy_is_sql_first_api_verify": true,
+      "query_output_count": 73,
+      "secret_scan_ok": true,
+      "secret_hits": 0
+    },
+    "sdk_usage_audit": {
+      "command": ".venv/bin/python scripts/generate_sdk_usage_audit.py",
+      "runtime_llm_direct_http_hits": 0,
+      "ok": true
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "ok": true
+    }
+  },
+  "local_qwen_probe": {
+    "command": "scripts/probe_hermes_sdk_toolcall.py",
+    "provider": "openai",
+    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+    "ok": true,
+    "sdk_path_used": true,
+    "toolcall_supported": true,
+    "tool_calls_count": 1,
+    "tool_name": "submit_probe_result"
+  },
+  "focused_smoke": {
+    "command": "scripts/run_hermes_v2_toolcall_smoke.py",
+    "env": {
+      "DASHAGENT_LLM_PROVIDER": "openai",
+      "OPENAI_BASE_URL": "http://localhost:8000/v1",
+      "OPENAI_MODEL": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+      "LLM_TIMEOUT_SECONDS": "180",
+      "HERMES_LLM_CALL_TIMEOUT_SEC": "180",
+      "V2_ENABLE_SCHEMA_BINDING": "0"
+    },
+    "ok": false,
+    "summary": {
+      "api_calls": 2,
+      "atomic_protocol_fallback_count": 0,
+      "caveat_or_error_only_count": 7,
+      "compiled_api_count": 2,
+      "compiled_sql_count": 2,
+      "error_count": 0,
+      "failed_count": 5,
+      "final_answer_repair_attempts": 2,
+      "final_semantic_gate_final_failures": 2,
+      "final_semantic_gate_initial_failures": 2,
+      "final_unavailable_with_runtime_facts": 0,
+      "live_api_fact_count": 0,
+      "local_snapshot_fact_count": 1,
+      "missing_answer_contract_count": 0,
+      "no_tool_fp": 2,
+      "passed_count": 2,
+      "raw_sql_fallback_used_count": 0,
+      "repaired_success_count": 0,
+      "row_count": 7,
+      "runtime_fact_count": 1,
+      "schema_binding_enabled_count": 0,
+      "schema_binding_mode_counts": {
+        "repair_hint_only": 7
+      },
+      "schema_binding_repair_attempt_count": 0,
+      "schema_binding_repair_success_count": 0,
+      "schema_binding_used_count": 0,
+      "schema_binding_validation_failure_count": 0,
+      "sql_calls": 2,
+      "timeout_count": 0,
+      "unknown_table_count": 0,
+      "unsupported_claims": 0
+    },
+    "rows": [
+      {
+        "prompt_id": "pure_concept_schema",
+        "pass": true,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": false,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Correct direct concept path."
+      },
+      {
+        "prompt_id": "pure_meta_list_schemas",
+        "pass": true,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": false,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Correct direct meta path."
+      },
+      {
+        "prompt_id": "ambiguous_user_schemas",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 0,
+        "api_calls": 1,
+        "no_tool_fp": false,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "final_semantic_gate_final_failures": 1,
+        "observation": "Routing improved to evidence, but model selected live API and final evidence unavailable."
+      },
+      {
+        "prompt_id": "local_schema_count",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 0,
+        "no_tool_fp": false,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "runtime_fact_count": 1,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Model still selected wrong schema-valid table and answered 0."
+      },
+      {
+        "prompt_id": "birthday_message_published",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": true,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "semantic_ir_validation_error_type": "unknown_field",
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Unknown-field repair still fails before evidence execution."
+      },
+      {
+        "prompt_id": "mixed_inactive_journeys",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": true,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "semantic_ir_validation_error_type": "unknown_field",
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Unknown-field repair still fails before evidence execution."
+      },
+      {
+        "prompt_id": "compare_local_live_birthday_status",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 1,
+        "no_tool_fp": false,
+        "schema_binding_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_mode": "repair_hint_only",
+        "final_semantic_gate_final_failures": 1,
+        "observation": "Executes local/live paths but final gate still rejects."
+      }
+    ]
+  },
+  "recommendation": {
+    "safe_to_keep": true,
+    "safe_to_commit": true,
+    "safe_to_run_strict_v2_dev_eval": false,
+    "safe_to_promote_v2": false,
+    "reason": "The default schema-binding toolcall regression is removed and tests/gates pass, but focused smoke remains 2/7 with no_tool_fp=2 and final_semantic_gate_final_failures=2."
+  },
+  "remaining_blockers": [
+    "ambiguous_user_schemas enters evidence but selects live API instead of local snapshot.",
+    "local_schema_count still selects a schema-valid wrong table and answers 0.",
+    "birthday_message_published and mixed_inactive_journeys fail with unknown_field before evidence execution.",
+    "compare_local_live_birthday_status still has final semantic gate failure."
+  ]
+}

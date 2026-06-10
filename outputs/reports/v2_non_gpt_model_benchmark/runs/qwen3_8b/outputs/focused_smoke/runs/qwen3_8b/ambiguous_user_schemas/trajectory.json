@@ -1,0 +1,329 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "What schemas do I have?",
+        "query_id": "pioneer_sweep_qwen3_8b_ambiguous_user_schemas",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-06-01T09:35:43.383686+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-06-01T09:35:43.383700+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-06-01T09:35:43.383703+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner",
+      "correctness_role": "keeps backend deterministic logic limited to compile/request gates and execution",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+      "efficiency_role": "uses one compact planner call before any SQL/API execution",
+      "input_summary": {
+        "query": "What schemas do I have?"
+      },
+      "output": {
+        "backend_unavailable": false,
+        "direct_answer": "You have the following schemas available:\n\n1. `br_campaign_segment` - Contains campaign-segment relationships with columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT.\n2. `dim_blueprint` - Contains blueprint definitions with columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID.\n3. `dim_campaign` - Contains campaign metadata with columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE.\n4. `dim_collection` - Contains collection details with columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME.\n5. `dim_connector` - Contains connector information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n6. `dim_property` - Contains property details with columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME.\n7. `dim_segment` - Contains segment definitions with columns: DEFINITION, SEGMENTID, UPDATEDTIME.\n8. `dim_target` - Contains target information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n\nAll schemas are stored in Parquet files in the `data/DBSnapshot/` directory.",
+        "evidence_order": "NO_EVIDENCE",
+        "model": "[REDACTED]",
+        "parse_error": false,
+        "provider": "[REDACTED]",
+        "raw_preview": {
+          "preview": "\"{\\\"route\\\": \\\"LLM_DIRECT\\\", \\\"direct_answer\\\": \\\"You have the following schemas available:\\\\n\\\\n1. `br_campaign_segment` - Contains campaign-segment relationships with columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT.\\\\n2. `dim_blueprint` - Contains blueprint definitions with columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID.\\\\n3. `dim_campaign` - Contains campaign metadata with columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE.\\\\n4. `dim_collection` - Contains collection details with columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME.\\\\n5. `dim_connector` - Contains connector information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\\\\n6. `dim_property` - Contains property details with columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME.\\\\n7. `dim_segment` - Contains segment definitions with columns: DEFINITION, SEGMENTID, UPDATEDTIME.\\\\n8. `dim_target` - Contains target information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\\\\n\\\\nAll schemas are stored in Parquet files in the `...",
+          "truncated": true
+        },
+        "route": "LLM_DIRECT"
+      },
+      "stage": "llm-owned planning",
+      "technique": "single unified LLM route/evidence/sql/api planner",
+      "timestamp": "2026-06-01T09:35:46.521357+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "keeps direct conceptual answers separate from evidence-grounded data answers",
+      "duration_ms": 0.0,
+      "effect": "records that no backend SQL/API/evidence planning ran for direct V2 answer",
+      "efficiency_role": "uses zero SQL/API calls",
+      "input_summary": {
+        "evidence_order": "NO_EVIDENCE",
+        "route": "LLM_DIRECT"
+      },
+      "output": {
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_answer_repair_attempts": 1,
+          "max_api_workers": 2,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "run_timeout_ms": 30000
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_pipeline_bypassed": true,
+        "llm_evidence_order": "NO_EVIDENCE",
+        "llm_owned_generation": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
+        "llm_route": "LLM_DIRECT",
+        "max_api_workers": 0,
+        "max_parallelism": 0,
+        "max_sql_workers": 0,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 0,
+        "pass_graph_gate_passed": true,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_results_count": 0,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 0,
+        "run_id": "run_40a9f16896824d7ab62624c1cb73e0ff",
+        "sequential_pass_count": 0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": false,
+        "truncated_fields": 2,
+        "v2_execution_optimizer_used": false,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm/backend boundary",
+      "technique": "LLM-owned direct route",
+      "timestamp": "2026-06-01T09:35:46.522009+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_bypass",
+      "correctness_role": "prevents empty EvidenceBus construction for no-evidence concept/meta answers",
+      "duration_ms": 0.0,
+      "effect": "bypasses SQL/API, EvidenceBus, answer slots, and post-evidence answer routing",
+      "efficiency_role": "uses no SQL/API calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "bypass_reason": "llm_owned_direct_no_evidence_required",
+        "evidence_bus_built": false,
+        "evidence_pipeline_bypassed": true,
+        "llm_evidence_order": "NO_EVIDENCE",
+        "llm_route": "LLM_DIRECT",
+        "post_evidence_answer_router_ran": false,
+        "pre_evidence_route": "LLM_DIRECT"
+      },
+      "stage": "pre-evidence routing",
+      "technique": "LLM-owned high-confidence direct routing boundary",
+      "timestamp": "2026-06-01T09:35:46.522013+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_safe_direct_answer_verifier",
+      "correctness_role": "blocks counts, IDs, timestamps, statuses, and live platform claims",
+      "duration_ms": 0.0,
+      "effect": "checks direct answer for unsupported concrete runtime claims",
+      "efficiency_role": "uses no SQL/API calls",
+      "input_summary": {
+        "llm_route": "LLM_DIRECT"
+      },
+      "output": {
+        "ok": true
+      },
+      "stage": "answer verification",
+      "technique": "safe-direct answer verifier",
+      "timestamp": "2026-06-01T09:35:46.522015+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "does not invent SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "returns the safe direct answer without building evidence artifacts",
+      "efficiency_role": "zero tool calls",
+      "output": {
+        "answer_length": 956,
+        "final_answer": "You have the following schemas available:\n\n1. `br_campaign_segment` - Contains campaign-segment relationships with columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT.\n2. `dim_blueprint` - Contains blueprint definitions with columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID.\n3. `dim_campaign` - Contains campaign metadata with columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE.\n4. `dim_collection` - Contains collection details with columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME.\n5. `dim_connector` - Contains connector information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n6. `dim_property` - Contains property details with columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME.\n7. `dim_segment` - Contains segment definitions with columns: DEFINITION, SEGMENTID, UPDATEDTIME.\n8. `dim_target` - Contains target information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n\nAll schemas are stored in Parquet files in the `data/DBSnapshot/` directory.",
+        "final_token_estimate": 221
+      },
+      "stage": "final response",
+      "technique": "LLM-owned direct concept answer",
+      "timestamp": "2026-06-01T09:35:46.522160+00:00"
+    }
+  ],
+  "diagnostics": {
+    "model_sweep_run_id": "qwen3_8b",
+    "pioneer_model": "Qwen3 8B",
+    "pioneer_model_id": "[REDACTED]",
+    "pioneer_model_sweep": true
+  },
+  "domain_type": "CONCEPTUAL",
+  "errors": [],
+  "estimated_tokens": 1035,
+  "execution_time": 0.0,
+  "final_answer": "You have the following schemas available:\n\n1. `br_campaign_segment` - Contains campaign-segment relationships with columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT.\n2. `dim_blueprint` - Contains blueprint definitions with columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID.\n3. `dim_campaign` - Contains campaign metadata with columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE.\n4. `dim_collection` - Contains collection details with columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME.\n5. `dim_connector` - Contains connector information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n6. `dim_property` - Contains property details with columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME.\n7. `dim_segment` - Contains segment definitions with columns: DEFINITION, SEGMENTID, UPDATEDTIME.\n8. `dim_target` - Contains target information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n\nAll schemas are stored in Parquet files in the `data/DBSnapshot/` directory.",
+  "model_sweep_run_id": "qwen3_8b",
+  "original_query": "What schemas do I have?",
+  "pioneer_model": "Qwen3 8B",
+  "pioneer_model_id": "[REDACTED]",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "pioneer_sweep_qwen3_8b_ambiguous_user_schemas",
+  "route_type": "LLM_DIRECT",
+  "runtime": 0.005211750045418739,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "estimated_tokens": 947,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/v2_non_gpt_model_benchmark/runs/qwen3_8b/outputs/focused_smoke/runs/qwen3_8b/ambiguous_user_schemas/metadata.json",
+      "prompt_tokens": 1454
+    },
+    {
+      "aggregation_instruction": "",
+      "api_request": null,
+      "backend_unavailable": false,
+      "direct_answer": "You have the following schemas available:\n\n1. `br_campaign_segment` - Contains campaign-segment relationships with columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT.\n2. `dim_blueprint` - Contains blueprint definitions with columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID.\n3. `dim_campaign` - Contains campaign metadata with columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE.\n4. `dim_collection` - Contains collection details with columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME.\n5. `dim_connector` - Contains connector information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n6. `dim_property` - Contains property details with columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME.\n7. `dim_segment` - Contains segment definitions with columns: DEFINITION, SEGMENTID, UPDATEDTIME.\n8. `dim_target` - Contains target information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\n\nAll schemas are stored in Parquet files in the `data/DBSnapshot/` directory.",
+      "evidence_order": "NO_EVIDENCE",
+      "kind": "llm_unified_planner",
+      "model": "[REDACTED]",
+      "parse_error": false,
+      "passes": [],
+      "provider": "[REDACTED]",
+      "raw_preview": {
+        "preview": "\"{\\\"route\\\": \\\"LLM_DIRECT\\\", \\\"direct_answer\\\": \\\"You have the following schemas available:\\\\n\\\\n1. `br_campaign_segment` - Contains campaign-segment relationships with columns: SEGMENTID, CAMPAIGNID, LABELSSEGMENT.\\\\n2. `dim_blueprint` - Contains blueprint definitions with columns: BLUEPRINTTYPE, EXTENDS, UPDATEDCLIENTID.\\\\n3. `dim_campaign` - Contains campaign metadata with columns: _ACP_SYSTEM_METADATA, UPDATEDTIME, STARTDATE.\\\\n4. `dim_collection` - Contains collection details with columns: ISIDENTITYENABLED, ROWCOUNT, UPDATEDTIME.\\\\n5. `dim_connector` - Contains connector information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\\\\n6. `dim_property` - Contains property details with columns: PROPERTY, ALTDISPLAYDESC, UPDATEDTIME.\\\\n7. `dim_segment` - Contains segment definitions with columns: DEFINITION, SEGMENTID, UPDATEDTIME.\\\\n8. `dim_target` - Contains target information with columns: DATAFLOWNAME, INTERVAL, UPDATEDTIME.\\\\n\\\\nAll schemas are stored in Parquet files in the `...",
+        "truncated": true
+      },
+      "reason": "",
+      "route": "LLM_DIRECT",
+      "sql": null
+    },
+    {
+      "bypass_reason": "llm_owned_direct_no_evidence_required",
+      "evidence_bus_built": false,
+      "evidence_pipeline_bypassed": true,
+      "kind": "evidence_boundary",
+      "llm_evidence_order": "NO_EVIDENCE",
+      "llm_route": "LLM_DIRECT",
+      "post_evidence_answer_router_ran": false,
+      "pre_evidence_route": "LLM_DIRECT"
+    },
+    {
+      "blocked_claims": [],
+      "kind": "safe_direct_answer_verifier",
+      "ok": true
+    }
+  ],
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "timings": {},
+  "tool_call_count": 0
+}

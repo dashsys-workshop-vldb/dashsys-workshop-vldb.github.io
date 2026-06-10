@@ -1,0 +1,43 @@
+{
+  "report_type": "evidence_answer_synthesis_preflight_blocker",
+  "status": "blocked",
+  "date": "2026-05-11",
+  "implementation_started": false,
+  "source_files_modified_by_this_pass": false,
+  "reason": "Protected tracked deletions are present under outputs/final_submission/** and outputs/source_code/**. The evidence-aware answer synthesis pass must not proceed while these protected artifacts are deleted.",
+  "protected_deletions": {
+    "final_submission_deletion_count": 3,
+    "final_submission_deletions": [
+      "outputs/final_submission/query_045/filled_system_prompt.txt",
+      "outputs/final_submission/query_045/metadata.json",
+      "outputs/final_submission/query_045/trajectory.json"
+    ],
+    "source_code_deletion_count": 74,
+    "source_code_deletion_examples": [
+      "outputs/source_code/dashagent/__init__.py",
+      "outputs/source_code/dashagent/agent_tools.py",
+      "outputs/source_code/dashagent/agents_sdk_adapter.py",
+      "outputs/source_code/dashagent/answer_claims.py",
+      "outputs/source_code/dashagent/answer_diagnostics.py",
+      "outputs/source_code/dashagent/answer_intent.py",
+      "outputs/source_code/dashagent/answer_reranker.py",
+      "outputs/source_code/dashagent/answer_shape.py",
+      "outputs/source_code/dashagent/answer_style_miner.py",
+      "outputs/source_code/dashagent/answer_synthesizer.py"
+    ],
+    "source_code_examples_truncated": true
+  },
+  "commands_run": [
+    "git status --short"
+  ],
+  "blocked_commands_not_run": [
+    "python3 -m pytest -q",
+    "python3 scripts/run_evidence_usage_audit.py",
+    "python3 scripts/run_evidence_aware_answer_rewrite_trial.py",
+    "python3 scripts/run_sql_evidence_usage_audit.py",
+    "python3 scripts/run_confidence_calibration_audit.py",
+    "python3 scripts/run_token_efficiency_audit.py"
+  ],
+  "recommended_fix": "Restore or regenerate the protected deleted artifacts first, then rerun validation before starting the evidence-aware answer synthesis pass.",
+  "residual_risk": "Continuing now could mix a new answer-only experiment with stale or missing final-submission/source-code artifacts."
+}

@@ -1,0 +1,33 @@
+# Accuracy And Bottleneck Summary
+
+- Starting score: `0.6491`
+- Best isolated score: `0.6558`
+- 0.70 target reached: `False`
+- 0.75 target reached: `False`
+- Answer-quality bottleneck: `True`
+- Dry-run API limitation: `True`
+- Live Adobe API readiness: `pass`; infrastructure validation only: `True`
+- Post-live robustness gate: `promote_efficiency_recovery_fix`; strict score `0.6572`; generated diagnostic pass `250`/`250`
+- Generalization risk: template dependency `0.1634`; template miss rate `0.6488`; controller trial `backend_answer_only_shadow_candidate`
+- Supportable rewrite status: `safe_for_autonomous_packaged_trial`
+- Endpoint tie-break status: `keep_shadow_only`
+- AST canary status: `keep_shadow_only`
+- LLM semantic routing helper: `do_not_promote` (complete)
+- Semantic router isolated trial: `complete`; promotion decision: `do_not_promote`
+- Decision-stage feedback-loop status: `candidate_not_viable_after_feedback_loops`
+- Evidence-aware answer synthesis: `keep_trial_only`; answer-only invariant enforced: `True`
+- Score-focused core path trials: `keep_trial_only`; best strict delta `0.0`; runtime change applied `False`
+- Comprehensive failure analysis: `wait_for_adobe_access`; rule candidates `5`; runtime change applied `False`
+- Type-specific deterministic rules: `speed_only_candidate`; candidate families `8`; runtime change applied `False`
+- SDK tool-calling optimization: `speed_only_shadow_candidates_no_promotion`; best projected strict delta `0.0`; runtime change applied `False`
+- Correctness + efficiency evaluation: `speed_only_patch_needs_validation`; best candidate `compact_tool_schema`; runtime change applied `False`
+- SDK tool-calling efficiency promotion: `promoted_speed_only_patch`; promotion accepted `True`; runtime change applied `True`
+- Core tool policy optimizer: `promoted_core_tool_efficiency_policy`; strict after projected `0.6553`; runtime change expected `True`
+- Weak-model scaffold: `weak_harness_balanced_improved_keep_shadow`; bounded harness trial improved SQL with answer safety (`limit10 strict 0.2758`, SQL `0.18`, API `0.8517`, answer `0.2367`, unsupported claims `0`), and full public/dev `weak_harness_answer_and_efficiency_v2` improved strict (`0.2981`) while preserving SQL lift (`0.12`), API non-regression (`0.6241`), unsupported claims `0`, and token/runtime cost (`2617.0` / `1.1085`); answer remains slightly below the prior weak scaffold (`-0.0007`) and is accepted only as negligible with strict improvement; shadow-only `True`
+
+## Why Changes Remain Shadow-Only
+
+- The 0.70 and 0.75 targets were not reached safely.
+- Live Adobe API readiness is now the primary API-path infrastructure target; dry-run wording remains fallback polish.
+- Endpoint/schema and AST changes are report-only or shadow-only unless strict gates improve.
+- The LLM semantic routing helper is default-off and remains shadow-only unless a later strict/safety gate promotes it.

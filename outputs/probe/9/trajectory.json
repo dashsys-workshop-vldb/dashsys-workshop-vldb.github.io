@@ -1,0 +1,215 @@
+{
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 1882,
+  "final_answer": "The 'weRetail: Customer Actions' schema, has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. Live api verification was not executed because adobe credentials are unavailable.",
+  "original_query": "Provide more details for the schema 'weRetail: Customer Actions'",
+  "query_id": "probe_9",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0057895409991033375,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "UNKNOWN"
+          ],
+          "examples": [],
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List/count Real-Time Customer Profile merge policies."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "STATUS_MONITORING"
+          ],
+          "examples": [],
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List segment evaluation jobs and statuses."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_collection",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "estimated_tokens": 3637,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe/9/metadata.json"
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then API only for live/platform state or status verification.",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": false,
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3",
+          "url": null,
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "filter": "name==weRetail: Customer Actions",
+            "limit": "5"
+          },
+          "purpose": "API parameter template: schema_by_name.",
+          "sql": null,
+          "url": "/schemas",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "original_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3",
+        "row_count": 1,
+        "rows": [
+          {
+            "CLASS": "https://ns.adobe.com/xdm/context/experienceevent",
+            "ISPROFILEENABLED": true,
+            "NAME": "weRetail: Customer Actions",
+            "blueprint_id": "d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f",
+            "collection_count": 1,
+            "property_count": 6,
+            "required_fields": "[]",
+            "updated_time": "2026-03-29T07:51:00.000+00:00"
+          }
+        ],
+        "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
+      },
+      "sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "name==weRetail: Customer Actions",
+        "limit": "5"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/schemas",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "name==weRetail: Customer Actions",
+          "limit": "5"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/schemas"
+      },
+      "url": "/schemas",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tool_call_count": 2
+}

@@ -1,0 +1,343 @@
+flowchart TD
+  %% Complete local-only data workflow diagram based on repository inspection.
+
+  subgraph S1["Input and Strategy"]
+    UQ(["User query<br/>benchmark example<br/>harness input"]):::input
+    DATAJSON[("data/data.json<br/>EvalHarness.load_examples")]:::store
+    CFG["Config.from_env<br/>runtime flags and env paths"]:::process
+    STRAT{"Selected strategy?"}:::decision
+    DEFAULT["PACKAGED_DEFAULT_STRATEGY<br/>SQL_FIRST_API_VERIFY"]:::process
+    SFAV["SQL_FIRST_API_VERIFY<br/>SQL-first evidence path"]:::process
+    HYBRID["SQL_FIRST_API_VERIFY_HYBRID_ANSWER<br/>SQL-first, then answer-layer experiment"]:::experiment
+    CONCISE["SQL_FIRST_API_VERIFY_CONCISE_LLM_REWRITE<br/>SQL-first, then concise rewrite experiment"]:::experiment
+    ROBUST["ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2<br/>research generalized routing and planner"]:::experiment
+    LEAK["runtime_leakage_guard<br/>score_provenance_guard<br/>hardcode_fake_score_guard"]:::guard
+    DBSTORE[("data/DBSnapshot/*.parquet<br/>local snapshot scope")]:::store
+    APIENV[("Adobe env vars<br/>redacted presence only")]:::store
+  end
+
+  subgraph S2["Pre-Evidence Routing"]
+    ROUTE0["prompt_router.route_prompt<br/>PromptRouteDecision"]:::process
+    DIRECT0{"mode == LLM_DIRECT?"}:::decision
+    OBJ["extract_objective_prompt_features<br/>ObjectivePromptFeatures"]:::process
+    SEMPARSE["parse_prompt_semantics<br/>SemanticParse"]:::process
+    SEMINTENT["classify_semantic_intent<br/>SemanticIntentDecision"]:::process
+    ANTIHALL["RoutingAntiHallucinationGate<br/>validate route support"]:::guard
+    SAFETY["NoToolSafetyVerifier<br/>blocks concrete data no-tool"]:::guard
+    PROGRESS["ProgressiveEvidencePolicy<br/>LLM_DIRECT / LLM_SAFE_DIRECT<br/>SAFE_API_PROBE / EVIDENCE_PIPELINE"]:::process
+    LADDER["semantic_route_decision_ladder<br/>combined pre-evidence decision"]:::process
+    FIXED{"Fixed SQL-first<br/>strategy?"}:::decision
+    BYPASS{"should_bypass_evidence_for_llm_direct<br/>true?"}:::decision
+    SAFEGET{"SAFE_API_PROBE<br/>selected?"}:::decision
+    DATAREQ{"Data, mixed, ambiguous,<br/>live-state, SQL/API signal?"}:::decision
+    RULEDIRECT["Rule: high-confidence pure general/concept/meta<br/>-> LLM_DIRECT or LLM_SAFE_DIRECT<br/>-> final concept answer<br/>-> no EvidenceBus"]:::rule
+    RULEEVID["Rule: data / mixed / ambiguous / live-state / SQL/API signal<br/>-> evidence pipeline<br/>-> EvidenceBus<br/>-> AnswerSlots<br/>-> grounded answer"]:::rule
+  end
+
+  subgraph S3["LLM Direct Bypass"]
+    DIRECTFALLBACK["deterministic no-key direct fallback<br/>for prompt_router LLM_DIRECT"]:::process
+    SEMDIRECT["_return_semantic_no_tool_applied_result<br/>semantic no-tool applied trial"]:::process
+    CONCEPTANS["_conceptual_no_tool_answer<br/>or safe concept fallback"]:::process
+    SAFEVERIFY["validate_llm_safe_direct_answer<br/>safe-direct verifier"]:::guard
+    NOTOOLS["No SQL<br/>No API<br/>No EvidenceBus<br/>No AnswerSlots<br/>No post-evidence answer router"]:::guard
+    DIRECTOUT(["Final concept/meta answer<br/>trajectory.json only"]):::output
+  end
+
+  subgraph S4["Evidence Acquisition"]
+    NORMALIZE["query_normalizer.normalize_query"]:::process
+    TOKENS["query_tokens.extract_query_tokens"]:::process
+    ROUTER["QueryRouter.route"]:::process
+    ANALYSIS["analyze_query<br/>QueryAnalysis"]:::process
+    RELEVANCE["relevance_scorer<br/>tables, APIs, lookup paths"]:::process
+    VALUES["value_retrieval<br/>optional entity/value matches"]:::process
+    LOOKUP["lookup_path_predictor<br/>optional lookup path"]:::process
+    META["MetadataSelector.save<br/>metadata.json"]:::process
+    PROMPT["render_system_prompt<br/>filled_system_prompt.txt"]:::process
+    SCHEMA[("SchemaIndex<br/>tables, joins, ID hints")]:::store
+    CATALOG[("EndpointCatalog<br/>allowed Adobe endpoints")]:::store
+    PLANNER["StrategyPlanner.create_plan"]:::process
+    SQLFIRST["SQL_FIRST_API_VERIFY planner<br/>SQL first, API verification if policy keeps it"]:::process
+    V2PLAN["research_generalized_v2 planner<br/>progressive evidence plan"]:::experiment
+    ENSEMBLE["plan_ensemble.select_plan<br/>one selected plan only"]:::process
+    OPT["PlanOptimizer<br/>dedupe, unresolved-path blocking,<br/>call_budget"]:::process
+    SQLSTEP{"SQL step?"}:::decision
+    SQLVAL["SQLValidator<br/>read-only schema/AST validation"]:::guard
+    DUCK["DuckDBDatabase.execute_sql<br/>read-only DuckDB views"]:::process
+    SQLERR{"SQL error<br/>or zero rows?"}:::decision
+    APIDECIDE{"API step kept?"}:::decision
+    POSTSQL["post_sql_api_decision<br/>deterministic/LLM-advice trial gates"]:::experiment
+    FWD["EvidenceBus.forward_to_step<br/>inject discovered IDs if available"]:::process
+    APIVAL["APIValidator<br/>EndpointCatalog, params, path placeholders"]:::guard
+    APICLIENT["AdobeAPIClient.call_api<br/>live REST or dry-run fallback"]:::process
+    LIVE{"Credentials and live call<br/>available?"}:::decision
+    PARSER["api_response_parser.normalize_api_response<br/>parsed_evidence"]:::process
+    APISTATE{"API evidence state?"}:::decision
+    LOCALNOTE["Scope note:<br/>SQL evidence is local snapshot"]:::rule
+    LIVENOTE["Scope note:<br/>API evidence is live Adobe platform or unavailable"]:::rule
+    SAFEPROBE["_return_safe_api_probe_result<br/>one safe catalog GET"]:::experiment
+  end
+
+  subgraph S5["Evidence Normalization"]
+    BUS["EvidenceBus()"]:::store
+    OBS_SQL["EvidenceBus.observe_sql<br/>rows, names, IDs, counts,<br/>statuses, timestamps"]:::process
+    OBS_API["EvidenceBus.observe_api<br/>items, IDs, names, statuses,<br/>counts, errors, pagination,<br/>evidence_state"]:::process
+    QUALITY["classify_evidence_quality<br/>SQL_DIRECT_ANSWER, SQL_ZERO_ROWS,<br/>API_ERROR, API_LIVE_EMPTY"]:::process
+    DISTINCTION["Preserve distinctions:<br/>API_ERROR != no data<br/>LIVE_EMPTY = scoped empty<br/>dry_run_unavailable != live evidence"]:::guard
+    SLOTS["extract_answer_slots<br/>AnswerSlots"]:::store
+    COUNTS["count slots"]:::process
+    LISTS["list/entity slots"]:::process
+    DATES["date/timestamp slots"]:::process
+    STATUSES["status slots"]:::process
+    RELS["relationship/entity ID slots"]:::process
+    CAVEATS["error/caveat slots<br/>dry-run, API error, live empty"]:::process
+  end
+
+  subgraph S6["Post-Evidence Answer Grounding"]
+    LEGACY["synthesize_answer_with_diagnostics<br/>legacy safe renderer path"]:::process
+    RERANK["answer_reranker.select_best_answer<br/>legacy verifier/reranker"]:::process
+    GROUNDED["build_evidence_grounded_answer<br/>answer_slot_renderer.render_answer_slots"]:::process
+    BROAD["classify_broad_question<br/>BroadQuestionClassifier"]:::process
+    MODE["route_answer_intent<br/>AnswerIntentRouter"]:::process
+    MODEDEC{"Post-evidence<br/>answer mode?"}:::decision
+    COUNT["COUNT"]:::process
+    LIST["LIST"]:::process
+    STATUS["STATUS"]:::process
+    DATE["DATE"]:::process
+    RELATION["RELATIONSHIP"]:::process
+    CONCEPT["CONCEPT"]:::process
+    MIXED["MIXED"]:::process
+    ERRORC["ERROR_CAVEAT"]:::process
+    UNKNOWN["UNKNOWN"]:::process
+    CANON["canonical_data_renderer.render_canonical_data_answer<br/>gold-style canonical rendering flag"]:::process
+    LLMCONCEPT["generate_llm_concept_answer<br/>LLMConceptAnswerGenerator"]:::experiment
+    HYBRIDCOMP["compose_hybrid_answer<br/>HybridMixedAnswerComposer"]:::experiment
+    LLMGROUND["generate_evidence_grounded_llm_answer<br/>optional LLM evidence-grounded candidate"]:::experiment
+    CONCISEREWRITE["concise_llm_answer_rewriter<br/>ConciseLLMRewrite trial"]:::experiment
+    CANDIDATES["Candidate answers:<br/>LEGACY_SAFE_RENDERER<br/>HYBRID_ANSWER<br/>LLM_EVIDENCE_GROUNDED<br/>DETERMINISTIC_FALLBACK"]:::store
+    POSTRULE["PostEvidenceAnswerModeRouter rule:<br/>runs only after evidence exists;<br/>classifies answer composition mode,<br/>not whether to gather evidence"]:::rule
+  end
+
+  subgraph S7["Verification and Selection"]
+    CLAIMS["extract_final_answer_claims<br/>COUNT, DATE, STATUS, ID, ENTITY,<br/>RELATIONSHIP, EXISTENCE"]:::process
+    FACTS["build_allowed_fact_index<br/>EvidenceBus + AnswerSlots + caveats"]:::store
+    MATCH["match_final_answer_claims"]:::process
+    FINALVER["verify_evidence_grounded_final_answer<br/>FinalAnswerVerifier"]:::guard
+    LEGACYVER["answer_verifier.verify_answer<br/>legacy AnswerSlots checks"]:::guard
+    SAFETY2["Safety checks:<br/>unsupported claims = 0<br/>API_ERROR not no-data<br/>LIVE_EMPTY not global absence<br/>local SQL not live/current platform"]:::guard
+    SELECT["select_answer_candidate<br/>AnswerCandidateSelector"]:::process
+    CONCISESEL["select_concise_rewrite<br/>only if exact fact card verifies"]:::experiment
+    FALLBACK{"Best candidate verified?"}:::decision
+    LEGACYFB["Fallback to legacy safe answer<br/>or deterministic fallback"]:::process
+    FINAL(["Final answer"]):::output
+  end
+
+  subgraph S8["Diagnostics and Reports"]
+    TRAJ["TrajectoryLogger<br/>steps, checkpoints, timings,<br/>tool counts, redacted previews"]:::process
+    OUTFILES[("Per-query outputs:<br/>metadata.json<br/>filled_system_prompt.txt<br/>trajectory.json")]:::store
+    EVAL["EvalHarness.run<br/>run_dev_eval.py"]:::process
+    STRICT[("outputs/eval_results_strict.json<br/>strategy_comparison_strict.md")]:::store
+    HIDDEN["run_hidden_style_eval.py<br/>hidden-style diagnostic"]:::process
+    LIVEGUARD["live_api_guard<br/>blocks full live runs until safe GET live_success"]:::guard
+    LIVEREPORTS[("outputs/reports/live_*<br/>Adobe readiness and blockers")]:::store
+    SCOREAUDIT["audit_score_provenance.py"]:::process
+    HARDCODE["audit_hardcoded_runtime_and_score_paths.py"]:::process
+    SDK["generate_sdk_usage_audit.py<br/>runtime_llm_direct_http_hits = 0"]:::process
+    GATE["run_integrated_robustness_gate.py"]:::process
+    DASH["generate_unified_robustness_diagnostics_dashboard.py"]:::process
+    VIZ["generate_project_mermaid_visualizations.py<br/>generate_full_project_dataflow_svg.py"]:::process
+    REPORTS[("outputs/reports/*.md/json<br/>local diagnostics and gates")]:::store
+    PACKAGE["package_submission.py<br/>package_query_outputs.py"]:::process
+    READY["check_submission_ready.py<br/>default strategy and secret scan"]:::guard
+    FINALSUB[("outputs/final_submission/<br/>packaged metadata, prompt, trajectory,<br/>source_code.zip")]:::store
+  end
+
+  UQ --> CFG
+  DATAJSON --> UQ
+  CFG --> STRAT
+  DEFAULT --> STRAT
+  STRAT -->|packaged default| SFAV
+  STRAT -->|explicit trial| HYBRID
+  STRAT -->|explicit trial| CONCISE
+  STRAT -->|explicit research trial| ROBUST
+  CFG --> LEAK
+  DBSTORE --> SCHEMA
+  APIENV --> APICLIENT
+
+  SFAV --> ROUTE0
+  HYBRID --> ROUTE0
+  CONCISE --> ROUTE0
+  ROBUST --> ROUTE0
+  LEAK --> ROUTE0
+
+  ROUTE0 --> DIRECT0
+  DIRECT0 -->|yes| DIRECTFALLBACK
+  DIRECT0 -->|no| OBJ
+  ROBUST -. enables .-> OBJ
+  OBJ --> SEMPARSE
+  SEMPARSE --> SEMINTENT
+  SEMINTENT --> ANTIHALL
+  ANTIHALL --> SAFETY
+  SAFETY --> PROGRESS
+  PROGRESS --> LADDER
+  LADDER --> FIXED
+  FIXED -->|yes: SQL_FIRST family| DATAREQ
+  FIXED -->|no: robust/research trial| BYPASS
+  BYPASS -->|yes| SEMDIRECT
+  BYPASS -->|no| SAFEGET
+  SAFEGET -->|yes| SAFEPROBE
+  SAFEGET -->|no| DATAREQ
+  DATAREQ -->|yes| NORMALIZE
+  DATAREQ -->|no but uncertain| NORMALIZE
+  RULEDIRECT -. documents .-> BYPASS
+  RULEEVID -. documents .-> DATAREQ
+
+  DIRECTFALLBACK --> NOTOOLS
+  SEMDIRECT --> CONCEPTANS
+  CONCEPTANS --> SAFEVERIFY
+  SAFEVERIFY --> NOTOOLS
+  NOTOOLS --> DIRECTOUT
+  DIRECTOUT --> TRAJ
+
+  SAFEPROBE --> APIVAL
+  NORMALIZE --> TOKENS
+  TOKENS --> ROUTER
+  ROUTER --> ANALYSIS
+  ANALYSIS --> RELEVANCE
+  RELEVANCE --> VALUES
+  VALUES --> LOOKUP
+  LOOKUP --> META
+  META --> PROMPT
+  SCHEMA --> ANALYSIS
+  CATALOG --> ANALYSIS
+  PROMPT --> PLANNER
+  PLANNER -->|SQL_FIRST_API_VERIFY family| SQLFIRST
+  PLANNER -->|ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2| V2PLAN
+  SQLFIRST --> ENSEMBLE
+  V2PLAN --> OPT
+  ENSEMBLE --> OPT
+  OPT --> SQLSTEP
+  SQLSTEP -->|yes| SQLVAL
+  SQLVAL -->|ok| DUCK
+  SQLVAL -->|blocked| SQLERR
+  DUCK --> SQLERR
+  SQLERR -->|rows or count| OBS_SQL
+  SQLERR -->|error or zero rows| OBS_SQL
+  SQLSTEP -->|no / after SQL| APIDECIDE
+  OBS_SQL --> BUS
+  OBS_SQL --> LOCALNOTE
+  SQLERR --> APIDECIDE
+  APIDECIDE -->|kept| POSTSQL
+  APIDECIDE -->|skipped by policy| QUALITY
+  POSTSQL -->|CALL_API or CAVEAT_ONLY| FWD
+  POSTSQL -->|SKIP_API| QUALITY
+  FWD --> APIVAL
+  APIVAL -->|ok| APICLIENT
+  APIVAL -->|blocked| OBS_API
+  APICLIENT --> LIVE
+  LIVE -->|live response| PARSER
+  LIVE -->|dry-run / credentials unavailable| PARSER
+  PARSER --> APISTATE
+  APISTATE -->|live_success| OBS_API
+  APISTATE -->|live_empty| OBS_API
+  APISTATE -->|api_error| OBS_API
+  APISTATE -->|dry_run_unavailable| OBS_API
+  OBS_API --> BUS
+  OBS_API --> LIVENOTE
+
+  BUS --> QUALITY
+  OBS_SQL --> QUALITY
+  OBS_API --> QUALITY
+  QUALITY --> DISTINCTION
+  DISTINCTION --> SLOTS
+  SLOTS --> COUNTS
+  SLOTS --> LISTS
+  SLOTS --> DATES
+  SLOTS --> STATUSES
+  SLOTS --> RELS
+  SLOTS --> CAVEATS
+
+  SLOTS --> LEGACY
+  LEGACY --> RERANK
+  SLOTS --> GROUNDED
+  QUALITY --> GROUNDED
+  SLOTS --> BROAD
+  BROAD --> MODE
+  MODE --> MODEDEC
+  MODEDEC -->|COUNT| COUNT
+  MODEDEC -->|LIST| LIST
+  MODEDEC -->|STATUS| STATUS
+  MODEDEC -->|DATE| DATE
+  MODEDEC -->|RELATIONSHIP| RELATION
+  MODEDEC -->|CONCEPT| CONCEPT
+  MODEDEC -->|MIXED| MIXED
+  MODEDEC -->|ERROR_CAVEAT| ERRORC
+  MODEDEC -->|UNKNOWN| UNKNOWN
+  COUNT --> CANON
+  LIST --> CANON
+  STATUS --> CANON
+  DATE --> CANON
+  RELATION --> CANON
+  ERRORC --> CANON
+  CONCEPT --> LLMCONCEPT
+  MIXED --> HYBRIDCOMP
+  UNKNOWN --> RERANK
+  GROUNDED --> CANDIDATES
+  RERANK --> CANDIDATES
+  CANON --> CANDIDATES
+  LLMCONCEPT --> CANDIDATES
+  HYBRIDCOMP --> CANDIDATES
+  LLMGROUND --> CANDIDATES
+  CONCISEREWRITE --> CANDIDATES
+  HYBRID -. enables .-> BROAD
+  CONCISE -. enables .-> CONCISEREWRITE
+  POSTRULE -. documents .-> MODE
+
+  CANDIDATES --> CLAIMS
+  SLOTS --> FACTS
+  BUS --> FACTS
+  QUALITY --> FACTS
+  CLAIMS --> MATCH
+  FACTS --> MATCH
+  MATCH --> FINALVER
+  RERANK --> LEGACYVER
+  FINALVER --> SAFETY2
+  LEGACYVER --> SAFETY2
+  SAFETY2 --> SELECT
+  SELECT --> CONCISESEL
+  CONCISESEL --> FALLBACK
+  FALLBACK -->|yes| FINAL
+  FALLBACK -->|no| LEGACYFB
+  LEGACYFB --> FINAL
+
+  FINAL --> TRAJ
+  TRAJ --> OUTFILES
+  OUTFILES --> EVAL
+  EVAL --> STRICT
+  EVAL --> HIDDEN
+  EVAL --> LIVEGUARD
+  LIVEGUARD --> LIVEREPORTS
+  TRAJ --> SCOREAUDIT
+  TRAJ --> HARDCODE
+  TRAJ --> SDK
+  STRICT --> GATE
+  HIDDEN --> GATE
+  LIVEREPORTS --> GATE
+  SCOREAUDIT --> DASH
+  HARDCODE --> DASH
+  SDK --> DASH
+  GATE --> REPORTS
+  DASH --> REPORTS
+  VIZ --> REPORTS
+  OUTFILES --> PACKAGE
+  REPORTS --> READY
+  PACKAGE --> READY
+  READY --> FINALSUB
+
+  classDef input fill:#eaf3ff,stroke:#2563eb,color:#111827;
+  classDef process fill:#f8fafc,stroke:#475569,color:#111827;
+  classDef decision fill:#fff7ed,stroke:#ea580c,color:#111827;
+  classDef store fill:#ecfdf5,stroke:#16a34a,color:#111827;
+  classDef output fill:#f5f3ff,stroke:#7c3aed,color:#111827;
+  classDef guard fill:#fee2e2,stroke:#dc2626,color:#111827;
+  classDef experiment fill:#eef2ff,stroke:#4f46e5,color:#111827;
+  classDef rule fill:#fef9c3,stroke:#ca8a04,color:#111827;

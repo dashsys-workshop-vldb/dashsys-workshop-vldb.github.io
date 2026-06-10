@@ -1,0 +1,70 @@
+{
+  "deterministic_rules": [
+    "If route is SQL-answerable and API is optional while structured live_success_count=0, expose execute_sql only.",
+    "If route is API_ONLY or API_REQUIRED, keep call_api available; never strip required API evidence.",
+    "If exactly one SDK tool is exposed, set parallel_tool_calls=false where the provider SDK supports it.",
+    "Use compact tool schemas and compact evidence summaries; preserve row count, key fields, API state, and caveats.",
+    "If backend answer is complete and verifier passes, skip LLM rewrite instead of spending another SDK turn."
+  ],
+  "dimensions": {
+    "allowed_tools_policy": "hide_api_when_optional_and_live_success_0",
+    "max_tool_call_budget": "current",
+    "max_turn_budget": "current",
+    "parallel_tool_calls_policy": "always_false_if_supported",
+    "rewrite_gate_policy": "skip_when_backend_complete",
+    "tool_choice_policy": "auto",
+    "tool_result_policy": "compact_evidence_summary",
+    "tool_schema_policy": "compact"
+  },
+  "efficiency": {
+    "end_to_end_time_delta": -0.02,
+    "end_to_end_time_seconds": 0.001,
+    "tool_calls": 1.0,
+    "tool_calls_delta": -2.0,
+    "total_tokens": 624.6,
+    "total_tokens_delta": -210.0,
+    "turns": null,
+    "turns_delta": 0.0,
+    "wall_time_delta": -0.02,
+    "wall_time_seconds": 0.001
+  },
+  "generated_at": "2026-05-19T00:17:07+00:00",
+  "generated_prompt_breakage_count": 0,
+  "implementable_before_adobe_access": true,
+  "no_high_scoring_row_regression": true,
+  "policy_id": "tcp_04f92b35aa59",
+  "recommendation": "promote_candidate",
+  "report_type": "tool_calling_compiled_policy_candidate",
+  "required_evidence_signals": [
+    "deterministic route mode",
+    "api_policy",
+    "requires_database/requires_api flags",
+    "structured live_success_count",
+    "verifier completeness result",
+    "tool result row count/key fields/API state/caveat"
+  ],
+  "requires_adobe_access": false,
+  "runtime_policy_already_matches_candidate": true,
+  "strict_score_after_projected": 0.6553,
+  "strict_score_before": 0.6553,
+  "strict_score_delta_projected": 0.0,
+  "tests_needed": [
+    "SQL-only prompt exposes SQL tool only",
+    "API-required prompt keeps API tool",
+    "optional API hidden when live_success_count=0",
+    "backend-complete answer skips rewrite",
+    "compact result summary preserves row count, key fields, API state, and caveat",
+    "no hardcoded IDs/prompts"
+  ],
+  "triggering_conditions": [
+    "api_policy is optional and structured live_success_count=0",
+    "single-tool deterministic policy disables parallel tool calls where SDK supports it",
+    "rewrite gate depends on verifier completeness and faithfulness, not examples"
+  ],
+  "unsupported_claim_delta": 0,
+  "uses_exact_prompt_strings": false,
+  "uses_generated_labels_as_ground_truth": false,
+  "uses_gold_answers": false,
+  "uses_prompt_ids": false,
+  "uses_query_ids": false
+}

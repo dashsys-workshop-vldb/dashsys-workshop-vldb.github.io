@@ -1,0 +1,153 @@
+{
+  "answer_time": 3.4999684430658817e-06,
+  "api_call_count": 1,
+  "domain_type": "STATUS_MONITORING",
+  "errors": [],
+  "estimated_tokens": 757,
+  "execution_time": 0.0001859589829109609,
+  "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+  "planning_time": 0.00012633396545425057,
+  "preprocessing_time": 0.0005186249618418515,
+  "query_id": "example_032",
+  "route_type": "API_ONLY",
+  "runtime": 0.0012247919803485274,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        },
+        {
+          "id": "audit_events_short",
+          "method": "GET",
+          "path": "/audit/events"
+        },
+        {
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.5,
+      "domain_type": "STATUS_MONITORING",
+      "kind": "route",
+      "reason": "Keyword routing using STATUS_MONITORING:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "export_batch_failed",
+          "export_batch_files"
+        ],
+        "lookup_paths": [
+          "destination_dataflow",
+          "batch"
+        ],
+        "tables": [
+          "dim_connector",
+          "dim_target"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "batch"
+        ],
+        "ids": 1,
+        "statuses": [
+          "failed"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 542,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_04/eval/example_032/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 813
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "batch_export_files",
+          "method": "GET",
+          "purpose": "API parameter template: batch_export_files.",
+          "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 11.8844
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+      },
+      "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 3.4999684430658817e-06,
+    "execution_time": 0.0001859589829109609,
+    "planning_time": 0.00012633396545425057,
+    "preprocessing_time": 0.0005186249618418515
+  },
+  "tool_call_count": 1
+}

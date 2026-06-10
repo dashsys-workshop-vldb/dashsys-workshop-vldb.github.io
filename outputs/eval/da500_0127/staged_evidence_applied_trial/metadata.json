@@ -1,0 +1,109 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Use dim_target/dim_connector evidence first; live API validates platform state.",
+    "api_families": [
+      "destination_flows",
+      "recent_destination_flows",
+      "failed_dataflow_flows"
+    ],
+    "api_mode": "optional",
+    "family": "destination_dataflow",
+    "join_path": [],
+    "required_ids": [
+      "target_id",
+      "dataflow_id"
+    ],
+    "tables": [
+      "dim_target",
+      "dim_connector"
+    ]
+  },
+  "domain_type": "DESTINATION_DATAFLOW",
+  "known_example_patterns": [
+    {
+      "method": "GET",
+      "params": {},
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "destination_dataflow"
+      ]
+    }
+  },
+  "query": "How many dataflow records are in the local snapshot? Use only local snapshot evidence for the operations triage.",
+  "query_id": "da500_0127",
+  "route_type": "SQL_ONLY",
+  "selected_apis": [
+    {
+      "id": "schema_registry_schema",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+    }
+  ],
+  "selected_columns": {
+    "dim_connector": [
+      "DATAFLOWID",
+      "DATAFLOWNAME",
+      "CONNECTIONSPECNAME",
+      "CREATEDTIME",
+      "NAME",
+      "SOURCEACCOUNTNAME",
+      "SOURCEID",
+      "STATE",
+      "UPDATEDTIME",
+      "INTERVAL"
+    ],
+    "dim_target": [
+      "DATAFLOWNAME",
+      "CONNECTIONSPECID",
+      "CREATEDTIME",
+      "NAME",
+      "STATE",
+      "TARGETID",
+      "UPDATEDTIME",
+      "INTERVAL"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "SOURCEID",
+      "left_table": "dim_connector",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SOURCEID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Matching ID-like column name.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_target_property"
+    }
+  ],
+  "selected_tables": [
+    "dim_target",
+    "dim_connector"
+  ],
+  "strategy": "STAGED_EVIDENCE_APPLIED_TRIAL"
+}

@@ -1,0 +1,157 @@
+{
+  "answer_time": 6.332993507385254e-06,
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 727,
+  "execution_time": 0.0002197919529862702,
+  "final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+  "planning_time": 0.00013645802391692996,
+  "preprocessing_time": 0.0005599589785560966,
+  "query_id": "example_021",
+  "route_type": "API_ONLY",
+  "runtime": 0.0013857090380042791,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        },
+        {
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_collection",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "merge_policies",
+          "audit_events"
+        ],
+        "lookup_paths": [
+          "merge_policy",
+          "schema_dataset"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "batch",
+          "merge_policy",
+          "schema_dataset",
+          "segment_audience"
+        ],
+        "field_paths": [
+          "_xdm.context.profile"
+        ],
+        "quoted_entities": [
+          "_xdm.context.profile"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 565,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_02/eval/example_021/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 839
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: blueprint_collection_list+schema_by_name+merge_policies.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "merge_policies",
+          "method": "GET",
+          "params": {
+            "limit": "5"
+          },
+          "purpose": "API parameter template: merge_policies.",
+          "url": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.38
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "5"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/config/mergePolicies",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "5"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
+      },
+      "url": "/data/core/ups/config/mergePolicies",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 6.332993507385254e-06,
+    "execution_time": 0.0002197919529862702,
+    "planning_time": 0.00013645802391692996,
+    "preprocessing_time": 0.0005599589785560966
+  },
+  "tool_call_count": 1
+}

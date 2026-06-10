@@ -1,0 +1,2484 @@
+{
+  "automatic_promotion": false,
+  "controller_system": "LLM_CONTROLLER_OPTIMIZED_AGENT",
+  "diagnostic_only": true,
+  "loss_category_enum": [
+    "answer_scorer_mismatch",
+    "backend_evidence_loss",
+    "controller_helped",
+    "dry_run_caveat_loss",
+    "llm_rewrite_loss",
+    "no_clear_loss",
+    "router_loss",
+    "verifier_loss"
+  ],
+  "official_strict_score_computed": false,
+  "promotion_status": "shadow_only",
+  "report_type": "llm_controller_failure_decomposition",
+  "rows": [
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": null,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.4875,
+        "backend_final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The journey \"Birthday Message\" has not been published, as indicated by a null published_time in the database. Verification through the API could not be completed due to unavailable Adobe credentials.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": false,
+        "rewrite_answer_score_delta_vs_backend": -0.0465,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "When was the journey 'Birthday Message' published?",
+      "query_id": "example_000",
+      "router_decision": {
+        "confidence": 0.88,
+        "deterministic_sql_first_route": "SQL_THEN_API",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: published.",
+        "requires_api": true,
+        "requires_database": true,
+        "route_mode": "SQL_PLUS_API"
+      },
+      "score_breakdown": {
+        "answer_score": 0.441,
+        "api_score": null,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0465,
+          "api_score": "unavailable",
+          "correctness_score": -0.0199,
+          "estimated_tokens": -263.0,
+          "final_score": -0.0216,
+          "runtime": 1.1597,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 652,
+        "runtime": 1.1724,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7033,
+        "strict_final_score": 0.6689,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.545,
+        "backend_final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested inactive journeys status requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.1712,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Give me inactive journeys",
+      "query_id": "example_001",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_THEN_API",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: journey.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3738,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.1712,
+          "api_score": 0.0,
+          "correctness_score": -0.0514,
+          "estimated_tokens": 26.0,
+          "final_score": -0.0661,
+          "runtime": 4.3576,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 932,
+        "runtime": 4.3696,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7721,
+        "strict_final_score": 0.7248,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.4427,
+        "backend_final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested list journeys list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.085,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "List all journeys",
+      "query_id": "example_002",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: journey, list.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3577,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.085,
+          "api_score": 0.0,
+          "correctness_score": -0.0255,
+          "estimated_tokens": 70.0,
+          "final_score": -0.0612,
+          "runtime": 10.5385,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 820,
+        "runtime": 10.5494,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7673,
+        "strict_final_score": 0.7003,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 2,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3559,
+        "backend_final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked.",
+        "backend_used": true,
+        "dry_run_count": 2,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 3
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the evidence provided, there are no segment audiences connected to the destination named 'SMS Opt-In'. The SQL query executed did not return any rows, indicating that no such segment audiences exist in the database. Additionally, live API verification could not be performed due to the unavailability of Adobe credentials, which means that further confirmation through the API could not be conducted.\n\n**Caveat:** Since the API verification was not executed, this result is based solely on the SQL query and may require further validation if Adobe credentials become available for API checks.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": false,
+        "rewrite_answer_score_delta_vs_backend": -0.0463,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "API/platform family keyword(s): file, files.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3096,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0463,
+          "api_score": 0.0,
+          "correctness_score": -0.0139,
+          "estimated_tokens": -760.0,
+          "final_score": -0.0157,
+          "runtime": 2.4444,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 811,
+        "runtime": 2.46,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7529,
+        "strict_final_score": 0.7004,
+        "tool_calls": 3
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": null,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.4492,
+        "backend_final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query did not return any rows indicating failed states. Additionally, the live API verification could not be executed due to unavailable Adobe credentials. Therefore, this response is based on the SQL query results with the caveat that real-time status via API could not be verified.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": false,
+        "rewrite_answer_score_delta_vs_backend": -0.0157,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Show me the IDs of failed dataflow runs",
+      "query_id": "example_004",
+      "router_decision": {
+        "confidence": 0.88,
+        "deterministic_sql_first_route": "SQL_THEN_API",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: failed.",
+        "requires_api": true,
+        "requires_database": true,
+        "route_mode": "SQL_PLUS_API"
+      },
+      "score_breakdown": {
+        "answer_score": 0.4335,
+        "api_score": null,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0157,
+          "api_score": "unavailable",
+          "correctness_score": -0.0067,
+          "estimated_tokens": -158.0,
+          "final_score": -0.0109,
+          "runtime": 1.6456,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 705,
+        "runtime": 1.6581,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7001,
+        "strict_final_score": 0.6637,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.8314,
+        "backend_final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 1.0,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested timestamp or daily value requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.494,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+      "query_id": "example_005",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "SQL_THEN_API",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "API/platform family keyword(s): sandbox.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3374,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.494,
+          "api_score": 0.0,
+          "correctness_score": -0.1482,
+          "estimated_tokens": -306.0,
+          "final_score": -0.1625,
+          "runtime": 5.0384,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 1013,
+        "runtime": 5.0522,
+        "sql_score": 1.0,
+        "strict_correctness": 0.8012,
+        "strict_final_score": 0.7509,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 0.7337,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.4725,
+        "backend_final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 1.0,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The schema dataset count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.3598,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+      "query_id": "example_006",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "SQL_THEN_API",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "API/platform family keyword(s): sandbox.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1127,
+        "api_score": 0.7337,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.3598,
+          "api_score": 0.0,
+          "correctness_score": -0.108,
+          "estimated_tokens": -351.0,
+          "final_score": -0.1093,
+          "runtime": 1.2924,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 722,
+        "runtime": 1.3046,
+        "sql_score": 1.0,
+        "strict_correctness": 0.6539,
+        "strict_final_score": 0.6186,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 0.6175,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.4857,
+        "backend_final_answer": "Based on the evidence provided, no datasets use the schema 'hkg_adls_profile_count_history'. The SQL query returned zero results, and live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the evidence provided, no datasets use the schema 'hkg_adls_profile_count_history'. A SQL query was executed to find any datasets using this schema, but it returned zero results. Additionally, an attempt to verify this information via the API could not be completed due to unavailable Adobe credentials. Therefore, the conclusion is based on the SQL query result with a caveat that API verification was not possible.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.0581,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+      "query_id": "example_007",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "API/platform family keyword(s): file.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.4276,
+        "api_score": 0.6175,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0581,
+          "api_score": 0.0,
+          "correctness_score": -0.0175,
+          "estimated_tokens": -472.0,
+          "final_score": -0.02,
+          "runtime": 1.9398,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 720,
+        "runtime": 1.9532,
+        "sql_score": 0.9,
+        "strict_correctness": 0.6735,
+        "strict_final_score": 0.636,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 0,
+        "api_score": null,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.482,
+        "backend_final_answer": "The field for \"Person: Birthday Today 001\" is person.birthDate. This is the birth date property from the SQL evidence. This field captures when a person was born and is used to identify birthday-related audiences.",
+        "backend_used": true,
+        "dry_run_count": 0,
+        "dry_run_state": "live_or_sql_only",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The field for \"Person: Birthday Today 001\" is `person.birthDate`. This field represents the birth date of a person and is utilized to identify individuals whose birthdays are being celebrated today. \n\n**Note:** This information is based on the local database snapshot and has not been verified via an external API due to the specified routing policy.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.0642,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "show me the field for Person: Birthday Today 001",
+      "query_id": "example_008",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: field, show.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.4178,
+        "api_score": null,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0642,
+          "api_score": "unavailable",
+          "correctness_score": -0.0276,
+          "estimated_tokens": 37.0,
+          "final_score": -0.0338,
+          "runtime": 1.8007,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 676,
+        "runtime": 1.8106,
+        "sql_score": 0.9,
+        "strict_correctness": 0.6933,
+        "strict_final_score": 0.6692,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": null,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.5246,
+        "backend_final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 1.0,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested schema dataset details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.1688,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Provide more details for the schema 'weRetail: Customer Actions'",
+      "query_id": "example_009",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: schema.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3558,
+        "api_score": null,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.1688,
+          "api_score": "unavailable",
+          "correctness_score": -0.0724,
+          "estimated_tokens": -786.0,
+          "final_score": -0.0723,
+          "runtime": 1.9502,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 775,
+        "runtime": 1.9646,
+        "sql_score": 1.0,
+        "strict_correctness": 0.7239,
+        "strict_final_score": 0.6859,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.5456,
+        "backend_final_answer": "Based on the SQL query result, there are 0 XDM Experience Event schemas enabled for profile in your environment.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The schema dataset count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.4392,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+      "query_id": "example_010",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "API/platform family keyword(s): file.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1064,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.4392,
+          "api_score": 0.0,
+          "correctness_score": -0.1318,
+          "estimated_tokens": -314.0,
+          "final_score": -0.1359,
+          "runtime": 2.0322,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 670,
+        "runtime": 2.0451,
+        "sql_score": 0.9,
+        "strict_correctness": 0.6919,
+        "strict_final_score": 0.6545,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3915,
+        "backend_final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The schema dataset count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.2554,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "How many schemas do I have?",
+      "query_id": "example_011",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: how many, schema.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1361,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.2554,
+          "api_score": 0.0,
+          "correctness_score": -0.0766,
+          "estimated_tokens": -102.0,
+          "final_score": -0.0801,
+          "runtime": 1.2837,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 649,
+        "runtime": 1.2944,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7008,
+        "strict_final_score": 0.6661,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.2124,
+        "backend_final_answer": "Based on the SQL evidence, 1 audience(s) match: Gender: Male (ID f6b93428-c021-4058-a1a2-77c277aab564) mapped to amazon-s3. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 1.0,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested audit event list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.118,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+      "query_id": "example_012",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "SQL_THEN_API",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "API/platform family keyword(s): sandbox.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.0944,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.118,
+          "api_score": 0.0,
+          "correctness_score": -0.0354,
+          "estimated_tokens": -305.0,
+          "final_score": -0.0407,
+          "runtime": 2.3334,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 823,
+        "runtime": 2.3474,
+        "sql_score": 1.0,
+        "strict_correctness": 0.7283,
+        "strict_final_score": 0.6886,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1695,
+        "backend_final_answer": "Based on the evidence provided, matching datasets are: hkg_adls_segment_profile_history, hkg_adls_profile_count_history, Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d, Profile Export For Destination - Merge Policy - 22a941a9-e598-45f8-846b-c9a8889f5035, BR_Segment_Destination, DIM_Destination, BR_Namespace_Destination, Segmentdefinition-Snapshot-Export-3405afd1-7c78-4aff-84e6-d2136ffcea93, weRetail: CRM, and weRetail: Customer Actions. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 1.0,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested schema dataset details require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.0839,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Show recent changes in datasets.",
+      "query_id": "example_013",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, show.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.0856,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0839,
+          "api_score": 0.0,
+          "correctness_score": -0.0252,
+          "estimated_tokens": 93.0,
+          "final_score": -0.0466,
+          "runtime": 6.2217,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 1181,
+        "runtime": 6.2365,
+        "sql_score": 1.0,
+        "strict_correctness": 0.7257,
+        "strict_final_score": 0.6701,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.4589,
+        "backend_final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 1,
+        "sql_score": 0.9,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the evidence from the local database, there are no entities that were created by a download process. The SQL query executed did not return any results, indicating that no such entities exist within the current data snapshot. Additionally, live API verification could not be performed due to unavailable Adobe credentials, which means this information is based solely on the local data without external verification.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": false,
+        "rewrite_answer_score_delta_vs_backend": -0.0567,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Show me all entities created by download",
+      "query_id": "example_014",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "SQL_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: show.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.4022,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0567,
+          "api_score": 0.0,
+          "correctness_score": -0.017,
+          "estimated_tokens": -103.0,
+          "final_score": -0.0228,
+          "runtime": 1.9868,
+          "sql_score": 0.0,
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 686,
+        "runtime": 1.9974,
+        "sql_score": 0.9,
+        "strict_correctness": 0.7807,
+        "strict_final_score": 0.7433,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3681,
+        "backend_final_answer": "The tag count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The tag count in this sandbox cannot be determined due to unavailable Adobe credentials, which prevented the execution of the necessary API call for verification.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.0004,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "dry_run_caveat_loss",
+      "query": "How many tags exist in this sandbox?",
+      "query_id": "example_015",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): sandbox, tag, tags.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3677,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0004,
+          "api_score": 0.0,
+          "correctness_score": -0.0001,
+          "estimated_tokens": 64.0,
+          "final_score": -0.0036,
+          "runtime": 0.8712,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 552,
+        "runtime": 0.8816,
+        "sql_score": null,
+        "strict_correctness": 0.6839,
+        "strict_final_score": 0.6638,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3598,
+        "backend_final_answer": "The requested tag list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested list of tags could not be retrieved as Adobe credentials are unavailable, preventing the execution of the necessary API call. Therefore, the tag list cannot be provided at this time.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0086,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "List all tags in this sandbox.",
+      "query_id": "example_016",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): sandbox, tag, tags.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3684,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0086,
+          "api_score": 0.0,
+          "correctness_score": 0.0043,
+          "estimated_tokens": 3.0,
+          "final_score": 0.001,
+          "runtime": 1.0068,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 558,
+        "runtime": 1.0167,
+        "sql_score": null,
+        "strict_correctness": 0.6842,
+        "strict_final_score": 0.6637,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 2,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1246,
+        "backend_final_answer": "Details for the tag named 'Uncategorized' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 2,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 2
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The details for the tag named 'Uncategorized', including its associated tags, could not be retrieved due to unavailable Adobe credentials, which prevented the execution of the necessary API calls. Therefore, no specific tags can be confirmed as belonging to the 'Uncategorized' category at this time.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0048,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "dry_run_caveat_loss",
+      "query": "Which tags belong to the category 'Uncategorized'?",
+      "query_id": "example_017",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): tag, tags.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1294,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0048,
+          "api_score": 0.0,
+          "correctness_score": 0.0024,
+          "estimated_tokens": -191.0,
+          "final_score": -0.0013,
+          "runtime": 1.5849,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 692,
+        "runtime": 1.5977,
+        "sql_score": null,
+        "strict_correctness": 0.5647,
+        "strict_final_score": 0.5286,
+        "tool_calls": 2
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3685,
+        "backend_final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The details for the tag named 'cool' could not be retrieved as Adobe credentials are unavailable, preventing the execution of the required API call. Therefore, information such as the tag ID, category, and associated Adobe organization cannot be provided at this time.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0067,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "dry_run_caveat_loss",
+      "query": "Show me the details of the tag named 'cool'.",
+      "query_id": "example_018",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): tag.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3752,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0067,
+          "api_score": 0.0,
+          "correctness_score": 0.0033,
+          "estimated_tokens": -32.0,
+          "final_score": -0.0019,
+          "runtime": 1.631,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 646,
+        "runtime": 1.6412,
+        "sql_score": null,
+        "strict_correctness": 0.6876,
+        "strict_final_score": 0.6642,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1049,
+        "backend_final_answer": "Merge policy information requires Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the provided backend evidence, the Adobe API call required to list all merge policies in the sandbox could not be executed due to unavailable Adobe credentials. Therefore, no specific merge policies can be listed at this time. The API call was in a dry-run state and did not return any results.\n\nIf you have access to the necessary credentials, you may attempt the API call again to retrieve the merge policies.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0167,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "List all merge policies in this sandbox.",
+      "query_id": "example_019",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1216,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0167,
+          "api_score": 0.0,
+          "correctness_score": 0.0084,
+          "estimated_tokens": 34.0,
+          "final_score": 0.0018,
+          "runtime": 1.8894,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 613,
+        "runtime": 1.8992,
+        "sql_score": null,
+        "strict_correctness": 0.5608,
+        "strict_final_score": 0.5369,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1079,
+        "backend_final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The merge policy count cannot be determined from the available evidence as the required Adobe credentials are unavailable, preventing the execution of the API call needed to retrieve this information.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0061,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "dry_run_caveat_loss",
+      "query": "How many merge policies are configured in this sandbox?",
+      "query_id": "example_020",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): merge policies, sandbox.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.114,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0061,
+          "api_score": 0.0,
+          "correctness_score": 0.003,
+          "estimated_tokens": 54.0,
+          "final_score": -0.0003,
+          "runtime": 0.8644,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 570,
+        "runtime": 0.874,
+        "sql_score": null,
+        "strict_correctness": 0.557,
+        "strict_final_score": 0.5368,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.117,
+        "backend_final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The default merge policy for the schema class '_xdm.context.profile' could not be retrieved as Adobe credentials are unavailable, preventing the execution of the necessary API call. Therefore, live Adobe API evidence required to determine the specific merge policy is not available.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0388,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+      "query_id": "example_021",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): file, merge policy.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1558,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0388,
+          "api_score": 0.0,
+          "correctness_score": 0.0194,
+          "estimated_tokens": -122.0,
+          "final_score": 0.0163,
+          "runtime": 1.2436,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 589,
+        "runtime": 1.2547,
+        "sql_score": null,
+        "strict_correctness": 0.5779,
+        "strict_final_score": 0.5563,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1178,
+        "backend_final_answer": "Segment definition details require live Adobe API evidence with definition names, IDs, and counts. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The segment definition count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0015,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "verifier_loss",
+      "query": "How many segment definitions exist in this sandbox?",
+      "query_id": "example_022",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): sandbox.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1193,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0015,
+          "api_score": 0.0,
+          "correctness_score": 0.0008,
+          "estimated_tokens": -58.0,
+          "final_score": -0.0032,
+          "runtime": 1.3498,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 580,
+        "runtime": 1.3598,
+        "sql_score": null,
+        "strict_correctness": 0.5596,
+        "strict_final_score": 0.5378,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1166,
+        "backend_final_answer": "The requested segment definition list requires live Adobe API evidence with definition names, IDs, and pagination counts. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the provided backend evidence, the segment definition list could not be retrieved as Adobe credentials are unavailable, preventing the execution of the necessary API call. Therefore, there is no current data available to list the segment definitions. This response is based on a dry run where the API call was not actually made due to the lack of credentials.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0123,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "List all segment definitions.",
+      "query_id": "example_023",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: list, segment.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1289,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0123,
+          "api_score": 0.0,
+          "correctness_score": 0.0061,
+          "estimated_tokens": -12.0,
+          "final_score": 0.0004,
+          "runtime": 1.7425,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 612,
+        "runtime": 1.7521,
+        "sql_score": null,
+        "strict_correctness": 0.5645,
+        "strict_final_score": 0.541,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1092,
+        "backend_final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested timestamp or daily value requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.0229,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Which segment definitions were updated most recently?",
+      "query_id": "example_024",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: segment.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.0863,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0229,
+          "api_score": 0.0,
+          "correctness_score": -0.0114,
+          "estimated_tokens": -44.0,
+          "final_score": -0.016,
+          "runtime": 1.4936,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 610,
+        "runtime": 1.5039,
+        "sql_score": null,
+        "strict_correctness": 0.5432,
+        "strict_final_score": 0.5206,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1075,
+        "backend_final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested segment evaluation job list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0098,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "List all segment evaluation jobs.",
+      "query_id": "example_025",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: list, segment.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1173,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0098,
+          "api_score": 0.0,
+          "correctness_score": 0.005,
+          "estimated_tokens": 24.0,
+          "final_score": -0.0043,
+          "runtime": 2.6931,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 655,
+        "runtime": 2.7028,
+        "sql_score": null,
+        "strict_correctness": 0.5586,
+        "strict_final_score": 0.5317,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1186,
+        "backend_final_answer": "The segment evaluation job count requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The segment evaluation job count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": false,
+        "rewrite_answer_score_delta_vs_backend": -0.0007,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "How many segment jobs are currently processing?",
+      "query_id": "example_026",
+      "router_decision": {
+        "confidence": 0.88,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current.",
+        "requires_api": true,
+        "requires_database": true,
+        "route_mode": "SQL_PLUS_API"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1179,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0007,
+          "api_score": 0.0,
+          "correctness_score": -0.0003,
+          "estimated_tokens": -86.0,
+          "final_score": -0.0051,
+          "runtime": 1.6453,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 583,
+        "runtime": 1.6557,
+        "sql_score": null,
+        "strict_correctness": 0.559,
+        "strict_final_score": 0.5361,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.2415,
+        "backend_final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The requested segment evaluation job list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.0023,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "Show all segment jobs with status 'QUEUED'.",
+      "query_id": "example_027",
+      "router_decision": {
+        "confidence": 0.88,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: status.",
+        "requires_api": true,
+        "requires_database": true,
+        "route_mode": "SQL_PLUS_API"
+      },
+      "score_breakdown": {
+        "answer_score": 0.2392,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.0023,
+          "api_score": 0.0,
+          "correctness_score": -0.0012,
+          "estimated_tokens": -114.0,
+          "final_score": -0.0061,
+          "runtime": 1.784,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 603,
+        "runtime": 1.7951,
+        "sql_score": null,
+        "strict_correctness": 0.6196,
+        "strict_final_score": 0.5961,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": true,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": false
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.107,
+        "backend_final_answer": "The requested batch detail is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=100, orderBy=desc:created. Live API unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The most recently created batches could not be listed due to Adobe credentials being unavailable, which prevented the execution of the API call. This response is based on a dry-run and the live API is currently unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0154,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "List the most recently created batches.",
+      "query_id": "example_028",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): batch, batches.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1224,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0154,
+          "api_score": 0.0,
+          "correctness_score": 0.0077,
+          "estimated_tokens": -35.0,
+          "final_score": 0.0039,
+          "runtime": 1.2407,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 595,
+        "runtime": 1.251,
+        "sql_score": null,
+        "strict_correctness": 0.5612,
+        "strict_final_score": 0.5396,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.1141,
+        "backend_final_answer": "success batch count is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=10, status=success. Live API unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The number of batches with a 'success' status is unavailable because the live API call could not be executed due to Adobe credentials being unavailable. This response is based on a dry-run simulation and should be considered as such.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": -0.001,
+        "rewrite_hurt_answer_score": true,
+        "rewrite_improved_answer_score": false,
+        "unsupported_claims": 0
+      },
+      "loss_category": "dry_run_caveat_loss",
+      "query": "How many batches have status 'success'?",
+      "query_id": "example_029",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): batch, batches.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.1131,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": -0.001,
+          "api_score": 0.0,
+          "correctness_score": -0.0005,
+          "estimated_tokens": -33.0,
+          "final_score": -0.0041,
+          "runtime": 1.161,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 593,
+        "runtime": 1.1726,
+        "sql_score": null,
+        "strict_correctness": 0.5565,
+        "strict_final_score": 0.5352,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.2802,
+        "backend_final_answer": "01KP69BPA5ZKFB7HCDYPE4GN6F batch detail is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F. Live API unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The details for batch `01KP69BPA5ZKFB7HCDYPE4GN6F` are currently unavailable due to being in dry-run mode and Adobe credentials not being available, which prevented the API call from executing. The intended endpoint for retrieval was `GET /data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F`.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0156,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
+      "query_id": "example_030",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): batch.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.2958,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0156,
+          "api_score": 0.0,
+          "correctness_score": 0.0078,
+          "estimated_tokens": -6.0,
+          "final_score": 0.001,
+          "runtime": 2.045,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 687,
+        "runtime": 2.0555,
+        "sql_score": null,
+        "strict_correctness": 0.6479,
+        "strict_final_score": 0.6228,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3449,
+        "backend_final_answer": "69de8a0e0cc6102b5d11f01e batch list is unavailable in dry-run mode. Endpoint: GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files. Live API unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The files available for download in batch 69de8a0e0cc6102b5d11f01e cannot be determined due to Adobe credentials being unavailable and the current operation being in dry-run mode, which prevents the execution of the API call. Therefore, the list of files for this batch is unavailable.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0135,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+      "query_id": "example_031",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): batch, file, files.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3584,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0135,
+          "api_score": 0.0,
+          "correctness_score": 0.0068,
+          "estimated_tokens": -1.0,
+          "final_score": 0.0012,
+          "runtime": 1.6769,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 716,
+        "runtime": 1.6877,
+        "sql_score": null,
+        "strict_correctness": 0.6792,
+        "strict_final_score": 0.6551,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.381,
+        "backend_final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "Based on the evidence provided, there are no failed files reported for batch `01KP6MNQ3X71RP6MNH6FHWGHVE`. A SQL query returned zero rows indicating no failed dataflow runs. An attempt to verify this with an API call was not executed due to unavailable Adobe credentials. Therefore, the information is based on database records without additional API confirmation.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.2269,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+      "query_id": "example_032",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): batch, file, files.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.6079,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.2269,
+          "api_score": 0.0,
+          "correctness_score": 0.1134,
+          "estimated_tokens": -68.0,
+          "final_score": 0.1079,
+          "runtime": 1.8523,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 680,
+        "runtime": 1.8628,
+        "sql_score": null,
+        "strict_correctness": 0.8039,
+        "strict_final_score": 0.7796,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": false,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3878,
+        "backend_final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The values for `timeseries.ingestion.dataset.recordsuccess.count` between 2026-03-15 and 2026-03-31 could not be retrieved due to the unavailability of Adobe credentials, which prevented the execution of the required API call. Therefore, no specific counts are available for this period based on the current backend evidence.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.008,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "router_loss",
+      "query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "query_id": "example_033",
+      "router_decision": {
+        "confidence": 0.84,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: count, dataset.",
+        "requires_api": false,
+        "requires_database": true,
+        "route_mode": "LOCAL_DB_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.3958,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.008,
+          "api_score": 0.0,
+          "correctness_score": 0.004,
+          "estimated_tokens": -232.0,
+          "final_score": -0.0008,
+          "runtime": 2.0281,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 808,
+        "runtime": 2.0418,
+        "sql_score": null,
+        "strict_correctness": 0.6979,
+        "strict_final_score": 0.6719,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    },
+    {
+      "backend_tool_result": {
+        "api_calls": 1,
+        "api_score": 1.0,
+        "backend_answer_reason": "Strict answer score from required facts plus capped fuzzy similarity.",
+        "backend_answer_score": 0.3645,
+        "backend_final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+        "backend_used": true,
+        "dry_run_count": 1,
+        "dry_run_state": "dry_run_unavailable",
+        "evidence_available": true,
+        "sql_calls": 0,
+        "sql_score": null,
+        "tool_call_count": 1
+      },
+      "instrumentation_gap": true,
+      "llm_rewrite_result": {
+        "final_controller_answer": "The ingestion record counts and batch success counts for the last 90 days could not be retrieved due to unavailable Adobe credentials, which prevented the execution of the required API calls. Therefore, no specific counts can be provided at this time.",
+        "llm_changed_backend_answer": true,
+        "proposed_llm_final_answer": "unavailable_from_existing_artifact",
+        "removed_useful_evidence_heuristic": true,
+        "rewrite_answer_score_delta_vs_backend": 0.0609,
+        "rewrite_hurt_answer_score": false,
+        "rewrite_improved_answer_score": true,
+        "unsupported_claims": 0
+      },
+      "loss_category": "controller_helped",
+      "query": "Show ingestion record counts and batch success counts for the last 90 days.",
+      "query_id": "example_034",
+      "router_decision": {
+        "confidence": 0.9,
+        "deterministic_sql_first_route": "API_ONLY",
+        "llm_direct_used": false,
+        "matches_deterministic_route": true,
+        "reason": "API/platform family keyword(s): batch.",
+        "requires_api": true,
+        "requires_database": false,
+        "route_mode": "API_ONLY"
+      },
+      "score_breakdown": {
+        "answer_score": 0.4254,
+        "api_score": 1.0,
+        "delta_vs_sql_first_api_verify": {
+          "answer_score": 0.0609,
+          "api_score": 0.0,
+          "correctness_score": 0.0304,
+          "estimated_tokens": -203.0,
+          "final_score": 0.0279,
+          "runtime": 1.27,
+          "sql_score": "unavailable",
+          "tool_call_count": 0.0
+        },
+        "estimated_tokens": 682,
+        "runtime": 1.2824,
+        "sql_score": null,
+        "strict_correctness": 0.7127,
+        "strict_final_score": 0.6902,
+        "tool_calls": 1
+      },
+      "verifier_behavior": {
+        "over_corrected": false,
+        "prevented_hallucination": false,
+        "safer_rewritten_answer_used": "unavailable_from_existing_artifact",
+        "under_corrected": true,
+        "verifier_passed": true
+      }
+    }
+  ],
+  "source_files": [
+    "outputs/llm_baseline_eval.json",
+    "outputs/llm_strict_baseline_eval.json",
+    "outputs/eval_results_strict.json"
+  ],
+  "summary": {
+    "automatic_promotion": false,
+    "controller_strict_score": 0.6328,
+    "deterministic_preferred": true,
+    "examples_helped": [
+      {
+        "answer_score": 0.3684,
+        "final_delta": 0.001,
+        "loss_category": "controller_helped",
+        "query": "List all tags in this sandbox.",
+        "query_id": "example_016"
+      },
+      {
+        "answer_score": 0.1216,
+        "final_delta": 0.0018,
+        "loss_category": "controller_helped",
+        "query": "List all merge policies in this sandbox.",
+        "query_id": "example_019"
+      },
+      {
+        "answer_score": 0.1558,
+        "final_delta": 0.0163,
+        "loss_category": "controller_helped",
+        "query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+        "query_id": "example_021"
+      },
+      {
+        "answer_score": 0.1289,
+        "final_delta": 0.0004,
+        "loss_category": "controller_helped",
+        "query": "List all segment definitions.",
+        "query_id": "example_023"
+      },
+      {
+        "answer_score": 0.1224,
+        "final_delta": 0.0039,
+        "loss_category": "controller_helped",
+        "query": "List the most recently created batches.",
+        "query_id": "example_028"
+      }
+    ],
+    "examples_hurt": [
+      {
+        "answer_score": 0.441,
+        "final_delta": -0.0216,
+        "loss_category": "router_loss",
+        "query": "When was the journey 'Birthday Message' published?",
+        "query_id": "example_000"
+      },
+      {
+        "answer_score": 0.3738,
+        "final_delta": -0.0661,
+        "loss_category": "router_loss",
+        "query": "Give me inactive journeys",
+        "query_id": "example_001"
+      },
+      {
+        "answer_score": 0.3577,
+        "final_delta": -0.0612,
+        "loss_category": "router_loss",
+        "query": "List all journeys",
+        "query_id": "example_002"
+      },
+      {
+        "answer_score": 0.3096,
+        "final_delta": -0.0157,
+        "loss_category": "router_loss",
+        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "query_id": "example_003"
+      },
+      {
+        "answer_score": 0.4335,
+        "final_delta": -0.0109,
+        "loss_category": "router_loss",
+        "query": "Show me the IDs of failed dataflow runs",
+        "query_id": "example_004"
+      },
+      {
+        "answer_score": 0.3374,
+        "final_delta": -0.1625,
+        "loss_category": "router_loss",
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+        "query_id": "example_005"
+      },
+      {
+        "answer_score": 0.1127,
+        "final_delta": -0.1093,
+        "loss_category": "router_loss",
+        "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+        "query_id": "example_006"
+      },
+      {
+        "answer_score": 0.4276,
+        "final_delta": -0.02,
+        "loss_category": "router_loss",
+        "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+        "query_id": "example_007"
+      }
+    ],
+    "instrumentation_gap_count": 35,
+    "loss_category_distribution": {
+      "controller_helped": 9,
+      "dry_run_caveat_loss": 5,
+      "router_loss": 20,
+      "verifier_loss": 1
+    },
+    "rows_where_answer_score_is_main_bottleneck": 34,
+    "rows_where_backend_evidence_matched_deterministic": 0,
+    "rows_where_llm_rewrite_hurt_answer": 20,
+    "rows_where_verifier_helped": 0,
+    "rows_where_verifier_hurt": 14,
+    "safest_next_controller_improvement": "Run backend-vs-LLM rewrite ablation; test no-rewrite and minimal style-edit controller variants.",
+    "total_controller_rows": 35
+  }
+}

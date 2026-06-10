@@ -1,0 +1,54 @@
+flowchart TD
+  subgraph Input
+    input_prompt["User Prompt<br/>When was the journey &#x27;Birthday Message&#x27; published?"]
+  end
+  subgraph Routing
+    router["Prompt Router<br/>mode=n/a - no prompt router decision<br/>api=n/a - no API policy recorded"]
+    input_prompt -->|route_prompt| router
+  end
+  subgraph QueryUnderstanding["Query Understanding"]
+    normalizer["Query Normalizer<br/>status=not_recorded"]
+    tokens["Query Tokens<br/>domains=none&lt;br/&gt;entities=none"]
+    router -->|clean + extract| normalizer --> tokens
+  end
+  subgraph ContextSelection["Context Selection"]
+    context["Context Mode<br/>candidate"]
+    candidates["Context<br/>tables=none&lt;br/&gt;apis=none"]
+    tokens -->|score relevance| context --> candidates
+  end
+  subgraph Planning
+    planner["Planner<br/>RAW_REAL_LLM_TWO_TOOLS_BASELINE"]
+    optimizer["Plan Optimizer<br/>selected=n/a - no optimizer selection recorded"]
+    candidates -->|metadata + policy| planner --> optimizer
+  end
+  subgraph SQLPath["SQL Path"]
+    sqlgen["SQL Generator<br/>tables=dim_campaign,br_campaign_segment&lt;br/&gt;rows=0"]
+    sqlval["SQL Validator<br/>ok"]
+    optimizer -->|SQL step if needed| sqlgen --> sqlval
+  end
+  subgraph APIPath["API Path"]
+    apisel["API Selector<br/>endpoint=/ajo/journey"]
+    apival["API Validator<br/>ok<br/>dry_run=True"]
+    optimizer -->|API policy| apisel --> apival
+  end
+  subgraph ToolExecution["Tool Execution"]
+    tools["Tool Calls<br/>sql=1 api=1<br/>invalid=0"]
+    sqlval -->|execute_sql| tools
+    apival -->|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence["EvidenceBus<br/>SQL evidence: no&lt;br/&gt;Live API evidence: no&lt;br/&gt;Dry-run API: yes"]
+    tools -->|extract facts| evidence
+  end
+  subgraph AnswerVerification["Answer Verification"]
+    verifier["Verifier<br/>status=not_recorded"]
+    evidence -->|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer["Final Answer"]
+    answer["Final Answer<br/>The executed query did not find evidence for Birthday Message. This is not a hard proof that it "]
+    verifier -->|safe answer| answer
+  end
+  subgraph Metrics
+    metrics["Metrics<br/>tools=2<br/>tokens=n/a - estimated_tokens missing<br/>runtime=10.1537"]
+    answer -->|record trajectory| metrics
+  end

@@ -1,0 +1,156 @@
+{
+  "answer_time": 4.749977961182594e-06,
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 704,
+  "execution_time": 0.00021349999587982893,
+  "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many segment jobs are currently processing?",
+  "planning_time": 0.00013387500075623393,
+  "preprocessing_time": 0.0005496669909916818,
+  "query_id": "example_026",
+  "route_type": "API_ONLY",
+  "runtime": 0.0013681250275112689,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies"
+        },
+        {
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property",
+        "hkg_br_segment_target"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, COUNT_AGGREGATION:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "segment_jobs",
+          "merge_policies"
+        ],
+        "lookup_paths": [
+          "segment_destination",
+          "audit"
+        ],
+        "tables": [
+          "dim_segment",
+          "hkg_br_segment_target"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "segment_audience"
+        ],
+        "statuses": [
+          "processing"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 681,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_02/eval/example_026/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 977
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_jobs.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "segment_jobs",
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "purpose": "API parameter template: segment_jobs.",
+          "url": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 11.8873
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "20"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/segment/jobs",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "20"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/core/ups/segment/jobs"
+      },
+      "url": "/data/core/ups/segment/jobs",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 4.749977961182594e-06,
+    "execution_time": 0.00021349999587982893,
+    "planning_time": 0.00013387500075623393,
+    "preprocessing_time": 0.0005496669909916818
+  },
+  "tool_call_count": 1
+}

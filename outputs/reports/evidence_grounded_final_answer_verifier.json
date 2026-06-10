@@ -1,0 +1,123 @@
+{
+  "report": "evidence_grounded_final_answer_verifier",
+  "verifier_implemented": true,
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "default_strategy_changed": false,
+  "final_submission_format_changed": false,
+  "candidate_strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE",
+  "candidate_explicit_only": true,
+  "principle": "free wording, bounded facts",
+  "components": {
+    "allowed_fact_index": {
+      "implemented": true,
+      "module": "dashagent/evidence_allowed_fact_index.py",
+      "sources": [
+        "EvidenceGroundedAnswerCard/EvidenceGroundedAnswer",
+        "AnswerSlots",
+        "EvidenceBus",
+        "caveats"
+      ],
+      "blocks_runtime_gold_metadata": true
+    },
+    "claim_extractor": {
+      "implemented": true,
+      "module": "dashagent/final_answer_claim_extractor.py",
+      "claim_types": [
+        "COUNT",
+        "ENTITY_NAME",
+        "ID",
+        "STATUS",
+        "DATE",
+        "RELATIONSHIP",
+        "EXISTENCE",
+        "NO_DATA",
+        "LIVE_STATE",
+        "CAVEAT",
+        "SOFT_TEXT"
+      ]
+    },
+    "deterministic_claim_matcher": {
+      "implemented": true,
+      "module": "dashagent/final_answer_claim_matcher.py",
+      "statuses": [
+        "SUPPORTED",
+        "UNSUPPORTED",
+        "OVER_SPECIFIED",
+        "NEEDS_CAVEAT",
+        "AMBIGUOUS"
+      ]
+    },
+    "ambiguous_llm_judge": {
+      "implemented": true,
+      "module": "dashagent/ambiguous_claim_llm_judge.py",
+      "default_enabled": false,
+      "backend_unavailable_fallback": "NEEDS_CAVEAT"
+    },
+    "final_answer_verifier": {
+      "implemented": true,
+      "module": "dashagent/evidence_grounded_final_answer_verifier.py",
+      "actions": [
+        "ACCEPT",
+        "REWRITE_WITH_FEEDBACK",
+        "FALLBACK_DETERMINISTIC"
+      ]
+    },
+    "llm_answer_generator": {
+      "implemented": true,
+      "module": "dashagent/evidence_grounded_llm_answer_generator.py",
+      "candidate_enabled": true,
+      "packaged_default_enabled": false,
+      "deterministic_fallback": true
+    }
+  },
+  "runtime_integration": {
+    "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE",
+    "llm_advisor_included": false,
+    "sql_api_validators_changed": false,
+    "evidence_bus_source_of_truth": true,
+    "answer_slots_source_of_truth": true,
+    "checkpoints_added": [
+      "checkpoint_final_answer_claim_extractor",
+      "checkpoint_final_answer_claim_matcher",
+      "checkpoint_evidence_grounded_final_answer_verifier",
+      "checkpoint_llm_answer_rewrite_feedback"
+    ]
+  },
+  "guardrails": {
+    "allows_natural_language_variation": true,
+    "allows_bullet_or_sentence_format": true,
+    "allows_harmless_discourse_phrases": true,
+    "blocks_invented_count": true,
+    "blocks_invented_id": true,
+    "blocks_invented_timestamp": true,
+    "blocks_invented_status": true,
+    "blocks_unsupported_relationship": true,
+    "blocks_live_empty_global_absence": true,
+    "allows_live_empty_scoped_empty": true,
+    "blocks_api_error_as_no_data": true,
+    "allows_api_error_as_unavailable": true,
+    "missing_role_not_invented": true
+  },
+  "validation": {
+    "pytest": {
+      "command": "python3 -m pytest -q tests/test_evidence_grounded_final_answer_verifier.py tests/test_evidence_grounded_llm_answer_generator.py tests/test_robust_generalized_candidate.py",
+      "result": "33 passed"
+    },
+    "check_submission_ready": {
+      "command": "python3 scripts/check_submission_ready.py",
+      "ok": true,
+      "default_strategy_is_sql_first_api_verify": true,
+      "query_output_count": 73,
+      "embedded_secret_scan_ok": true
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  },
+  "known_limitations": [
+    "Entity-name extraction is intentionally conservative and should be tuned with broader runtime examples before promotion.",
+    "Ambiguous-claim LLM judge is implemented but default-disabled; backend unavailable falls back to NEEDS_CAVEAT.",
+    "The candidate can attempt LLM answer generation, but falls back deterministically when backend or verification fails."
+  ]
+}

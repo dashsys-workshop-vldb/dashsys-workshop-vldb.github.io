@@ -1,0 +1,233 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "compact_context_experiment": {
+    "confidence": 0.6848,
+    "context_mode": "expanded_candidate",
+    "enabled": true,
+    "estimated_tokens": 4691,
+    "packaged_default": false,
+    "packaged_execution_changed": false,
+    "score_margin": 0.33,
+    "source": "schema_vote_safe_candidate_context"
+  },
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Batch details/files are API evidence; keep dry-run answers explicit.",
+    "api_families": [
+      "batch_list",
+      "recent_batches",
+      "batch_details",
+      "batch_export_files",
+      "successful_batch_count"
+    ],
+    "api_mode": "required",
+    "family": "batch",
+    "join_path": [],
+    "required_ids": [
+      "batch_id"
+    ],
+    "tables": []
+  },
+  "domain_type": "UNKNOWN",
+  "known_example_patterns": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "100",
+        "orderBy": "desc:created",
+        "status": "success"
+      },
+      "path": "/data/foundation/catalog/batches"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "batch",
+        "journey_campaign"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "List the most recently created batches.",
+  "query_id": "example_028",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "id": "catalog_batches",
+      "method": "GET",
+      "path": "/data/foundation/catalog/batches"
+    },
+    {
+      "id": "audit_events",
+      "method": "GET",
+      "path": "/data/foundation/audit/events"
+    },
+    {
+      "id": "audit_events_short",
+      "method": "GET",
+      "path": "/audit/events"
+    },
+    {
+      "id": "export_batch_failed",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/failed"
+    },
+    {
+      "id": "export_batch_files",
+      "method": "GET",
+      "path": "/data/foundation/export/batches/{batch_id}/files"
+    }
+  ],
+  "selected_columns": {
+    "br_campaign_segment": [
+      "SEGMENTID",
+      "CAMPAIGNID"
+    ],
+    "dim_blueprint": [
+      "BLUEPRINTTYPE",
+      "UPDATEDCLIENTID",
+      "UPDATEDTIME",
+      "BLUEPRINTID",
+      "NAME",
+      "ISBEHAVIORTIMESERIESTYPE",
+      "ISBEHAVIORRECORDTYPE",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_collection": [
+      "CREATEDCLIENTID",
+      "CREATEDTIME",
+      "COLLECTIONID",
+      "NAME",
+      "ROWCOUNT",
+      "UPDATEDTIME",
+      "CREATEDBY",
+      "ISIDENTITYENABLED",
+      "UPDATEDBY"
+    ],
+    "dim_segment": [
+      "CREATEDTIME",
+      "EVALUATIONCOMPLETEDTIME",
+      "LIFECYCLESTATUS",
+      "MERGEPOLICYID",
+      "NAME",
+      "SEGMENTID",
+      "UPDATEDTIME",
+      "ISBATCH",
+      "ISACCOUNTSEGMENT",
+      "TYPE"
+    ],
+    "dim_target": [
+      "CREATEDTIME",
+      "CONNECTIONSPECID",
+      "DATAFLOWNAME",
+      "NAME",
+      "STATE",
+      "TARGETID",
+      "UPDATEDTIME"
+    ],
+    "hkg_br_base_segment_used_by_dependent_segment": [
+      "SEGMENTID",
+      "DEPENDENTSEGMENTID"
+    ],
+    "hkg_br_blueprint_collection": [
+      "COLLECTIONID",
+      "BLUEPRINTID"
+    ],
+    "hkg_br_blueprint_property": [
+      "BLUEPRINTID"
+    ],
+    "hkg_br_collection_property": [
+      "COLLECTIONID"
+    ],
+    "hkg_br_collection_segment": [
+      "SEGMENTID",
+      "COLLECTIONID"
+    ],
+    "hkg_br_segment_property": [
+      "SEGMENTID"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID"
+    ],
+    "hkg_br_source_collection": [
+      "DATAFLOWNAME",
+      "COLLECTIONID",
+      "DATAFLOWID",
+      "SOURCEID"
+    ],
+    "hkg_br_target_property": [
+      "TARGETID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "path": "dim_segment.SEGMENTID->hkg_br_segment_target.SEGMENTID",
+      "reason": "Curated: Segment to target bridge.",
+      "score": 1.4
+    },
+    {
+      "path": "dim_target.TARGETID->hkg_br_segment_target.TARGETID",
+      "reason": "Curated: Segment to target bridge.",
+      "score": 1.4
+    },
+    {
+      "path": "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "br_campaign_segment.SEGMENTID->hkg_br_segment_target.SEGMENTID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_collection_property.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_collection_segment.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    },
+    {
+      "path": "dim_collection.COLLECTIONID->hkg_br_source_collection.COLLECTIONID",
+      "reason": "Matching ID-like column name.",
+      "score": 0.7
+    }
+  ],
+  "selected_tables": [
+    "dim_collection",
+    "dim_segment",
+    "hkg_br_segment_target",
+    "dim_blueprint",
+    "dim_target",
+    "br_campaign_segment",
+    "hkg_br_blueprint_collection",
+    "hkg_br_blueprint_property",
+    "hkg_br_collection_property",
+    "hkg_br_collection_segment",
+    "hkg_br_source_collection",
+    "hkg_br_base_segment_used_by_dependent_segment",
+    "hkg_br_segment_property",
+    "hkg_br_target_property"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

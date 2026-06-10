@@ -1,0 +1,58 @@
+{
+  "answer_payload_leakage_hits": [
+    {
+      "path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/eval/example_000/robust_ablation_llm_answer_with_verifier/trajectory.json",
+      "terms": [
+        "gold"
+      ]
+    },
+    {
+      "path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/eval/example_001/robust_ablation_llm_answer_with_verifier/trajectory.json",
+      "terms": [
+        "gold"
+      ]
+    },
+    {
+      "path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/eval/example_002/robust_ablation_llm_answer_with_verifier/trajectory.json",
+      "terms": [
+        "gold"
+      ]
+    },
+    {
+      "path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/eval/example_015/robust_ablation_llm_answer_with_verifier/trajectory.json",
+      "terms": [
+        "tags"
+      ]
+    },
+    {
+      "path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/eval/example_016/robust_ablation_llm_answer_with_verifier/trajectory.json",
+      "terms": [
+        "tags"
+      ]
+    }
+  ],
+  "config_path": "dashagent.config.robust_generalized_ablation_config(llm_answer_with_verifier / answer_grounding_only)",
+  "critical_difference": "The prior high-scoring ablation selected evidence_grounded_llm_answer_generator output directly and allowed an empty final answer to pass verification; strict scoring then gave empty generated answers 0.85 because empty string matched as a substring of gold. The isolated SQL_FIRST strategy uses answer_candidate_selector fallback, so empty LLM output does not become final answer.",
+  "module_function_used": "dashagent.evidence_grounded_llm_answer_generator.generate_evidence_grounded_llm_answer",
+  "prior_empty_final_answer_count": 35,
+  "prior_path_clean_of_gold_category_tags_oracle_expected_trace_in_answer_payload": false,
+  "prior_path_status": "runtime_payload_clean_but_score_inflated_by_empty_answer_evaluator_bug",
+  "prior_paths_found": 35,
+  "prior_sample": {
+    "final_answer_length": 0,
+    "llm_backend_used": true,
+    "llm_final_answer_length": 0,
+    "path": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/eval/example_000/robust_ablation_llm_answer_with_verifier/trajectory.json",
+    "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+    "verifier_ok": true
+  },
+  "prior_score_summary_if_available": {
+    "ROBUST_ABLATION_ANSWER_GROUNDING_ONLY": null,
+    "ROBUST_ABLATION_LLM_ANSWER_WITH_VERIFIER": null
+  },
+  "prompt_card_used": "EvidenceGroundedAnswerCard from build_evidence_grounded_answer plus AnswerSlots.compact",
+  "report_type": "sql_first_llm_answer_prior_path_diff",
+  "reuse_decision": "do_not_reuse_prior_empty_answer_selection; keep selector/verifier fallback and strict scorer empty-answer guard",
+  "runtime_gold_leakage_in_answer_payload_found": true,
+  "used_llm_backend": true
+}

@@ -1,0 +1,35 @@
+{
+  "baseline": {
+    "best_isolated_score": 0.6558,
+    "packaged_strict_score": 0.6491,
+    "preferred_strategy": "SQL_FIRST_API_VERIFY"
+  },
+  "cleanup_policy": "dry-run only; no file deletion in overnight loop",
+  "created_at": "2026-05-10T05:44:06.123569+00:00",
+  "expected_improvement": "Improve answer score on dry-run API rows where the selected endpoint/params are real evidence but live payload is unavailable; no SQL/API/tool changes expected.",
+  "files_to_edit": [
+    "dashagent/config.py",
+    "dashagent/answer_templates.py",
+    "tests/test_answer_correctness_layer.py"
+  ],
+  "goal": "Trial and, only if gated validation passes, promote a generic answer-only dry-run endpoint wording improvement.",
+  "iteration": 1,
+  "packaged_behavior_may_change": true,
+  "risk_level": "medium-low",
+  "rollback_condition": "Revert behavior-changing edits if strict score does not improve, correctness regresses, hidden-style/readiness/secret scan fails, or SQL/API/tool hashes drift for answer-only rows.",
+  "safety_controls": [
+    "feature flag first",
+    "answer-only only",
+    "SQL/API calls unchanged",
+    "tool count unchanged",
+    "no live API evidence fabrication",
+    "full strict eval before promotion"
+  ],
+  "validation_commands": [
+    "python3 -m pytest -q",
+    "python3 scripts/run_dev_eval.py --strict",
+    "python3 scripts/run_hidden_style_eval.py",
+    "python3 scripts/check_submission_ready.py",
+    "secret scan"
+  ]
+}

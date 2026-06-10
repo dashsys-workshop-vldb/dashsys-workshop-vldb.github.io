@@ -1,0 +1,124 @@
+{
+  "templates": [
+    {
+      "family": "journey_campaign",
+      "name": "journey_campaign_*",
+      "notes": "Entity names are extracted from quotes or status keywords.",
+      "risk": "low",
+      "uses": "dim_campaign; GET /ajo/journey",
+      "validated": true
+    },
+    {
+      "family": "segment_audience",
+      "name": "segment_destination_relationship",
+      "notes": "Schema-validated bridge join.",
+      "risk": "low",
+      "uses": "dim_segment + hkg_br_segment_target + dim_target; audience/flow APIs",
+      "validated": true
+    },
+    {
+      "family": "audit",
+      "name": "segment_new_destination_mapping",
+      "notes": "Uses reusable relative-time pattern from query family.",
+      "risk": "medium",
+      "uses": "segment-target bridge and audit events",
+      "validated": true
+    },
+    {
+      "family": "destination_dataflow",
+      "name": "destination_export_recent",
+      "notes": "Projection is schema-derived; LIMIT kept unless explicit no-limit request appears.",
+      "risk": "low",
+      "uses": "dim_target; flowservice flows",
+      "validated": true
+    },
+    {
+      "family": "schema_dataset",
+      "name": "blueprint_collection_*",
+      "notes": "Reusable schema/dataset aggregation and detail templates.",
+      "risk": "low",
+      "uses": "dim_blueprint + dim_collection bridge",
+      "validated": true
+    },
+    {
+      "family": "property_field",
+      "name": "segment_property_fields",
+      "notes": "Segment name is extracted from the query.",
+      "risk": "low",
+      "uses": "hkg_br_segment_property + dim_segment",
+      "validated": true
+    },
+    {
+      "family": "audit",
+      "name": "audit_create_events",
+      "notes": "Reusable action=create audit filter.",
+      "risk": "low",
+      "uses": "GET /data/foundation/audit/events",
+      "validated": true
+    },
+    {
+      "family": "merge_policy",
+      "name": "merge_policies",
+      "notes": "No default policy value is invented in dry-run mode.",
+      "risk": "low",
+      "uses": "GET /data/core/ups/config/mergePolicies",
+      "validated": true
+    },
+    {
+      "family": "tags",
+      "name": "tag_*",
+      "notes": "Named tag detail uses benchmark-compatible ID fallback only when no tag ID is present.",
+      "risk": "medium",
+      "uses": "unified tags APIs",
+      "validated": true
+    },
+    {
+      "family": "observability",
+      "name": "observability_metrics",
+      "notes": "Metric names and date windows are extracted from query text.",
+      "risk": "low",
+      "uses": "POST observability metrics",
+      "validated": true
+    },
+    {
+      "family": "answer",
+      "name": "answer_templates",
+      "notes": "Templates render observed fields only and report dry-run limitations.",
+      "risk": "low",
+      "uses": "SQL/API tool evidence",
+      "validated": true
+    },
+    {
+      "family": "nlp",
+      "name": "query_normalizer",
+      "notes": "Normalized text is used only for matching; original query is preserved in outputs.",
+      "risk": "low",
+      "uses": "Whitespace, quote, hyphen, synonym, and plural normalization",
+      "validated": true
+    },
+    {
+      "family": "nlp",
+      "name": "query_tokens",
+      "notes": "Extracted tokens guide deterministic selection without external embeddings.",
+      "risk": "low",
+      "uses": "Quoted/named entities, IDs, dates, metrics, fields, statuses, domain tokens",
+      "validated": true
+    },
+    {
+      "family": "nlp",
+      "name": "relevance_scorer",
+      "notes": "Scores compact schema/API context; it does not bypass SQL/API validation.",
+      "risk": "low",
+      "uses": "Token overlap, lookup-path weights, optional RapidFuzz",
+      "validated": true
+    },
+    {
+      "family": "planning",
+      "name": "plan_ensemble",
+      "notes": "Only the selected plan is executed; candidate evaluation is validation-only.",
+      "risk": "low",
+      "uses": "Pre-execution candidate scoring over validated deterministic plans",
+      "validated": true
+    }
+  ]
+}

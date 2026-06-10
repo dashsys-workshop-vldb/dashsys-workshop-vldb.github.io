@@ -1,0 +1,219 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "The local status and the live status of the Birthday Message should match. If there are differences, they should be noted and addressed to ensure consistency.",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "active_task_count": 4,
+      "api_candidate_cards": 2,
+      "api_candidate_success_count": 2,
+      "atomic_candidate_slots_used": true,
+      "atomic_checklist_used": true,
+      "atomic_weak_protocol_used": true,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "backend_semantic_routing_used": false,
+      "candidate_card_latency_ms": 7634,
+      "candidate_card_max_tokens": 220,
+      "candidate_card_success": 4,
+      "candidate_repair_attempts": 0,
+      "candidate_repair_max_tokens": 220,
+      "checklist_bits": {},
+      "checklist_latency_ms": 2524,
+      "checklist_parse_success": false,
+      "checklist_repair_attempted": true,
+      "checklist_repair_latency_ms": 2064,
+      "checklist_route": "EVIDENCE_PIPELINE",
+      "dependency_edges": [
+        [
+          "T1",
+          "T3"
+        ],
+        [
+          "T2",
+          "T3"
+        ],
+        [
+          "T3",
+          "T4"
+        ]
+      ],
+      "direct_route_challenge_needs_evidence": null,
+      "direct_route_challenge_repair_attempted": false,
+      "direct_route_challenge_used": false,
+      "evidence_planner_called": true,
+      "final_answer_max_tokens": 500,
+      "fixed_task_slots_used": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 4,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "atomic_weak_protocol",
+      "planner_provider_latency_ms": 19562,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_card_max_tokens": 80,
+      "route_card_repair_attempted": true,
+      "route_card_route": null,
+      "route_card_success": false,
+      "route_gate_repair_attempted": true,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": false,
+      "slot_count": 5,
+      "sql_candidate_cards": 2,
+      "sql_candidate_success_count": 2,
+      "task_count": 4,
+      "task_ledger_latency_ms": 7340,
+      "task_ledger_max_tokens": 300,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "SQL",
+        "API",
+        "SQL_AND_API",
+        "DIRECT"
+      ],
+      "task_slot_repair_attempted": false,
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "mistralai/Mistral-Nemo-Instruct-2407",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Retrieve the local status of the Birthday Message using SQL.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT LABELSCAMPAIGN FROM dim_campaign WHERE NAME = 'Birthday Message'"
+        },
+        "subtask": "Retrieve the local status of the Birthday Message using SQL."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "query": {
+              "filter": {
+                "name": "Birthday Message",
+                "status": "live"
+              }
+            }
+          },
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Fetch the live status of the Birthday Message using the platform's API.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T2",
+        "path": "API",
+        "sql": null,
+        "subtask": "Fetch the live status of the Birthday Message using the platform's API."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {
+            "query": "journeyName=Birthday Message"
+          },
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": false,
+        "depends_on": [
+          "T1",
+          "T2"
+        ],
+        "evidence_order": "PARALLEL",
+        "expected_result": "Compare the local and live status of the Birthday Message by combining the results from T1 and T2.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T3",
+        "path": "SQL_AND_API",
+        "sql": {
+          "params": [],
+          "query": "SELECT * FROM dim_segment WHERE SEGMENTID IN (SELECT SEGMENTID FROM hkg_br_base_segment_used_by_dependent_segment WHERE DEPENDENTSEGMENTID IN (SELECT SEGMENTID FROM dim_segment WHERE NAME = 'Birthday Message'))"
+        },
+        "subtask": "Compare the local and live status of the Birthday Message by combining the results from T1 and T2."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "T3"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Describe the differences, if any, between the local and live status of the Birthday Message based on the comparison in T3.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "T4",
+        "path": "DIRECT",
+        "sql": null,
+        "subtask": "Describe the differences, if any, between the local and live status of the Birthday Message based on the comparison in T3."
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "atomic_api_candidate_T2": "METHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS_JSON={\"query\": {\"filter\": {\"status\": \"live\", \"name\": \"Birthday Message\"}}}",
+      "atomic_api_candidate_T3": "METHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS_JSON={\"query\": \"journeyName=Birthday Message\"}",
+      "atomic_checklist": "RECORDS=1|1\nLIST=1|1\nCOUNT=1|1\nSTATUS=1|1\nDATE=1|1\nLOCAL_SNAPSHOT=1|0\nLIVE_CURRENT=0|1\nSHOW_ITEMS=1|1\nMIXED_CONCEPT_DATA=0|0\nPURE_CONCEPT=0|0\n",
+      "atomic_checklist_repair": "Here's the repaired Atomic Evidence Need Checklist with all fields set exactly once, using 1 or 0, and a data flag set to 1 where uncertain:\n\nUSER_PROMPT=Compare local and live status of Birthday Message if both are available.\nPREVIOUS_RESPONSE=0\nLIST=0\nCOUNT=0\nSTATUS=1\nDATE=1\nLOC",
+      "atomic_sql_candidate_T1": "SQL_QUERY=SELECT LABELSCAMPAIGN FROM dim_campaign WHERE NAME = 'Birthday Message'\nPARAMS_JSON=[]",
+      "atomic_sql_candidate_T3": "SQL_QUERY=SELECT * FROM dim_segment WHERE SEGMENTID IN (SELECT SEGMENTID FROM hkg_br_base_segment_used_by_dependent_segment WHERE DEPENDENTSEGMENTID IN (SELECT SEGMENTID FROM dim_segment WHERE NAME = 'Birthday Message'))\nPARAMS_JSON=[]",
+      "fixed_task_slots": "T1_PATH=B\nT1_DEPS=[]\nT1_DESC=Retrieve the local status of the Birthday Message using SQL.\n\nT2_PATH=C\nT2_DEPS=[]\nT2_DESC=Fetch the live status of the Birthday Message using the platform's API.\n\nT3_PATH=D\nT3_DEPS=[T1, T2]\nT3_DESC=Compare the local and live status of the Birthday Message by combining the results from T1 and T2.\n\nT4_PATH=A\nT4_DEPS=[T3]\nT4_DESC=Describe the differences, if any, between the local and live status of the Birthday Message based on the comparison in T3.\n\nT5_PATH=NONE\nT5_DEPS=[]\nT5_DESC=\n\nAGGREGATE=The local status and the live status of the Birthday Message should match. If there are differences, they should be noted and addressed to ensure consistency."
+    },
+    "reason": "Atomic checklist selected evidence; fixed task slots supplied LLM-owned tasks.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT LABELSCAMPAIGN FROM dim_campaign WHERE NAME = 'Birthday Message'"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Compare local and live status of Birthday Message if both are available.",
+  "query_id": "pioneer_sweep_mistral_nemo_instruct_2407_compare_local_live_birthday_status",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T20:15:14.420082+00:00",
+    "deadline_at": "2026-06-01T20:15:44.420082+00:00",
+    "evidence_bus_id": "evidence_run_3c5ebb20124e406fb555de0c19021f98",
+    "original_prompt": "Compare local and live status of Birthday Message if both are available.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_mistral_nemo_instruct_2407_compare_local_live_birthday_status",
+    "result_bundle_id": "bundle_run_3c5ebb20124e406fb555de0c19021f98",
+    "run_id": "run_3c5ebb20124e406fb555de0c19021f98",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

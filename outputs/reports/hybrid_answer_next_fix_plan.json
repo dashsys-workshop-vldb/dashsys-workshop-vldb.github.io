@@ -1,0 +1,212 @@
+{
+  "generated_at": "2026-05-28T11:38:09.846384+00:00",
+  "intent_router_vs_renderer": "intent_router_plus_renderer",
+  "minimal_test_plan_for_next_fix": [
+    "Unit: legacy-first selector keeps legacy when hybrid loses exact count/date/status/entity overlap.",
+    "Unit: canonical count/date/status/list templates preserve exact AnswerSlots values and requested roles.",
+    "Unit: LIVE_EMPTY does not override available SQL_DIRECT_ANSWER as global no-data.",
+    "Focused: run tests/test_gold_style_canonical_renderer.py tests/test_answer_intent_router.py tests/test_hybrid_answer_composer.py.",
+    "Eval: run organizer35 only for SQL_FIRST_API_VERIFY and SQL_FIRST_API_VERIFY_HYBRID_ANSWER; require SQL/API/tool deltas 0 and unsupported claims 0."
+  ],
+  "promotion_recommendation": "none",
+  "proposed_concrete_next_fixes": [
+    "Add a runtime-evidence-only answer feature comparator that refuses hybrid when numeric/date/status/entity overlap is below legacy.",
+    "Tune COUNT templates to preserve exact count and object label already emitted by legacy; avoid extra scope text unless local/live distinction is required by prompt or evidence conflict.",
+    "Tune DATE/STATUS templates to keep entity name plus exact date/status fields from AnswerSlots; do not collapse date rows into generic status labels.",
+    "For LIST rows, preserve legacy item ordering and identifiers when those appear in AnswerSlots; canonical semicolon formatting is acceptable only if it keeps all requested fields.",
+    "Make canonical caveats scoped and short, but do not replace available SQL evidence with LIVE_EMPTY caveat when SQL_DIRECT_ANSWER exists and API is only empty scoped support.",
+    "Adjust AnswerIntentRouter only for rows where audit_expected_answer_type differs from predicted intent; do not use gold-derived labels at runtime."
+  ],
+  "recommendation_detail": "Keep SQL/API path unchanged. For organizer-style structured data, make legacy the default unless canonical rendering demonstrably preserves exact numbers/dates/status/entity substrings and does not add scope/caveat wording that hurts strict scorer features. Use hybrid canonical only for intents where feature audit shows equal-or-better overlap.",
+  "recommended_strategy": "legacy_first_with_selective_hybrid_override",
+  "report_type": "hybrid_answer_next_fix_plan",
+  "rows_most_responsible_for_drop": [
+    {
+      "answer_score_delta": -0.2356,
+      "baseline_answer": "You have 74 schemas. This count comes from your blueprint query and is confirmed by the API response from Adobe Schema Registry, which shows tenant schemas are available.",
+      "hybrid_answer": "API schemas count: 74.",
+      "hybrid_answer_intent": "COUNT",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "How many schemas do I have?",
+      "query_id": "example_011",
+      "root_causes": [
+        "TEMPLATE_TOO_SHORT",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.2283,
+      "baseline_answer": "Based on the SQL query result, there are 0 XDM Experience Event schemas enabled for profile in your environment.",
+      "hybrid_answer": "API schemas count: 0.",
+      "hybrid_answer_intent": "COUNT",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+      "query_id": "example_010",
+      "root_causes": [
+        "MISSING_STATUS_WORD",
+        "OVER_CAVEATED",
+        "TEMPLATE_TOO_SHORT",
+        "HYBRID_LOST_SUBSTRING_MATCH",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.1245,
+      "baseline_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+      "hybrid_answer": "No matching records were returned for this query/scope.",
+      "hybrid_answer_intent": "ERROR_CAVEAT",
+      "hybrid_answer_mode": "CANONICAL_CAVEAT",
+      "prompt": "Show me all entities created by download",
+      "query_id": "example_014",
+      "root_causes": [
+        "ANSWER_INTENT_WRONG",
+        "ANSWER_MODE_WRONG",
+        "TEMPLATE_TOO_SHORT",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.1187,
+      "baseline_answer": "Based on live observability API evidence, timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count values include: 2026-03-29 timeseries.ingestion.dataset.recordsuccess.count: 152120.0, 2026-03-29 timeseries.ingestion.dataset.batchsuccess.count: 24.0, 2026-03-30 timeseries.ingestion.dataset.recordsuccess.count: 16231.0, 2026-03-30 timeseries.ingestion.dataset.batchsuccess.count: 14.0, 2026-03-31 timeseries.ingestion.dataset.recordsuccess.count: 2701.0, 2026-03-31 timeseries.ingestion.dataset.batchsuccess.count: 13.0, 2026-04-01 timeseries.ingestion.dataset.recordsuccess.count: 1028.0, and 2026-04-01 timeseries.ingestion.dataset.batchsuccess.count: 14.0. Other returned daily values were 0.",
+      "hybrid_answer": "API batches count: 1.",
+      "hybrid_answer_intent": "COUNT",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "Show ingestion record counts and batch success counts for the last 90 days.",
+      "query_id": "example_034",
+      "root_causes": [
+        "MISSING_EXACT_NUMBER",
+        "TEMPLATE_TOO_SHORT",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.1117,
+      "baseline_answer": "Based on live observability API evidence, timeseries.ingestion.dataset.recordsuccess.count values include: 2026-03-29 timeseries.ingestion.dataset.recordsuccess.count: 152120.0, 2026-03-30 timeseries.ingestion.dataset.recordsuccess.count: 16231.0, 2026-03-31 timeseries.ingestion.dataset.recordsuccess.count: 2701.0, 2026-03-16 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-17 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-18 timeseries.ingestion.dataset.recordsuccess.count: 0.0, 2026-03-19 timeseries.ingestion.dataset.recordsuccess.count: 0.0, and 2026-03-20 timeseries.ingestion.dataset.recordsuccess.count: 0.0. Other returned daily values were 0.",
+      "hybrid_answer": "API datasets count: 1.",
+      "hybrid_answer_intent": "COUNT",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "query_id": "example_033",
+      "root_causes": [
+        "MISSING_EXACT_NUMBER",
+        "ANSWER_INTENT_WRONG",
+        "TEMPLATE_TOO_SHORT",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.0996,
+      "baseline_answer": "The most recent dataset changes occurred on 2026-04-14 21:08:54.000 UTC, including hkg_adls_segment_profile_history (2026-04-14 21:08:54.000 UTC), hkg_adls_profile_count_history (2026-04-14 21:08:43.000 UTC), and Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d (2026-04-14 20:40:04.000 UTC). The API returned usable supporting evidence.",
+      "hybrid_answer": "Results: {updated_time=2026-04-14T21:08:54.000+00:00}; {updated_time=2026-04-14T21:08:43.000+00:00}; {updated_time=2026-04-14T20:40:04.000+00:00}.",
+      "hybrid_answer_intent": "LIST",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "Show recent changes in datasets.",
+      "query_id": "example_013",
+      "root_causes": [
+        "MISSING_EXACT_NUMBER",
+        "WRONG_OBJECT_LABEL",
+        "TEMPLATE_TOO_SHORT",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.0574,
+      "baseline_answer": "The API evidence reports 82 segment definition(s). The first visible definition is Very High Loyalty Enrollment Target \u2014 Apr16v7 (ID 706ddcd9-12e2-4036-861b-6d58bebc4fa2, updated 1776395696590).",
+      "hybrid_answer": "API segments count: 82.",
+      "hybrid_answer_intent": "COUNT",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "How many segment definitions exist in this sandbox?",
+      "query_id": "example_022",
+      "root_causes": [
+        "WRONG_OBJECT_LABEL",
+        "TEMPLATE_TOO_SHORT",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.0265,
+      "baseline_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+      "hybrid_answer": "API audiences count: 0. API unavailable/error; cannot verify live state.",
+      "hybrid_answer_intent": "COUNT",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "root_causes": [
+        "OVER_CAVEATED",
+        "TEMPLATE_TOO_SHORT",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.0227,
+      "baseline_answer": "The most recent segment definition returned by the API is Very High Loyalty Enrollment Target \u2014 Apr16v7 (ID 706ddcd9-12e2-4036-861b-6d58bebc4fa2, updated 1776395696590). The API evidence reports 82 item(s).",
+      "hybrid_answer": "Results: {id=706ddcd9-12e2-4036-861b-6d58bebc4fa2, name=Very High Loyalty Enrollment Target \u2014 Apr16v7}; {id=4c29991f-e517-4968-978c-1d70367cf145, name=Fully Profiled Color and Advisor \u2014 Apr16v7}; {id=c0960179-0a51-4df6-84d7-5040eccaadaa, name=Size Preference M or L \u2014 Apr16v7}.",
+      "hybrid_answer_intent": "LIST",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "Which segment definitions were updated most recently?",
+      "query_id": "example_024",
+      "root_causes": [
+        "WRONG_OBJECT_LABEL",
+        "UNDER_CAVEATED",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    },
+    {
+      "answer_score_delta": -0.0206,
+      "baseline_answer": "The API evidence reports 82 segment definition(s). The first visible definition is Very High Loyalty Enrollment Target \u2014 Apr16v7 (ID 706ddcd9-12e2-4036-861b-6d58bebc4fa2, updated 1776395696590).",
+      "hybrid_answer": "Results: {id=706ddcd9-12e2-4036-861b-6d58bebc4fa2, name=Very High Loyalty Enrollment Target \u2014 Apr16v7}; {id=4c29991f-e517-4968-978c-1d70367cf145, name=Fully Profiled Color and Advisor \u2014 Apr16v7}; {id=c0960179-0a51-4df6-84d7-5040eccaadaa, name=Size Preference M or L \u2014 Apr16v7}.",
+      "hybrid_answer_intent": "LIST",
+      "hybrid_answer_mode": "CANONICAL_DATA",
+      "prompt": "List all segment definitions.",
+      "query_id": "example_023",
+      "root_causes": [
+        "WRONG_OBJECT_LABEL",
+        "FUZZY_SIMILARITY_DROP",
+        "CANONICAL_RENDERER_WRONG_TEMPLATE"
+      ]
+    }
+  ],
+  "safety_constraints_for_next_fix": [
+    "Do not change packaged default strategy.",
+    "Do not change SQL/API planner, validators, or execution.",
+    "Do not use gold/category/tags/oracle/query_id at runtime.",
+    "Keep unsupported claims at 0 and preserve API_ERROR vs no-data and LIVE_EMPTY scoped semantics.",
+    "Validate SQL/API call deltas remain 0 against SQL_FIRST_API_VERIFY for answer-only strategies."
+  ],
+  "top_5_root_causes": [
+    [
+      "CANONICAL_RENDERER_WRONG_TEMPLATE",
+      10
+    ],
+    [
+      "TEMPLATE_TOO_SHORT",
+      8
+    ],
+    [
+      "FUZZY_SIMILARITY_DROP",
+      8
+    ],
+    [
+      "WRONG_OBJECT_LABEL",
+      4
+    ],
+    [
+      "MISSING_EXACT_NUMBER",
+      3
+    ]
+  ],
+  "which_templates_need_adjustment": {
+    "caveat": 3,
+    "count": 9,
+    "date": 0,
+    "list": 3,
+    "status": 1
+  }
+}

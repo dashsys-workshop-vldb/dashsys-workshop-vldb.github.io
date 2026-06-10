@@ -1,0 +1,219 @@
+{
+  "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
+  "compact_context_safe": true,
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+        "limit": "3"
+      },
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+  ],
+  "current_runtime": 0.0137,
+  "current_strict_score": 0.6552,
+  "current_tokens": 1283,
+  "current_tool_calls": 2,
+  "decision": "keep_current_repair_selector_rejected",
+  "decision_hash": "71f976e82797b1cb",
+  "dry_run_only": true,
+  "evidence_available": false,
+  "execution_changed": false,
+  "fallback_reason": "compact and fallback top candidates agree",
+  "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
+  "module_skipped_by_risk": [],
+  "offline_score_delta": 0.1148,
+  "packaged_execution_changed": false,
+  "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+  "query_id": "example_007",
+  "rejection_reason": "Repair safety verifier did not pass.; Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "safety_verifier"
+    ],
+    "no_op": false,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Repair safety verifier did not pass."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "schema_registry_schema",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "schema_detail",
+      "endpoint_id": "schema_registry_schema",
+      "method": "GET",
+      "params": {},
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+  ],
+  "repaired_runtime": 0.0137,
+  "repaired_strict_score": 0.77,
+  "repaired_tokens": 1283,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "schema_vs_dataset_confusion",
+  "risk_efficiency_controller": {
+    "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+    "active": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.8635,
+      "endpoint_family_confidence": 0.94,
+      "missing_candidate_signals": {},
+      "risk_cluster": "schema_vs_dataset_confusion",
+      "schema_link_risk": "low",
+      "score_margin": 0.92
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "high risk: value retrieval + shadow repair + verifier diagnostics",
+    "module_skipped_by_risk": [],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking",
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "risk_level": "high",
+    "risk_reasons": [
+      "risk_cluster:schema_vs_dataset_confusion"
+    ],
+    "runtime_saved_estimate_ms": 0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 0
+  },
+  "risk_level": "high",
+  "runtime_delta": 0.0,
+  "runtime_saved_estimate_ms": 0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [
+        "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters."
+      ],
+      "ok": false,
+      "repaired_aliases": []
+    },
+    "confidence": 0.788,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "api_validation"
+    ],
+    "reasons": [
+      "Invalid repaired endpoint: GET /data/foundation/schemaregistry/tenant/schemas/{schema_id}; Endpoint path contains unresolved path parameters."
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'",
+          "parsed_ok": true,
+          "selected_columns": [
+            "C.COLLECTIONID",
+            "C.NAME",
+            "BC.COLLECTIONID",
+            "BC.BLUEPRINTID",
+            "B.BLUEPRINTID",
+            "B.NAME"
+          ],
+          "selected_tables": [
+            "hkg_br_blueprint_collection",
+            "dim_collection",
+            "dim_blueprint"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "savings_are_estimates": true,
+  "schema_context_vote": {
+    "active": true,
+    "behavior_changed": false,
+    "compact_candidate_apis": [
+      "schema_registry_schema",
+      "schema_registry_schemas",
+      "catalog_datasets",
+      "schemas_short",
+      "catalog_batches"
+    ],
+    "compact_candidate_tables": [
+      "dim_blueprint",
+      "dim_segment",
+      "br_campaign_segment",
+      "dim_collection",
+      "hkg_br_blueprint_property",
+      "hkg_br_segment_target",
+      "hkg_br_collection_segment",
+      "hkg_br_segment_property"
+    ],
+    "compact_context_safe": true,
+    "compact_context_tokens": 4000,
+    "diagnostic_only": true,
+    "fallback_candidate_apis": [
+      "schema_registry_schema",
+      "schema_registry_schemas",
+      "catalog_datasets",
+      "schemas_short",
+      "catalog_batches",
+      "export_batch_failed",
+      "export_batch_files",
+      "audit_events"
+    ],
+    "fallback_candidate_tables": [
+      "dim_blueprint",
+      "hkg_br_base_segment_used_by_dependent_segment",
+      "dim_segment",
+      "br_campaign_segment",
+      "dim_collection",
+      "hkg_br_blueprint_collection",
+      "hkg_br_blueprint_property",
+      "hkg_br_collection_property"
+    ],
+    "fallback_context_tokens": 5156,
+    "fallback_reason": "compact and fallback top candidates agree",
+    "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+    "schema_vote_agreement": true,
+    "token_delta": 1156
+  },
+  "schema_vote_agreement": true,
+  "score_delta": 0.1148,
+  "shadow_runtime": 0.0117,
+  "token_delta": 0,
+  "token_saved_estimate": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}
