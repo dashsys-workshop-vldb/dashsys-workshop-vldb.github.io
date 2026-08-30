@@ -1,0 +1,685 @@
+{
+  "backend_type": "openai_sdk",
+  "baseline_variant": "raw",
+  "data_driven_prompt": true,
+  "dry_run_only_api_count": 0,
+  "duplicate_invalid_call_count": 0,
+  "errors": [],
+  "estimated_tokens": 12931,
+  "execution_previews": [
+    {
+      "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+      "ok": false,
+      "row_count": 0,
+      "rows_preview": {
+        "items": [],
+        "total_items": 0,
+        "truncated_items": false
+      },
+      "validation": {
+        "errors": [
+          "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "error": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.",
+      "ok": false,
+      "row_count": 0,
+      "rows_preview": {
+        "items": [],
+        "total_items": 0,
+        "truncated_items": false
+      },
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "error": null,
+      "ok": true,
+      "row_count": 2,
+      "rows_preview": {
+        "items": [
+          {
+            "day": "2026-03-30 00:00:00",
+            "record_success_count": 6
+          },
+          {
+            "day": "2026-03-29 00:00:00",
+            "record_success_count": 18
+          }
+        ],
+        "total_items": 2,
+        "truncated_items": false
+      },
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "failure_categories": {
+    "unknown_table_count": 1
+  },
+  "failure_reason": "",
+  "final_answer": "The daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31' are as follows:\n\n- 2026-03-29: 18 records\n- 2026-03-30: 6 records\n\nNo other days within the specified range had successful records.",
+  "invalid_tool_call_count": 1,
+  "llm_tool_calls": [
+    {
+      "arguments": {
+        "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+      },
+      "dry_run_only": false,
+      "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+      "evidence_available": false,
+      "executed": false,
+      "guided_features_used": false,
+      "original_arguments": {
+        "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+      },
+      "result_preview": {
+        "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "tool": "execute_sql",
+      "tool_execution_attempted": false,
+      "tool_execution_ok": false,
+      "tool_invoked": true,
+      "tool_name": "execute_sql",
+      "tool_validation_ok": false,
+      "turn": 1,
+      "validation": {
+        "errors": [
+          "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      },
+      "validation_ok": false
+    },
+    {
+      "arguments": {
+        "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+      },
+      "dry_run_only": false,
+      "error": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.",
+      "evidence_available": false,
+      "executed": true,
+      "guided_features_used": false,
+      "original_arguments": {
+        "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+      },
+      "result_preview": {
+        "error": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "tool": "execute_sql",
+      "tool_execution_attempted": true,
+      "tool_execution_ok": false,
+      "tool_invoked": true,
+      "tool_name": "execute_sql",
+      "tool_validation_ok": true,
+      "turn": 3,
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "validation_ok": true
+    },
+    {
+      "arguments": {
+        "sql": "SELECT DATE_TRUNC('day', CAST(UPDATEDTIME AS TIMESTAMP)) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE CAST(UPDATEDTIME AS TIMESTAMP) BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+      },
+      "dry_run_only": false,
+      "error": "",
+      "evidence_available": true,
+      "executed": true,
+      "guided_features_used": false,
+      "original_arguments": {
+        "sql": "SELECT DATE_TRUNC('day', CAST(UPDATEDTIME AS TIMESTAMP)) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE CAST(UPDATEDTIME AS TIMESTAMP) BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+      },
+      "result_preview": {
+        "error": null,
+        "ok": true,
+        "row_count": 2,
+        "rows_preview": {
+          "items": [
+            {
+              "day": "2026-03-30 00:00:00",
+              "record_success_count": 6
+            },
+            {
+              "day": "2026-03-29 00:00:00",
+              "record_success_count": 18
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "tool": "execute_sql",
+      "tool_execution_attempted": true,
+      "tool_execution_ok": true,
+      "tool_invoked": true,
+      "tool_name": "execute_sql",
+      "tool_validation_ok": true,
+      "turn": 4,
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      },
+      "validation_ok": true
+    }
+  ],
+  "llm_total_tokens": 12931,
+  "llm_transcript_steps": [
+    {
+      "assistant_tool_calls": {
+        "items": [
+          {
+            "arguments": {
+              "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+            },
+            "id": "chatcmpl-tool-b1819c14d6ac9a12",
+            "name": "execute_sql",
+            "tool": "execute_sql"
+          }
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      },
+      "kind": "llm_turn",
+      "tool_results": [
+        {
+          "arguments": {
+            "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+          },
+          "dry_run_only": false,
+          "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+          "evidence_available": false,
+          "executed": false,
+          "guided_features_used": false,
+          "original_arguments": {
+            "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+          },
+          "result_preview": {
+            "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+            "ok": false,
+            "row_count": 0,
+            "rows_preview": {
+              "items": [],
+              "total_items": 0,
+              "truncated_items": false
+            },
+            "validation": {
+              "errors": [
+                "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+              ],
+              "ok": false,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          "tool": "execute_sql",
+          "tool_execution_attempted": false,
+          "tool_execution_ok": false,
+          "tool_invoked": true,
+          "tool_name": "execute_sql",
+          "tool_validation_ok": false,
+          "turn": 1,
+          "validation": {
+            "errors": [
+              "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+            ],
+            "ok": false,
+            "repaired": false,
+            "warnings": []
+          },
+          "validation_ok": false
+        }
+      ],
+      "turn": 1
+    },
+    {
+      "kind": "llm_turn",
+      "llm_response": "There seems to be a mistake in the table name. The table `dim_dataset` does not exist in the local database. Could you please provide the correct table name that contains the 'timeseries.ingestion.dataset.recordsuccess.count' values? If you're unsure, please specify the relevant table based on the schema context provided.",
+      "retry_reason": "no native or JSON tool call before evidence",
+      "tool_results": [],
+      "turn": 2
+    },
+    {
+      "assistant_tool_calls": {
+        "items": [
+          {
+            "arguments": {
+              "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+            },
+            "id": "chatcmpl-tool-8d7a39fa66510559",
+            "name": "execute_sql",
+            "tool": "execute_sql"
+          }
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      },
+      "kind": "llm_turn",
+      "tool_results": [
+        {
+          "arguments": {
+            "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+          },
+          "dry_run_only": false,
+          "error": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.",
+          "evidence_available": false,
+          "executed": true,
+          "guided_features_used": false,
+          "original_arguments": {
+            "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+          },
+          "result_preview": {
+            "error": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.",
+            "ok": false,
+            "row_count": 0,
+            "rows_preview": {
+              "items": [],
+              "total_items": 0,
+              "truncated_items": false
+            },
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          "tool": "execute_sql",
+          "tool_execution_attempted": true,
+          "tool_execution_ok": false,
+          "tool_invoked": true,
+          "tool_name": "execute_sql",
+          "tool_validation_ok": true,
+          "turn": 3,
+          "validation": {
+            "errors": [],
+            "ok": true,
+            "repaired": false,
+            "warnings": []
+          },
+          "validation_ok": true
+        }
+      ],
+      "turn": 3
+    },
+    {
+      "assistant_tool_calls": {
+        "items": [
+          {
+            "arguments": {
+              "sql": "SELECT DATE_TRUNC('day', CAST(UPDATEDTIME AS TIMESTAMP)) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE CAST(UPDATEDTIME AS TIMESTAMP) BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+            },
+            "id": "chatcmpl-tool-acec66da835cbb53",
+            "name": "execute_sql",
+            "tool": "execute_sql"
+          }
+        ],
+        "total_items": 1,
+        "truncated_items": false
+      },
+      "kind": "llm_turn",
+      "tool_results": [
+        {
+          "arguments": {
+            "sql": "SELECT DATE_TRUNC('day', CAST(UPDATEDTIME AS TIMESTAMP)) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE CAST(UPDATEDTIME AS TIMESTAMP) BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+          },
+          "dry_run_only": false,
+          "error": "",
+          "evidence_available": true,
+          "executed": true,
+          "guided_features_used": false,
+          "original_arguments": {
+            "sql": "SELECT DATE_TRUNC('day', CAST(UPDATEDTIME AS TIMESTAMP)) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE CAST(UPDATEDTIME AS TIMESTAMP) BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;"
+          },
+          "result_preview": {
+            "error": null,
+            "ok": true,
+            "row_count": 2,
+            "rows_preview": {
+              "items": [
+                {
+                  "day": "2026-03-30 00:00:00",
+                  "record_success_count": 6
+                },
+                {
+                  "day": "2026-03-29 00:00:00",
+                  "record_success_count": 18
+                }
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "validation": {
+              "errors": [],
+              "ok": true,
+              "repaired": false,
+              "warnings": []
+            }
+          },
+          "tool": "execute_sql",
+          "tool_execution_attempted": true,
+          "tool_execution_ok": true,
+          "tool_invoked": true,
+          "tool_name": "execute_sql",
+          "tool_validation_ok": true,
+          "turn": 4,
+          "validation": {
+            "errors": [],
+            "ok": true,
+            "repaired": false,
+            "warnings": []
+          },
+          "validation_ok": true
+        }
+      ],
+      "turn": 4
+    }
+  ],
+  "llm_turn_count": 5,
+  "llm_turns": [
+    {
+      "content_preview": "",
+      "error": "",
+      "final_answer_present": false,
+      "finish_reason": "tool_calls",
+      "json_tool_call_count": 0,
+      "native_tool_call_count": 1,
+      "response_ok": true,
+      "tool_choice": "auto",
+      "turn": 1,
+      "usage": {
+        "completion_tokens": 73,
+        "completion_tokens_details": null,
+        "prompt_tokens": 2146,
+        "prompt_tokens_details": null,
+        "total_tokens": 2219
+      },
+      "usage_total_tokens": 2219
+    },
+    {
+      "content_preview": "There seems to be a mistake in the table name. The table `dim_dataset` does not exist in the local database. Could you please provide the correct table name that contains the 'timeseries.ingestion.dataset.recordsuccess.count' values? If you're unsure, please specify the relevant table based on the schema context provided.",
+      "error": "",
+      "final_answer_present": false,
+      "finish_reason": "stop",
+      "json_tool_call_count": 0,
+      "native_tool_call_count": 0,
+      "response_ok": true,
+      "tool_choice": "auto",
+      "turn": 2,
+      "usage": {
+        "completion_tokens": 67,
+        "completion_tokens_details": null,
+        "prompt_tokens": 2383,
+        "prompt_tokens_details": null,
+        "total_tokens": 2450
+      },
+      "usage_total_tokens": 2450
+    },
+    {
+      "content_preview": "",
+      "error": "",
+      "final_answer_present": false,
+      "finish_reason": "stop",
+      "json_tool_call_count": 0,
+      "native_tool_call_count": 1,
+      "response_ok": true,
+      "tool_choice": {
+        "function": {
+          "name": "execute_sql"
+        },
+        "type": "function"
+      },
+      "turn": 3,
+      "usage": {
+        "completion_tokens": 60,
+        "completion_tokens_details": null,
+        "prompt_tokens": 2422,
+        "prompt_tokens_details": null,
+        "total_tokens": 2482
+      },
+      "usage_total_tokens": 2482
+    },
+    {
+      "content_preview": "",
+      "error": "",
+      "final_answer_present": false,
+      "finish_reason": "tool_calls",
+      "json_tool_call_count": 0,
+      "native_tool_call_count": 1,
+      "response_ok": true,
+      "tool_choice": "auto",
+      "turn": 4,
+      "usage": {
+        "completion_tokens": 82,
+        "completion_tokens_details": null,
+        "prompt_tokens": 2665,
+        "prompt_tokens_details": null,
+        "total_tokens": 2747
+      },
+      "usage_total_tokens": 2747
+    },
+    {
+      "content_preview": "The daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31' are as follows:\n\n- 2026-03-29: 18 records\n- 2026-03-30: 6 records\n\nNo other days within the specified range had successful records.",
+      "error": "",
+      "final_answer_present": true,
+      "finish_reason": "stop",
+      "json_tool_call_count": 0,
+      "native_tool_call_count": 0,
+      "response_ok": true,
+      "tool_choice": "none",
+      "turn": 5,
+      "usage": {
+        "completion_tokens": 91,
+        "completion_tokens_details": null,
+        "prompt_tokens": 2942,
+        "prompt_tokens_details": null,
+        "total_tokens": 3033
+      },
+      "usage_total_tokens": 3033
+    }
+  ],
+  "original_query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+  "prompt_context_tokens": 1348,
+  "prompt_route": {
+    "api_policy": "API_SKIP",
+    "confidence": 0.84,
+    "matched_rules": [
+      "local_db:count",
+      "local_db:dataset"
+    ],
+    "mode": "LOCAL_DB_ONLY",
+    "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: count, dataset.",
+    "recommended_strategy": "SQL_FIRST_API_VERIFY",
+    "requires_api": false,
+    "requires_database": true,
+    "risk": "low"
+  },
+  "query_id": "real_llm_two_tools",
+  "real_llm_called": true,
+  "real_llm_used": true,
+  "repaired_endpoint_count": 0,
+  "runtime": 8.4853,
+  "schema_hint_injected": 0,
+  "sdk_path_used": true,
+  "skipped_or_failed": false,
+  "steps": [
+    {
+      "index": 0,
+      "kind": "sql_call",
+      "result": {
+        "error": "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [
+            "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+          ],
+          "ok": false,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_dataset WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;",
+      "validation": {
+        "errors": [
+          "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+        ],
+        "ok": false,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "index": 1,
+      "kind": "sql_call",
+      "result": {
+        "error": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.",
+        "ok": false,
+        "row_count": 0,
+        "rows_preview": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "sql": "SELECT DATE_TRUNC('day', UPDATEDTIME) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE UPDATEDTIME BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "index": 2,
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "ok": true,
+        "row_count": 2,
+        "rows_preview": {
+          "items": [
+            {
+              "day": "2026-03-30 00:00:00",
+              "record_success_count": 6
+            },
+            {
+              "day": "2026-03-29 00:00:00",
+              "record_success_count": 18
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "validation": {
+          "errors": [],
+          "ok": true,
+          "repaired": false,
+          "warnings": []
+        }
+      },
+      "sql": "SELECT DATE_TRUNC('day', CAST(UPDATEDTIME AS TIMESTAMP)) AS day, COUNT(*) AS record_success_count FROM dim_collection WHERE CAST(UPDATEDTIME AS TIMESTAMP) BETWEEN '2026-03-15' AND '2026-03-31' GROUP BY day;",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "RAW_REAL_LLM_TWO_TOOLS_BASELINE",
+  "successful_evidence_count": 1,
+  "token_source": "measured_usage",
+  "tool_call_count": 3,
+  "tool_calls_executed": true,
+  "transport": "openai_sdk",
+  "unsupported_negative_answer_count": 0,
+  "valid_agent_run": true,
+  "validation_results": [
+    {
+      "errors": [
+        "Unknown table: dim_dataset. Suggestions: dim_target, dim_segment, dim_campaign, dim_property"
+      ],
+      "ok": false,
+      "repaired": false,
+      "warnings": []
+    },
+    {
+      "errors": [],
+      "ok": true,
+      "repaired": false,
+      "warnings": []
+    },
+    {
+      "errors": [],
+      "ok": true,
+      "repaired": false,
+      "warnings": []
+    }
+  ]
+}

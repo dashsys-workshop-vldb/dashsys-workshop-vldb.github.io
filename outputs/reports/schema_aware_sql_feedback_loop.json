@@ -1,0 +1,108 @@
+{
+  "baseline": {
+    "hidden_style_passed": 48,
+    "hidden_style_total": 48,
+    "packaged_strict_score": 0.6555
+  },
+  "classification": "keep_trial_only",
+  "diagnostic_only": true,
+  "generated_at": "2026-05-25T10:00:48.269065+00:00",
+  "notes": [
+    "Fixed SQL templates remain the fast path.",
+    "Schema-aware fallback remains feature-flagged and diagnostic-only.",
+    "Generated prompts and deterministic paraphrases are robustness evidence only, not official strict score evidence.",
+    "No live strict eval or live generated prompt suite is run by this feedback loop."
+  ],
+  "observed": {
+    "llm_calls_executed": 0,
+    "paraphrase_consistency_score": 0.9907,
+    "schema_aware_trial_rows_hurt": 1,
+    "schema_aware_trial_strict_score_delta": -0.016,
+    "template_dependency_score": 0.1634,
+    "template_hit_rate": 0.3512
+  },
+  "official_score_claim": false,
+  "output_paths": {
+    "json": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/schema_aware_sql_feedback_loop.json",
+    "markdown": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/reports/schema_aware_sql_feedback_loop.md"
+  },
+  "packaged_default_changed": false,
+  "promotion_allowed": false,
+  "promotion_decision": {
+    "decision": "keep_trial_only",
+    "failed_gates": [
+      "strict_score_non_regression",
+      "template_dependency_decreased"
+    ],
+    "promotion_allowed": false,
+    "reason": "Robustness gates did not all pass; schema-aware SQL remains diagnostic-only."
+  },
+  "promotion_gates": {
+    "coverage_report_available": {
+      "observed": 285,
+      "passed": true,
+      "required": "SQL template coverage report exists"
+    },
+    "hidden_style_48_of_48": {
+      "observed": {
+        "failed": 0,
+        "passed": 48,
+        "total": 48
+      },
+      "passed": true,
+      "required": "48/48 when hidden-style eval is available"
+    },
+    "multi_backend_or_no_llm_robustness": {
+      "observed": {
+        "available_backend_count": 4,
+        "llm_calls_executed": 0
+      },
+      "passed": true,
+      "required": "works without hosted LLM backend and records other backends without model-specific dependence"
+    },
+    "paraphrase_consistency_stable": {
+      "observed": 0.9907,
+      "passed": true,
+      "required": "diagnostic consistency score >= 0.70 before any promotion discussion"
+    },
+    "strict_score_non_regression": {
+      "observed": -0.016,
+      "passed": false,
+      "required": "schema-aware trial strict score delta >= 0"
+    },
+    "template_dependency_decreased": {
+      "observed": 0.1634,
+      "passed": false,
+      "required": "requires a before/after decrease; no runtime promotion candidate is active"
+    },
+    "tool_runtime_no_significant_regression": {
+      "observed": {
+        "runtime_delta": -0.0013,
+        "tool_count_delta": 0.0
+      },
+      "passed": true,
+      "required": "tool count/runtime must not regress materially"
+    },
+    "unsafe_sql_no_increase": {
+      "observed": 0,
+      "passed": true,
+      "required": "all candidates still pass read-only SQL validation"
+    },
+    "unsupported_claims_no_increase": {
+      "observed": "not_changed_answer_path",
+      "passed": true,
+      "required": "answer path unchanged by diagnostic fallback"
+    }
+  },
+  "report_type": "schema_aware_sql_feedback_loop",
+  "robustness_principle": "Higher score is not considered meaningful unless robustness and generalization gates pass.",
+  "runtime_change_applied": false,
+  "source_reports": {
+    "coverage": "outputs/reports/sql_template_coverage_audit.json",
+    "multi_llm": "outputs/reports/multi_llm_backend_robustness.json",
+    "paraphrase_consistency": "outputs/reports/nl_sql_paraphrase_consistency.json",
+    "robustness": "outputs/reports/nl_sql_robustness_audit.json",
+    "schema_aware_trial": "outputs/reports/schema_aware_sql_trial.json"
+  },
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

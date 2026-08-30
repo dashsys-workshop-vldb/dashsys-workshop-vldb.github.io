@@ -1,0 +1,82 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "Present the local snapshot records with their campaign status and segment associations. Explain that status values like 'inactive' or 'draft' indicate the campaign lifecycle state.",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "planner_json_fallback_used": true,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "content_json",
+      "planner_provider_latency_ms": 6464,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      }
+    },
+    "direct_answer": null,
+    "evidence_order": "SQL_FIRST",
+    "model": "claude-haiku-4-5",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "campaign and segment records from local snapshot",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT c.CAMPAIGNID, c.CAMPAIGNNAME, c.STATUS, s.SEGMENTID, s.SEGMENTNAME, bcs.LABELSSEGMENT FROM dim_campaign c LEFT JOIN br_campaign_segment bcs ON c.CAMPAIGNID = bcs.CAMPAIGNID LEFT JOIN dim_segment s ON bcs.SEGMENTID = s.SEGMENTID LIMIT 100"
+        },
+        "subtask": "Query campaign and segment data from the local database snapshot"
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "preview": "\"```json\\n{\\n  \\\"route\\\": \\\"EVIDENCE_PIPELINE\\\",\\n  \\\"evidence_order\\\": \\\"SQL_FIRST\\\",\\n  \\\"passes\\\": [\\n    {\\n      \\\"pass_id\\\": \\\"pass_1\\\",\\n      \\\"path\\\": \\\"SQL\\\",\\n      \\\"can_run_parallel\\\": true,\\n      \\\"depends_on\\\": [],\\n      \\\"optional\\\": false,\\n      \\\"fallback\\\": false,\\n      \\\"evidence_order\\\": \\\"SQL_FIRST\\\",\\n      \\\"expected_result\\\": \\\"campaign and segment records from local snapshot\\\",\\n      \\\"subtask\\\": \\\"Query campaign and segment data from the local database snapshot\\\",\\n      \\\"sql\\\": {\\n        \\\"query\\\": \\\"SELECT c.CAMPAIGNID, c.CAMPAIGNNAME, c.STATUS, s.SEGMENTID, s.SEGMENTNAME, bcs.LABELSSEGMENT FROM dim_campaign c LEFT JOIN br_campaign_segment bcs ON c.CAMPAIGNID = bcs.CAMPAIGNID LEFT JOIN dim_segment s ON bcs.SEGMENTID = s.SEGMENTID LIMIT 100\\\",\\n        \\\"params\\\": []\\n      },\\n      \\\"api_request\\\": null\\n    }\\n  ],\\n  \\\"aggregation_instruction\\\": \\\"Present the local snapshot records with their campaign status and segment associations. Explain that ...",
+      "truncated": true
+    },
+    "reason": "User requests data records from the local snapshot; SQL evidence is required to retrieve campaign and segment information",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT c.CAMPAIGNID, c.CAMPAIGNNAME, c.STATUS, s.SEGMENTID, s.SEGMENTNAME, bcs.LABELSSEGMENT FROM dim_campaign c LEFT JOIN br_campaign_segment bcs ON c.CAMPAIGNID = bcs.CAMPAIGNID LEFT JOIN dim_segment s ON bcs.SEGMENTID = s.SEGMENTID LIMIT 100"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Explain what inactive journey means and show inactive journeys.",
+  "query_id": "pioneer_sweep_claude_haiku_4_5_mixed_inactive_journeys",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T16:15:35.336081+00:00",
+    "deadline_at": "2026-06-01T16:16:05.336081+00:00",
+    "evidence_bus_id": "evidence_run_6f6c4d694ab54a948e6c09558bd43940",
+    "original_prompt": "Explain what inactive journey means and show inactive journeys.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_claude_haiku_4_5_mixed_inactive_journeys",
+    "result_bundle_id": "bundle_run_6f6c4d694ab54a948e6c09558bd43940",
+    "run_id": "run_6f6c4d694ab54a948e6c09558bd43940",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

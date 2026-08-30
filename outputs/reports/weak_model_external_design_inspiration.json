@@ -1,0 +1,64 @@
+{
+  "diagnostic_only": true,
+  "patterns": [
+    {
+      "adopted_pattern": "Schema/context retrieval for text-to-SQL",
+      "implemented_in": [
+        "dashagent/nlp_generalization_layer.py",
+        "dashagent/weak_model_semantic_slots.py",
+        "dashagent/semantic_slot_compiler.py"
+      ],
+      "inspiration": "Vanna-style schema/context retrieval",
+      "robustness_guard": "The weak model emits semantic slots only; deterministic compiler maps slots to known tables and columns.",
+      "runtime_effect": "Shadow-only weak-model evaluation; packaged SQL_FIRST_API_VERIFY unchanged.",
+      "weak_model_benefit": "Reduces burden on a weak model to memorize physical table and column names."
+    },
+    {
+      "adopted_pattern": "Schema-aware structured SQL intent instead of raw SQL",
+      "implemented_in": [
+        "dashagent/weak_model_semantic_slots.py",
+        "dashagent/semantic_slot_compiler.py"
+      ],
+      "inspiration": "SQLCoder-style schema-aware prompting",
+      "robustness_guard": "Raw LLM SQL is not executed; generated SQL is deterministic and validated.",
+      "runtime_effect": "Shadow-only weak-model evaluation; packaged SQL_FIRST_API_VERIFY unchanged.",
+      "weak_model_benefit": "Converts weak-model semantic interpretation into safer executable actions."
+    },
+    {
+      "adopted_pattern": "Validator feedback and repair boundary",
+      "implemented_in": [
+        "dashagent/weak_model_slot_verifier.py",
+        "dashagent/semantic_slot_compiler.py"
+      ],
+      "inspiration": "SQLFixAgent-style validation and repair loops",
+      "robustness_guard": "Invalid API-only choices for local snapshot questions are rejected and corrected to SQL-first slots.",
+      "runtime_effect": "Shadow-only weak-model evaluation; packaged SQL_FIRST_API_VERIFY unchanged.",
+      "weak_model_benefit": "Catches common weak-model tool-choice errors before execution."
+    },
+    {
+      "adopted_pattern": "AST/safety validation before execution",
+      "implemented_in": [
+        "dashagent/semantic_slot_compiler.py",
+        "dashagent/validators.py"
+      ],
+      "inspiration": "SQLGlot/SQLValidator-style validation",
+      "robustness_guard": "Only SELECT/read-only, known-table, known-column SQL can execute through the scaffold.",
+      "runtime_effect": "No packaged runtime change.",
+      "weak_model_benefit": "Preserves safety even when the weak model misreads the prompt."
+    },
+    {
+      "adopted_pattern": "Explicit staged agent workflow",
+      "implemented_in": [
+        "scripts/run_weak_model_lift_eval.py",
+        "scripts/run_weak_model_robustness_gate.py"
+      ],
+      "inspiration": "LangGraph/LangChain-style state-machine traceability",
+      "robustness_guard": "Each stage records semantic slots, compiler output, tool calls, and evidence-grounded answer state.",
+      "runtime_effect": "Diagnostic-only reports; final submission format unchanged.",
+      "weak_model_benefit": "Makes scaffold lift measurable rather than treating the weak model as an opaque answer generator."
+    }
+  ],
+  "promotion_allowed": false,
+  "report_type": "weak_model_external_design_inspiration",
+  "summary": "The implementation borrows lightweight design patterns conceptually, without importing large frameworks or changing packaged runtime behavior."
+}

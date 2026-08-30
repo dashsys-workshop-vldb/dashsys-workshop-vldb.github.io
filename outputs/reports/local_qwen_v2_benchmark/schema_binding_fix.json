@@ -1,0 +1,219 @@
+{
+  "objective": "Add LLM-owned schema/table/field binding support for V2 Semantic IR planning and run local Qwen focused smoke before strict dev eval.",
+  "packaged_default_unchanged": true,
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "strict_dev_eval_ran": false,
+  "strict_dev_eval_skip_reason": "Focused smoke failed the required 7/7 gate.",
+  "files_changed_runtime": [
+    "dashagent/v2_schema_binding.py",
+    "dashagent/v2_schema_binding_validator.py",
+    "dashagent/v2_schema_binding_planner.py",
+    "dashagent/v2_semantic_ir.py",
+    "dashagent/v2_semantic_ir_validator.py",
+    "dashagent/v2_semantic_ir_planner.py",
+    "dashagent/v2_semantic_ir_compiler.py",
+    "dashagent/v2_semantic_ir_context.py",
+    "scripts/run_hermes_v2_toolcall_smoke.py"
+  ],
+  "files_changed_tests": [
+    "tests/test_v2_schema_binding.py",
+    "tests/test_v2_semantic_ir.py",
+    "tests/test_hermes_v2_toolcall_smoke.py"
+  ],
+  "implementation": {
+    "schema_binding_contract_added": true,
+    "schema_binding_tool_name": "submit_schema_binding_plan",
+    "semantic_ir_binding_ids_added": true,
+    "binding_validation_added": true,
+    "backend_semantic_binding_inference_used": false,
+    "backend_rewrites_or_repairs_binding": false,
+    "smoke_schema_binding_diagnostics_added": true,
+    "smoke_spawn_start_method_added": true
+  },
+  "probe": {
+    "command": "scripts/probe_hermes_sdk_toolcall.py",
+    "provider": "openai",
+    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+    "ok": true,
+    "sdk_path_used": true,
+    "toolcall_supported": true,
+    "tool_calls_count": 1,
+    "tool_name": "submit_probe_result"
+  },
+  "fresh_smoke": {
+    "command": "scripts/run_hermes_v2_toolcall_smoke.py",
+    "start_method": "spawn",
+    "ok": false,
+    "summary": {
+      "api_calls": 1,
+      "atomic_protocol_fallback_count": 0,
+      "caveat_or_error_only_count": 3,
+      "compiled_api_count": 0,
+      "compiled_sql_count": 1,
+      "error_count": 0,
+      "failed_count": 5,
+      "final_answer_repair_attempts": 1,
+      "final_semantic_gate_final_failures": 0,
+      "final_semantic_gate_initial_failures": 1,
+      "final_unavailable_with_runtime_facts": 0,
+      "live_api_fact_count": 0,
+      "local_snapshot_fact_count": 1,
+      "missing_answer_contract_count": 0,
+      "no_tool_fp": 3,
+      "passed_count": 2,
+      "raw_sql_fallback_used_count": 0,
+      "repaired_success_count": 0,
+      "row_count": 7,
+      "runtime_fact_count": 1,
+      "schema_binding_repair_attempt_count": 0,
+      "schema_binding_repair_success_count": 0,
+      "schema_binding_used_count": 1,
+      "schema_binding_validation_failure_count": 0,
+      "sql_calls": 2,
+      "timeout_count": 2,
+      "unknown_table_count": 0,
+      "unsupported_claims": 0
+    },
+    "rows": [
+      {
+        "prompt_id": "pure_concept_schema",
+        "pass": true,
+        "timed_out": false,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": false,
+        "schema_binding_used": false,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Correct direct concept answer."
+      },
+      {
+        "prompt_id": "pure_meta_list_schemas",
+        "pass": true,
+        "timed_out": false,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": false,
+        "schema_binding_used": false,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Correct direct meta-language answer."
+      },
+      {
+        "prompt_id": "ambiguous_user_schemas",
+        "pass": false,
+        "timed_out": false,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": true,
+        "schema_binding_used": false,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Data-like prompt incorrectly bypassed evidence; binding did not run."
+      },
+      {
+        "prompt_id": "local_schema_count",
+        "pass": false,
+        "timed_out": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 0,
+        "no_tool_fp": false,
+        "schema_binding_used": true,
+        "schema_binding_count": 1,
+        "schema_binding_ids": [
+          "task_schema_count"
+        ],
+        "schema_binding_validation_passed": true,
+        "runtime_fact_count": 1,
+        "local_snapshot_fact_count": 1,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Binding validated, but LLM selected a schema-valid wrong table and answered 0."
+      },
+      {
+        "prompt_id": "birthday_message_published",
+        "pass": false,
+        "timed_out": true,
+        "timed_out_stage": "checkpoint_llm_owned_pass_graph_gate",
+        "route": null,
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": true,
+        "schema_binding_used": false,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Timed out before a completed route/evidence result."
+      },
+      {
+        "prompt_id": "mixed_inactive_journeys",
+        "pass": false,
+        "timed_out": true,
+        "timed_out_stage": "checkpoint_llm_unified_planner_start",
+        "route": null,
+        "sql_calls": 0,
+        "api_calls": 0,
+        "no_tool_fp": true,
+        "schema_binding_used": false,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Timed out before a completed route/evidence result."
+      },
+      {
+        "prompt_id": "compare_local_live_birthday_status",
+        "pass": false,
+        "timed_out": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 1,
+        "no_tool_fp": false,
+        "schema_binding_used": false,
+        "semantic_ir_validation_passed": false,
+        "semantic_ir_validation_error_type": "unknown_field",
+        "runtime_fact_count": 0,
+        "final_semantic_gate_initial_failures": 1,
+        "final_semantic_gate_final_failures": 0,
+        "observation": "Semantic IR remained invalid with unknown_field; binding did not run."
+      }
+    ]
+  },
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest -q",
+      "passed": 1220,
+      "skipped": 1,
+      "failed": 0,
+      "ok": true
+    },
+    "check_submission_ready": {
+      "ok": true,
+      "default_strategy_is_sql_first_api_verify": true,
+      "query_output_count": 73,
+      "secret_scan_ok": true,
+      "secret_hits": 0
+    },
+    "sdk_usage_audit": {
+      "runtime_llm_direct_http_hits": 0,
+      "ok": true
+    },
+    "git_diff_check": {
+      "ok": true
+    }
+  },
+  "blockers": [
+    "ambiguous_user_schemas still routes to LLM_DIRECT and creates a no-tool false positive.",
+    "local_schema_count uses schema binding, but the LLM selected a schema-valid wrong table.",
+    "birthday_message_published timed out at checkpoint_llm_owned_pass_graph_gate.",
+    "mixed_inactive_journeys timed out at checkpoint_llm_unified_planner_start.",
+    "compare_local_live_birthday_status still fails Semantic IR validation with unknown_field before binding can repair the table/field association."
+  ],
+  "recommendation": {
+    "safe_to_keep_shadow_only": true,
+    "safe_to_benchmark_v2": false,
+    "safe_to_promote_v2": false,
+    "safe_to_commit_as_readiness_fix": false,
+    "notes": "The binding infrastructure is test-covered and preserves backend non-ownership of semantics, but fresh smoke failed 2/7 and must not be used as benchmark evidence."
+  }
+}

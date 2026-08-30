@@ -1,0 +1,94 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "Answer with the complete list of schemas returned from pass_1 runtime evidence. Include schema names, IDs, and update times if available.",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "backend_route_inference_used": false,
+      "evidence_planner_called": true,
+      "llm_plan_self_check_used": true,
+      "llm_route_gate_used": true,
+      "plan_self_check_missing_parts": [],
+      "plan_self_check_ok": null,
+      "plan_self_check_parse_error": "Expecting ',' delimiter: line 16 column 6 (char 1036)",
+      "plan_self_check_revised": false,
+      "planner_json_fallback_used": true,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "content_json",
+      "planner_provider_latency_ms": 13840,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_gate_parse_error": null,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true
+    },
+    "direct_answer": null,
+    "evidence_order": "SQL_FIRST",
+    "model": "claude-haiku-4-5",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "list of schema records with names, IDs, and metadata",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT DISTINCT SCHEMANAME, SCHEMAID, UPDATEDTIME FROM dim_schema LIMIT 100"
+        },
+        "subtask": "Retrieve all available schemas from the local snapshot using database_schema table and column metadata"
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "preview": "\"```json\\n{\\n  \\\"route\\\": \\\"EVIDENCE_PIPELINE\\\",\\n  \\\"reason\\\": \\\"user-specific data request requiring runtime evidence from database snapshot\\\",\\n  \\\"evidence_order\\\": \\\"SQL_FIRST\\\",\\n  \\\"direct_answer\\\": null,\\n  \\\"passes\\\": [\\n    {\\n      \\\"pass_id\\\": \\\"pass_1\\\",\\n      \\\"path\\\": \\\"SQL\\\",\\n      \\\"subtask\\\": \\\"Retrieve all available schemas from the local snapshot using database_schema table and column metadata\\\",\\n      \\\"sql\\\": {\\n        \\\"query\\\": \\\"SELECT DISTINCT SCHEMANAME, SCHEMAID, UPDATEDTIME FROM dim_schema LIMIT 100\\\",\\n        \\\"params\\\": []\\n      },\\n      \\\"expected_result\\\": \\\"list of schema records with names, IDs, and metadata\\\",\\n      \\\"depends_on\\\": [],\\n      \\\"can_run_parallel\\\": true,\\n      \\\"optional\\\": false,\\n      \\\"fallback\\\": false,\\n      \\\"evidence_order\\\": \\\"SQL_FIRST\\\",\\n      \\\"api_request\\\": null\\n    }\\n  ],\\n  \\\"aggregation_instruction\\\": \\\"Answer with the complete list of schemas returned from pass_1 runtime evidence. Include schema names, I...",
+      "truncated": true
+    },
+    "reason": "user-specific data request requiring runtime evidence from database snapshot",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT DISTINCT SCHEMANAME, SCHEMAID, UPDATEDTIME FROM dim_schema LIMIT 100"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "What schemas do I have?",
+  "query_id": "pioneer_sweep_claude_haiku_4_5_ambiguous_user_schemas",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T17:28:24.662193+00:00",
+    "deadline_at": "2026-06-01T17:28:54.662193+00:00",
+    "evidence_bus_id": "evidence_run_f9cf62ba62ef4c188720ca30b71e59b0",
+    "original_prompt": "What schemas do I have?",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_claude_haiku_4_5_ambiguous_user_schemas",
+    "result_bundle_id": "bundle_run_f9cf62ba62ef4c188720ca30b71e59b0",
+    "run_id": "run_f9cf62ba62ef4c188720ca30b71e59b0",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

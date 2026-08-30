@@ -1,0 +1,195 @@
+{
+  "answer_time": 9.333016350865364e-06,
+  "api_call_count": 2,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 936,
+  "execution_time": 0.00048229098320007324,
+  "final_answer": "Details for the tag named 'Uncategorized' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Which tags belong to the category 'Uncategorized'?",
+  "planning_time": 0.0002662090118974447,
+  "preprocessing_time": 0.0006019999855197966,
+  "query_id": "example_017",
+  "route_type": "API_ONLY",
+  "runtime": 0.0016918749897740781,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "unified_tag_categories",
+          "unified_tag_detail"
+        ],
+        "lookup_paths": [
+          "tags"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "tags"
+        ],
+        "quoted_entities": [
+          "Uncategorized"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 668,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_fast_paths/eval/example_017/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 976
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_categories+tags_by_uncategorized_category.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "tag_categories",
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "purpose": "API parameter template: tag_categories.",
+          "url": "/unifiedtags/tagCategory"
+        },
+        {
+          "action": "api",
+          "family": "tags_by_uncategorized_category",
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          },
+          "purpose": "API parameter template: tags_by_uncategorized_category.",
+          "url": "/unifiedtags/tags"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2764
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "100"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/unifiedtags/tagCategory",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "100"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/unifiedtags/tagCategory"
+      },
+      "url": "/unifiedtags/tagCategory",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "100",
+        "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/unifiedtags/tags",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "100",
+          "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/unifiedtags/tags"
+      },
+      "url": "/unifiedtags/tags",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 9.333016350865364e-06,
+    "execution_time": 0.00048229098320007324,
+    "planning_time": 0.0002662090118974447,
+    "preprocessing_time": 0.0006019999855197966
+  },
+  "tool_call_count": 2
+}

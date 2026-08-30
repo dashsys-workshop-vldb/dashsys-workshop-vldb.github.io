@@ -1,0 +1,18 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.10, nodesep=0.48, ranksep=0.62, splines=ortho];
+  node [shape=rect, style="rounded,filled", fontname="Aptos", fontsize=19, margin="0.16,0.10", penwidth=2.0];
+  edge [fontname="Aptos", fontsize=12.5, color="#687386", fontcolor="#425466", penwidth=1.7, arrowsize=0.72];
+  valid [label="ValidatedPlan\n• valid_sql_steps[]\n• valid_api_steps[]\n• validation_warnings[]", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  results [label="ToolResults\n• sql_rows[]\n• api_payloads[]\n• dry_run_flags[]\n• errors[]", shape=rect, fillcolor="#E8FAF8", color="#0B8F8A"];
+  bus [label="EvidenceBus\n• entity_ids{}\n• names[]\n• counts{}\n• timestamps[]\n• statuses[]\n• sql_rows[]\n• api_items[]", shape=rect, fillcolor="#E8FAF8", color="#0B8F8A"];
+  slots [label="AnswerSlots\n• entity_name\n• entity_id\n• count\n• status\n• timestamp\n• metric_value\n• dry_run\n• discrepancy", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  ans [label="VerifiedAnswer\n• final_text\n• verifier_passed\n• unsupported_claims_count\n• caveats[]", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  art [label="Artifacts\n• metadata.json\n• filled_system_prompt.txt\n• trajectory.json\n• eval reports", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  { rank=same; valid; results; bus; }
+  { rank=same; slots; ans; art; }
+  valid -> results [label="execute_sql + call_api/dry-run"];
+  results -> bus [label="extract structured facts"];
+  bus -> slots [label="forward exact evidence"];
+  slots -> ans [label="verify claims + rerank"];
+  ans -> art [label="write reproducible trace"];
+}

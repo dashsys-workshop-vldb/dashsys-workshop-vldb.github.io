@@ -1,0 +1,36 @@
+{
+  "executor_wiring": [
+    "SemanticIRValidator invokes AnswerContractValidator after existing task/table/API/alias validation.",
+    "Compiled V2 plan carries answer_contract into the LLMUnifiedPlan-compatible payload.",
+    "Executor evaluates evidence contract after ResultBundle construction.",
+    "LLM final answer card receives answer_contract and evidence_slot_states.",
+    "Final answer semantic gate is wrapped by FinalAnswerContractGate before existing grounding checks."
+  ],
+  "generated_at": "2026-06-02T22:15:43.935008+00:00",
+  "modules": {
+    "dashagent/final_answer_contract_gate.py": "Final answer gate that blocks unsupported positives, raw evidence dumps, and caveat misuse.",
+    "dashagent/v2_answer_contract.py": "Dataclasses and parser/serializer for LLM-owned answer contracts and evidence slot states.",
+    "dashagent/v2_answer_contract_validator.py": "Shape/reference/scope validator for answer contracts; no backend semantic inference.",
+    "dashagent/v2_evidence_contract.py": "Runtime evidence-state evaluator mapping pass results to required answer slots."
+  },
+  "semantic_ir_contract": {
+    "backend_non_goals": [
+      "no slot inference from prompt",
+      "no table/endpoint selection",
+      "no SQL/API rewrite",
+      "no gold/hidden wording use"
+    ],
+    "backend_role": "Validate contract shape, evaluate evidence state, pass state to final composer/gate.",
+    "evidence_route_policy": "EVIDENCE plans require required_slots referencing LLM-declared task IDs.",
+    "primary_tool_schema": "SDK toolcall schema requires an object answer_contract; DIRECT can use empty NONE-scope contract.",
+    "root_field": "answer_contract"
+  },
+  "strategy_scope": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 only; packaged default remains SQL_FIRST_API_VERIFY",
+  "validation": {
+    "check_submission_ready_ok": true,
+    "focused_v2_tests": "142 passed",
+    "full_pytest": "1206 passed, 1 skipped",
+    "git_diff_check": "passed",
+    "sdk_usage_runtime_llm_direct_http_hits": null
+  }
+}

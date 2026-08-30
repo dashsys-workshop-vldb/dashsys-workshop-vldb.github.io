@@ -1,0 +1,115 @@
+# Minimal Progressive Candidate Eval Preflight
+
+- Packaged default strategy: `SQL_FIRST_API_VERIFY`
+- Candidate available: `True`
+- Candidate base strategy: `SQL_FIRST_API_VERIFY`
+- check_submission_ready return code: `0`
+- check_submission_ready ok: `True`
+- query_output_count: `73`
+- final submission default unchanged: `True`
+
+## Module Presence
+- `progressive_evidence_policy`: `True`
+- `semantic_role_aware_verifier`: `True`
+- `post_sql_llm_first_decision`: `True`
+- `minimal_correction_feedback`: `True`
+- `risk_minimizing_fallback`: `True`
+- `evidence_grounded_llm_answer_verifier`: `True`
+
+## Candidate Flags
+- `enable_objective_prompt_features`: `True`
+- `enable_semantic_intent_classifier`: `True`
+- `enable_routing_anti_hallucination_gate`: `True`
+- `enable_no_tool_safety_verifier`: `True`
+- `enable_semantic_route_decision_ladder`: `True`
+- `enable_safe_api_probe`: `True`
+- `enable_staged_evidence_policy`: `True`
+- `enable_post_sql_deterministic_policy`: `True`
+- `enable_post_sql_llm_advisor`: `None`
+- `enable_evidence_quality_classifier`: `True`
+- `enable_answer_slot_renderer`: `True`
+- `enable_evidence_grounded_answer_builder`: `True`
+
+## Git Status
+- status line count: `544`
+- ` M outputs/eval/example_000/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_001/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_002/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_003/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_004/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_005/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_006/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_007/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_008/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_009/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_010/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_011/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_012/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_013/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_014/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_015/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_016/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_017/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_018/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_019/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_020/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_021/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_022/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_023/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_024/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_025/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_026/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_027/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_028/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_029/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_030/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_031/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_032/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_033/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval/example_034/sql_first_api_verify/trajectory.json`
+- ` M outputs/eval_results_strict.csv`
+- ` M outputs/eval_results_strict.json`
+- ` M outputs/hidden_style_eval.json`
+- ` M outputs/strategy_comparison_strict.md`
+- ` M outputs/visualizations/end_to_end_execution_primary.json`
+- ` M outputs/visualizations/end_to_end_execution_primary.md`
+- ` M outputs/visualizations/end_to_end_system_dataflow.html`
+- ` M outputs/visualizations/end_to_end_system_dataflow.json`
+- ` M outputs/visualizations/executive_dashboard.json`
+- ` M outputs/visualizations/executive_dashboard.md`
+- ` M outputs/visualizations/prompt_storyboard_primary.json`
+- ` M outputs/visualizations/query_example_000_dataflow.json`
+- ` M outputs/visualizations/query_example_000_dataflow.md`
+- ` M outputs/visualizations/query_example_003_dataflow.json`
+- ` M outputs/visualizations/query_example_003_dataflow.md`
+- ` M outputs/visualizations/query_example_011_dataflow.json`
+- ` M outputs/visualizations/query_example_011_dataflow.md`
+- ` M outputs/visualizations/query_example_021_dataflow.json`
+- ` M outputs/visualizations/query_example_021_dataflow.md`
+- ` M outputs/visualizations/query_example_031_dataflow.json`
+- ` M outputs/visualizations/query_example_031_dataflow.md`
+- ` M outputs/visualizations/query_example_033_dataflow.json`
+- ` M outputs/visualizations/query_example_033_dataflow.md`
+- ` M outputs/visualizations/score_bottleneck_dashboard.json`
+- ` M outputs/visualizations/score_improvement_timeline.json`
+- ` M outputs/visualizations/score_improvement_timeline.md`
+- ` M outputs/visualizations/sql_prompt_storyboard_primary.json`
+- ` M outputs/visualizations/sql_prompt_storyboard_primary.md`
+- ` M outputs/visualizations/technique_catalog.json`
+- ` M outputs/visualizations/technique_catalog.md`
+- ` M outputs/visualizations/technique_impact_matrix.json`
+- ` M outputs/visualizations/technique_impact_matrix.md`
+- ` M outputs/visualizations/technique_pipeline_map.json`
+- ` M outputs/visualizations/technique_visual_cards.json`
+- ` M outputs/visualizations/technique_visual_cards.md`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_answer_grounding_only_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_full_candidate_no_llm_answer_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_full_candidate_no_safe_api_probe_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_full_candidate_no_semantic_parse_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_full_candidate_no_staged_policy_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_llm_answer_no_verifier_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_llm_answer_with_verifier_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_no_llm_components_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_no_semantic_routing_real/`
+- `?? outputs/dashagent_500_prompt_suite_eval_real/ablation_semantic_role_parse_only_real/`
+- ... `464` additional lines omitted from Markdown; full output is in JSON.

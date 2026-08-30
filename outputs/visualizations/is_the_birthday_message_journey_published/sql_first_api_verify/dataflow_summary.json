@@ -1,0 +1,389 @@
+{
+  "answer": {
+    "answer_verification": {
+      "errors": {
+        "items": [],
+        "total_items": 0,
+        "truncated_items": false
+      },
+      "rewrite_applied": false,
+      "supported_claims_count": 2,
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    },
+    "empty_result_uncertainty": "n/a - no empty-result uncertainty wording detected",
+    "final_answer_preview": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable."
+  },
+  "api": {
+    "dry_run": true,
+    "endpoint": "GET /ajo/journey",
+    "endpoint_repair": "n/a - no endpoint repair recorded",
+    "live_evidence_available": false,
+    "result_preview": "n/a - no API result preview recorded",
+    "validation": "ok"
+  },
+  "candidate_ranking": "n/a - no candidate context report row attached",
+  "checkpoint_count": 25,
+  "checkpoint_effect": {
+    "checkpoint_id": "checkpoint_01_raw_query",
+    "correctness_role": "keeps later normalization from changing the user-facing question",
+    "effect": "preserves the original query for reproducibility",
+    "efficiency_role": "starts one trace without extra tool calls"
+  },
+  "compact_context_shadow": "n/a - no compact-context shadow eval row attached",
+  "context": {
+    "candidate_apis": {
+      "items": [
+        "journey_list"
+      ],
+      "total_items": 3,
+      "truncated_items": false
+    },
+    "candidate_tables": {
+      "items": [
+        "dim_campaign"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "confidence": 0.88,
+    "context_mode": "metadata_context_card",
+    "context_mode_note": "display-only inferred from checkpoint_07_context_card",
+    "estimated_context_tokens": 378,
+    "score_margin": "n/a - no candidate score margin recorded"
+  },
+  "evidence": {
+    "dry_run_only": true,
+    "evidence_available": true,
+    "explanation": "SQL evidence is available. API tool was invoked and validated, but live API evidence was unavailable because Adobe credentials were missing.",
+    "live_api_evidence_available": false,
+    "overall_evidence_available": true,
+    "sql_evidence_available": true,
+    "successful_evidence_count": 1,
+    "zero_row_uncertain": false
+  },
+  "execution": {
+    "call_api_calls": 1,
+    "duplicate_invalid_calls": "n/a - no duplicate-invalid metric recorded",
+    "endpoint_repairs": "n/a - no endpoint-repair metric recorded",
+    "execute_sql_calls": 1,
+    "invalid_tool_calls": "n/a - no invalid-call metric recorded",
+    "schema_hint_injections": "n/a - no schema-hint metric recorded",
+    "tool_call_count": 2,
+    "tool_calls_executed": "n/a - tool_calls_executed not recorded",
+    "valid_agent_run": "n/a - valid_agent_run not recorded",
+    "valid_tool_calls": 2
+  },
+  "metrics": {
+    "answer_time": 0.0014284999342635274,
+    "checkpoint_count": 25,
+    "estimated_tokens": 914,
+    "execution_time": 0.0019871669355779886,
+    "planning_time": 0.013216209015809,
+    "preprocessing_time": 0.07595137506723404,
+    "prompt_context_tokens": "n/a - prompt_context_tokens missing",
+    "runtime": 0.012621874921023846
+  },
+  "normalization": {
+    "matching_text": "is the 'birthday message' journey published?",
+    "normalized_query": "Is the 'Birthday Message' journey published?"
+  },
+  "official_token_reduction": {
+    "correctness_impact_expected": false,
+    "estimated_tokens_after": 914,
+    "estimated_tokens_before": 952,
+    "official_token_reduction_active": true,
+    "official_token_reduction_available": true,
+    "packaged_execution_changed": false,
+    "reduced_fields": [
+      "steps[2].metadata_path",
+      "steps[5].result.rows"
+    ],
+    "token_savings": 38
+  },
+  "planning": {
+    "call_budget": {
+      "final_planned_calls": 2,
+      "max_api_calls": 1,
+      "max_sql_calls": 1,
+      "max_total_tool_calls": 2,
+      "planned_api_calls": 1,
+      "planned_sql_calls": 1
+    },
+    "optimizer_decision": "{\"candidate_scores\": {\"generic_sql_first\": 14.2787}, \"candidate_tool_calls\": {\"generic_sql_first\": 2}, \"selected\": \"generic_sql_first\"}",
+    "optimizer_selected": "generic_sql_first",
+    "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_published+journey_by_name.",
+    "selected_strategy": "SQL_FIRST_API_VERIFY"
+  },
+  "query_id": "is_the_birthday_message_journey_published",
+  "research_techniques": [
+    {
+      "active": true,
+      "correctness_impact": "detects schema/safety mismatches structurally",
+      "effect_on_dataflow": "AST SQL validation and table/column extraction",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "SQLGlot",
+      "technique": "SQLGlot AST validation",
+      "visualization_checkpoint": "checkpoint_sql_ast_validation"
+    },
+    {
+      "active": false,
+      "correctness_impact": "keeps relevant tables, columns, and bridges visible",
+      "effect_on_dataflow": "Bidirectional schema linking and bridge preservation",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "RSL-SQL",
+      "technique": "Robust schema linking",
+      "visualization_checkpoint": "checkpoint_schema_linking"
+    },
+    {
+      "active": true,
+      "correctness_impact": "grounds named entities and IDs before planning",
+      "effect_on_dataflow": "Entity-value grounding from local DB samples",
+      "efficiency_impact": "bounded cached retrieval budget",
+      "source_inspiration": "CHESS",
+      "technique": "Value/entity retrieval",
+      "visualization_checkpoint": "checkpoint_value_entity_retrieval"
+    },
+    {
+      "active": true,
+      "correctness_impact": "preserves complex constraints",
+      "effect_on_dataflow": "Complex-query decomposition into constraints",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "DIN-SQL",
+      "technique": "Query decomposition",
+      "visualization_checkpoint": "checkpoint_query_decomposition"
+    },
+    {
+      "active": true,
+      "correctness_impact": "prevents invalid hard-case SQL from being selected",
+      "effect_on_dataflow": "Hard-case candidate validation before one execution",
+      "efficiency_impact": "validates only; executes one selected plan",
+      "source_inspiration": "DIN-SQL / self-correction",
+      "technique": "Gated SQL candidates",
+      "visualization_checkpoint": "checkpoint_gated_sql_candidate_selection"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Optional family hints for LLM SQL",
+      "efficiency_impact": "optional LLM-only token cost",
+      "source_inspiration": "DAIL-SQL",
+      "technique": "Query-family examples",
+      "visualization_checkpoint": "checkpoint_query_family_examples"
+    },
+    {
+      "active": true,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Local span-style checkpoint export",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "OpenAI Agents SDK tracing",
+      "technique": "Span export",
+      "visualization_checkpoint": "spans.json"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Report-only candidate separation scoring",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "Blended RAG / rank fusion",
+      "technique": "Hybrid candidate scoring",
+      "visualization_checkpoint": "checkpoint_hybrid_candidate_scoring"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Report-only endpoint family reranking",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "Domain-aware retrieval",
+      "technique": "Endpoint family ranking",
+      "visualization_checkpoint": "checkpoint_endpoint_family_ranking"
+    },
+    {
+      "active": false,
+      "correctness_impact": "keeps relevant tables, columns, and bridges visible",
+      "effect_on_dataflow": "Report-only bridge/relationship preservation diagnostics",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "RSL-SQL",
+      "technique": "Structural schema preservation",
+      "visualization_checkpoint": "checkpoint_structural_schema_preservation"
+    },
+    {
+      "active": false,
+      "correctness_impact": "grounds named entities and IDs before planning",
+      "effect_on_dataflow": "High-confidence entity matches can boost API-family ranking in reports",
+      "efficiency_impact": "bounded cached retrieval budget",
+      "source_inspiration": "CHESS",
+      "technique": "Value-to-API ranking",
+      "visualization_checkpoint": "checkpoint_value_to_api_ranking"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Diagnostic repaired candidate comparison without execution change",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "CHASE-SQL-style repair",
+      "technique": "Gated risk-cluster repair",
+      "visualization_checkpoint": "checkpoint_gated_risk_cluster_repair"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Diagnostic policy that estimates skipped module cost by risk level",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "adaptive retrieval control",
+      "technique": "Risk-based efficiency controller",
+      "visualization_checkpoint": "checkpoint_risk_efficiency_controller"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "High-risk diagnostic comparison of compact and broader context",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "full-vs-compact context voting",
+      "technique": "Schema context voting",
+      "visualization_checkpoint": "checkpoint_schema_context_voting"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Replay-only compact-context cost comparison",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "shadow replay",
+      "technique": "Compact context shadow eval",
+      "visualization_checkpoint": "checkpoint_compact_context_shadow_eval"
+    },
+    {
+      "active": false,
+      "correctness_impact": "makes technique visibility auditable",
+      "effect_on_dataflow": "Replay-only diagnostic module-skipping cost comparison",
+      "efficiency_impact": "diagnostic overhead only",
+      "source_inspiration": "shadow replay",
+      "technique": "Risk-efficiency shadow eval",
+      "visualization_checkpoint": "checkpoint_risk_efficiency_shadow_eval"
+    }
+  ],
+  "risk_efficiency_controller": "n/a - no risk-efficiency diagnostic row attached",
+  "risk_efficiency_shadow": "n/a - no risk-efficiency shadow eval row attached",
+  "route": {
+    "api_policy": "n/a - no API policy recorded",
+    "confidence": 0.88,
+    "mode": "SQL_PLUS_API",
+    "risk": "medium"
+  },
+  "schema_context_vote": "n/a - no schema context voting diagnostic row attached",
+  "shadow_repair": {
+    "available": false,
+    "status": "n/a - no shadow repair eval row recorded"
+  },
+  "sql": {
+    "preview": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",
+    "result_preview": "{\"items\": {\"items\": [{\"campaign_name\": \"Birthday Message\"}], \"total_items\": 1, \"truncated_items\": false}, \"total_items\": 2, \"truncated_items\": true}",
+    "row_count": 2,
+    "validation": "ok"
+  },
+  "sql_ast": {
+    "destructive_sql_detected": false,
+    "parsed_ok": true,
+    "selected_columns": {
+      "items": [
+        "LASTDEPLOYEDTIME"
+      ],
+      "total_items": 2,
+      "truncated_items": false
+    },
+    "selected_tables": {
+      "items": [
+        "dim_campaign"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "summaries": {
+      "items": [
+        {
+          "destructive_sql_detected": false,
+          "enabled": true,
+          "normalized_sql": "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50",
+          "parsed_ok": true,
+          "selected_columns": {
+            "items": [
+              "NAME",
+              "LASTDEPLOYEDTIME"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "selected_tables": {
+            "items": [
+              "dim_campaign"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    }
+  },
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tokens": {
+    "domains": {
+      "items": [
+        "journey_campaign"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "quoted_entities": {
+      "items": [
+        "Birthday Message"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "statuses": {
+      "items": [
+        "published"
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    }
+  },
+  "user_query": "Is the 'Birthday Message' journey published?",
+  "value_retrieval_cache": {
+    "active": true,
+    "cache_hit": true,
+    "cache_key": "fa917ba84b79c5a3",
+    "cache_key_algorithm": "sha256",
+    "cache_reproducible": true,
+    "match_count": 1,
+    "matches": {
+      "items": [
+        {
+          "confidence": 1.0,
+          "kind": "quoted_entity",
+          "match_type": "exact",
+          "matched_column": "NAME",
+          "matched_table": "dim_campaign",
+          "matched_value": "Birthday Message",
+          "mention": "Birthday Message",
+          "retrieval_cost": {
+            "budget_exceeded": false,
+            "cache_hit": true,
+            "cache_key": "fa917ba84b79c5a3",
+            "cache_key_algorithm": "sha256",
+            "cache_reproducible": true,
+            "retrieval_ms": 7.652
+          },
+          "truncated_fields": 1
+        }
+      ],
+      "total_items": 1,
+      "truncated_items": false
+    },
+    "query_value_count": 2,
+    "truncated_fields": 8
+  },
+  "variant": "n/a - not a baseline variant"
+}

@@ -1,0 +1,126 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Name audience/destination rows from SQL; only use API to verify live audience/flow evidence.",
+    "api_families": [
+      "audience_by_destination_id",
+      "destination_flows"
+    ],
+    "api_mode": "optional",
+    "family": "segment_destination",
+    "join_path": [
+      "dim_segment.segmentid = hkg_br_segment_target.segmentid",
+      "hkg_br_segment_target.targetid = dim_target.targetid"
+    ],
+    "required_ids": [
+      "segment_id",
+      "destination_id",
+      "target_id"
+    ],
+    "tables": [
+      "dim_segment",
+      "hkg_br_segment_target",
+      "dim_target"
+    ]
+  },
+  "domain_type": "SEGMENT_AUDIENCE",
+  "known_example_patterns": [],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "segment_destination",
+        "audit"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "Which segment definitions were updated most recently?",
+  "query_id": "example_024",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "id": "segment_definitions",
+      "method": "GET",
+      "path": "/data/core/ups/segment/definitions"
+    }
+  ],
+  "selected_columns": {
+    "dim_segment": [
+      "DEFINITION",
+      "SEGMENTID",
+      "UPDATEDTIME",
+      "CREATEDTIME",
+      "EVALUATIONCOMPLETEDTIME",
+      "LIFECYCLESTATUS",
+      "MERGEPOLICYID",
+      "NAME",
+      "DEFINITIONHASH",
+      "ISACCOUNTSEGMENT",
+      "ISPEOPLESEGMENT",
+      "LABELSSEGMENT"
+    ],
+    "dim_target": [
+      "UPDATEDTIME",
+      "CONNECTIONSPECID",
+      "CREATEDTIME",
+      "DATAFLOWNAME",
+      "NAME",
+      "STATE",
+      "TARGETID"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID",
+      "LABELSSEGMENT"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.75,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Foreign-key-looking column references table root.",
+      "right_column": "DEPENDENTSEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    }
+  ],
+  "selected_tables": [
+    "dim_segment",
+    "hkg_br_segment_target",
+    "dim_target"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

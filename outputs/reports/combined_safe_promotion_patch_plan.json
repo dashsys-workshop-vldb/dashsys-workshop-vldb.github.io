@@ -1,0 +1,41 @@
+{
+  "apply_now": false,
+  "candidate_strategy": "COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE",
+  "config_or_strategy_flag": "Use explicit strategy selection first; do not change SQL_FIRST_API_VERIFY semantics directly.",
+  "created_because_all_dry_run_gates_passed": true,
+  "excluded_components": [
+    "post_sql_llm_advisor",
+    "broad_semantic_router",
+    "semantic_no_tool_runtime_promotion"
+  ],
+  "expected_default_impact": "Would enable deterministic staged evidence and post-SQL API preservation/skip policy for packaged outputs while preserving validators and final output shape.",
+  "files_to_modify_for_future_enablement": [
+    "dashagent/agent_tools.py",
+    "dashagent/executor.py",
+    "scripts/package_query_outputs.py",
+    "scripts/package_submission.py",
+    "scripts/check_submission_ready.py"
+  ],
+  "minimal_default_change": "Change the packaged strategy/default submission strategy from SQL_FIRST_API_VERIFY to COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE only after explicit user approval.",
+  "post_enable_validation": [
+    "python3 scripts/run_dev_eval.py --strict",
+    "python3 scripts/run_hidden_style_eval.py",
+    "python3 scripts/check_submission_ready.py",
+    "python3 scripts/audit_workshop_requirements.py",
+    "python3 scripts/generate_sdk_usage_audit.py",
+    "python3 -m pytest -q",
+    "git diff --check",
+    "targeted secret scan"
+  ],
+  "report_type": "combined_safe_promotion_patch_plan",
+  "risk_assessment": {
+    "api_underuse_risk": "low after API preservation guard; dry-runs show API_REQUIRED underuse 0",
+    "runtime_cost_risk": "low to favorable; candidate reduces optional API calls in internal benchmarks",
+    "scoring_uncertainty": "organizer 35 gain is small; promotion should still be explicit and reversible"
+  },
+  "rollback_plan": [
+    "Revert packaged default strategy references to SQL_FIRST_API_VERIFY.",
+    "Rerun package_submission.py and package_query_outputs.py.",
+    "Rerun check_submission_ready.py and run_dev_eval.py --strict."
+  ]
+}

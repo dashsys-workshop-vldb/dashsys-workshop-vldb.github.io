@@ -1,0 +1,216 @@
+{
+  "api_call_count": 2,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 1096,
+  "final_answer": "The default merge policy requires live Adobe API evidence. Live api verification was not executed because adobe credentials are unavailable.",
+  "original_query": "Show the default merge policy for schema class '_xdm.context.profile'.",
+  "query_id": "probe_21",
+  "route_type": "API_ONLY",
+  "runtime": 0.0023695839918218553,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "UNKNOWN"
+          ],
+          "examples": [],
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List/count Real-Time Customer Profile merge policies."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "STATUS_MONITORING"
+          ],
+          "examples": [],
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List segment evaluation jobs and statuses."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_collection",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1, DATASET_SCHEMA:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "estimated_tokens": 3639,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe/21/metadata.json"
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then API only for live/platform state or status verification.",
+      "steps": [
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "filter": "name==_xdm.context.profile",
+            "limit": "5"
+          },
+          "purpose": "API parameter template: schema_by_name.",
+          "sql": null,
+          "url": "/schemas",
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "5"
+          },
+          "purpose": "API parameter template: merge_policies.",
+          "sql": null,
+          "url": "/data/core/ups/config/mergePolicies",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "name==_xdm.context.profile",
+        "limit": "5"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/schemas",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "filter": "name==_xdm.context.profile",
+          "limit": "5"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/schemas"
+      },
+      "url": "/schemas",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "5"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/config/mergePolicies",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "5"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/core/ups/config/mergePolicies"
+      },
+      "url": "/data/core/ups/config/mergePolicies",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "tool_call_count": 2
+}

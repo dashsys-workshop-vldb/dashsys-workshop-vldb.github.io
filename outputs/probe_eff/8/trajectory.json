@@ -1,0 +1,121 @@
+{
+  "answer_time": 9.220803622156382e-05,
+  "api_call_count": 0,
+  "domain_type": "PROPERTY_FIELD",
+  "errors": [],
+  "estimated_tokens": 804,
+  "execution_time": 0.0021554999984800816,
+  "final_answer": "The field for \"Person: Birthday Today 001\" is person.birthDate. This is the birth date property from the SQL evidence.",
+  "original_query": "show me the field for Person: Birthday Today 001",
+  "planning_time": 0.0001889999839477241,
+  "preprocessing_time": 0.0009775839862413704,
+  "query_id": "probe_eff_8",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0038143330020830035,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {},
+          "domains": [
+            "DATASET_SCHEMA",
+            "PROPERTY_FIELD"
+          ],
+          "examples": [
+            {
+              "path_params": {
+                "schema_id": "..."
+              },
+              "query": "schema by id"
+            }
+          ],
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+          "path_params": [
+            "schema_id"
+          ],
+          "risk_notes": [
+            "Requires a schema ID; do not call with an unresolved placeholder."
+          ],
+          "use_when": "Fetch schema details when a concrete schema ID is known."
+        }
+      ],
+      "candidate_tables": [
+        "dim_property",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_property_property",
+        "hkg_br_segment_property",
+        "hkg_br_target_property"
+      ],
+      "confidence": 0.5,
+      "domain_type": "PROPERTY_FIELD",
+      "kind": "route",
+      "reason": "Keyword routing using PROPERTY_FIELD:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "estimated_tokens": 1243,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe_eff/8/metadata.json",
+      "prompt_tokens": 1709
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then apply evidence policy before API verification. API decision: API_SKIP (No API template matched and SQL/local evidence is preferred.).",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": false,
+          "family": "segment_property_fields",
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+          "url": null,
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "original_sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "property_name": "person.birthDate",
+              "segment_name": "Person: Birthday Today 001"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+      },
+      "sql": "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 9.220803622156382e-05,
+    "execution_time": 0.0021554999984800816,
+    "planning_time": 0.0001889999839477241,
+    "preprocessing_time": 0.0009775839862413704
+  },
+  "tool_call_count": 1
+}

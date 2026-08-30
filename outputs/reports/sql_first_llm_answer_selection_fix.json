@@ -1,0 +1,790 @@
+{
+  "answer_card_or_slots_missing_facts": "No broad AnswerSlots/Card propagation defect was required for this pass; prompt exact_facts payload now exposes counts/names/ids/statuses/dates/rows to the LLM.",
+  "check_submission_ready": {
+    "default_strategy_is_sql_first_api_verify": true,
+    "ok": true,
+    "query_output_count": 73
+  },
+  "credentials_printed": false,
+  "empty_answer_scoring_guard_result": "focused strict scorer tests passed",
+  "final_submission_format_unchanged": true,
+  "fixes_applied": {
+    "card_propagation": [
+      "No structural card propagation change required; LLM payload now includes exact_facts built from AnswerSlots."
+    ],
+    "evaluator_empty_answer_guard": [
+      "Verified focused strict scoring tests; empty/whitespace generated answers receive zero score."
+    ],
+    "prompt": [
+      "Added runtime_requested_roles, exact_facts, answer_requirements, and stronger concise answer instructions."
+    ],
+    "selector": [
+      "Added explicit SELECT_LLM/SELECT_LEGACY reason codes.",
+      "Added high-precision LLM selection gate.",
+      "Stopped rewarding live-empty zero as a no-result role when positive count evidence exists.",
+      "Added selector guard for live_empty global overreach."
+    ],
+    "verifier": [
+      "Expanded live_empty global-overreach detection for scoped phrases ending in globally/anywhere."
+    ]
+  },
+  "focused_tests": "64 passed",
+  "generated_at": "2026-05-28T02:50:46.123540+00:00",
+  "git_diff_check": {
+    "ok": true
+  },
+  "hidden_style_result": {
+    "cases": 48,
+    "completed": true
+  },
+  "legacy_selected_rows": 34,
+  "llm_answers_safe_but_not_selected": "Most unselected LLM answers were either lower coverage, omitted roles, unsupported, or failed the new high-precision selection gate.",
+  "llm_selected_rows": [
+    "example_003"
+  ],
+  "organizer35_before_after": {
+    "after_baseline_answer_score": 0.3207,
+    "after_baseline_final_score": 0.6579,
+    "after_candidate_answer_score": 0.321,
+    "after_candidate_final_score": 0.6487,
+    "api_calls": 36,
+    "api_score": 0.9791,
+    "before_candidate_answer_score": 0.3207,
+    "sql_calls": 15,
+    "sql_score": 0.9333
+  },
+  "packaged_default_unchanged": true,
+  "promotion_recommendation": "not_run",
+  "remaining_blockers": [
+    "Answer lift is intentionally small: high-precision selection avoided hurt rows but most LLM outputs remain lower coverage than legacy-safe renderer.",
+    "Runtime cost increases when the explicit LLM answer strategy is used because it calls the fallback LLM backend."
+  ],
+  "report_type": "sql_first_llm_answer_selection_fix",
+  "root_cause_of_legacy_only_selection": "LLM generation was non-empty, but generated answers often omitted runtime requested roles or introduced unsupported/over-broad claims. The initial selector also allowed superficial role hits to select lower-quality LLM answers.",
+  "sdk_usage_audit": {
+    "runtime_llm_direct_http_hits": 0
+  },
+  "selected_answer_source_counts": {
+    "LEGACY_SAFE_RENDERER": 34,
+    "LLM_EVIDENCE_GROUNDED": 1
+  },
+  "selector_too_conservative": "Before this pass it selected no LLM answers; after prompt and high-precision selector updates it selects one safe/high-confidence LLM answer and avoids hurt rows.",
+  "smoke_results": [
+    {
+      "api_calls": 1,
+      "backend_fallback_used": true,
+      "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+      "legacy_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+      "llm_generated_answer": "Status: {id=9f4ebca4-2fdd-4873-95f5-8d66bab358c6, name=Birthday Message, updated_time=2026-03-31T06:07:32.838462639Z}; {id=3f277603-ac4d-4022-a993-8cbd3afc0d62, name=Gold Tier Welcome Email, updated_time=2026-03-31T15:35:12.042188843Z}. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+      "llm_nonempty": true,
+      "prompt": "Give me inactive journeys",
+      "query_id": "selection_fix_inactive_journeys",
+      "selected_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+      "selected_source": "LEGACY_SAFE_RENDERER",
+      "selector_reason_codes": [
+        "SELECT_LEGACY_LLM_UNSUPPORTED",
+        "STATUS_COVERAGE_ADVANTAGE",
+        "STATUS_FILTER_COVERAGE_ADVANTAGE",
+        "STATUS_COVERED",
+        "STATUS_FILTER_COVERED",
+        "CAVEAT_COVERED"
+      ],
+      "sql_calls": 1,
+      "verification_result": {
+        "action": "REWRITE_WITH_FEEDBACK",
+        "allowed_fact_index": {
+          "allowed_caveats": [
+            "API_ERROR"
+          ],
+          "api_error_scopes": [
+            "live api verification"
+          ],
+          "counts": [
+            "2"
+          ],
+          "dates": [
+            "2026-03-31t06:07:32.838462639z",
+            "2026-03-31t15:35:12.042188843z"
+          ],
+          "evidence_strings": [
+            "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+            "2026-03-31t06:07:32.838462639z",
+            "/ajo/journey",
+            "gold tier welcome email",
+            "created",
+            "2026-03-31t15:35:12.042188843z",
+            "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+            "updated",
+            "status!=live",
+            "birthday message"
+          ],
+          "ids": [
+            "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+            "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+          ],
+          "live_empty_scopes": [],
+          "missing_roles": [],
+          "names": [
+            "birthday message",
+            "gold tier welcome email"
+          ],
+          "relationships": [],
+          "statuses": [
+            "updated",
+            "created"
+          ]
+        },
+        "ambiguous_claims": [],
+        "claim_extractor": {
+          "claim_count": 10,
+          "claims": [
+            {
+              "hardness": "HARD",
+              "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "type": "ID",
+              "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+            },
+            {
+              "hardness": "HARD",
+              "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "type": "ID",
+              "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+            },
+            {
+              "hardness": "HARD",
+              "span": "2026-03-31T06:07:32.838462639Z",
+              "text": "2026-03-31T06:07:32.838462639Z",
+              "type": "DATE",
+              "value": "2026-03-31T06:07:32.838462639Z"
+            },
+            {
+              "hardness": "HARD",
+              "span": "2026-03-31T15:35:12.042188843Z",
+              "text": "2026-03-31T15:35:12.042188843Z",
+              "type": "DATE",
+              "value": "2026-03-31T15:35:12.042188843Z"
+            },
+            {
+              "hardness": "HARD",
+              "span": "API unavailable",
+              "text": "API unavailable",
+              "type": "CAVEAT",
+              "value": "api unavailable"
+            },
+            {
+              "hardness": "HARD",
+              "span": "API unavailable/error",
+              "text": "API unavailable/error",
+              "type": "CAVEAT",
+              "value": "api unavailable/error"
+            },
+            {
+              "hardness": "HARD",
+              "span": "cannot verify live state",
+              "text": "cannot verify live state",
+              "type": "CAVEAT",
+              "value": "cannot verify live state"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Live API verification was not executed",
+              "text": "Live API verification was not executed",
+              "type": "CAVEAT",
+              "value": "live api verification was not executed"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Birthday Message",
+              "text": "Birthday Message",
+              "type": "ENTITY_NAME",
+              "value": "Birthday Message"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Gold Tier Welcome Email",
+              "text": "Gold Tier Welcome Email",
+              "type": "ENTITY_NAME",
+              "value": "Gold Tier Welcome Email"
+            }
+          ]
+        },
+        "claim_matcher": {
+          "matches": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+                "type": "ID",
+                "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+              },
+              "reason": "id",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+                "type": "ID",
+                "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+              },
+              "reason": "id",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "2026-03-31T06:07:32.838462639Z",
+                "text": "2026-03-31T06:07:32.838462639Z",
+                "type": "DATE",
+                "value": "2026-03-31T06:07:32.838462639Z"
+              },
+              "reason": "date",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "2026-03-31T15:35:12.042188843Z",
+                "text": "2026-03-31T15:35:12.042188843Z",
+                "type": "DATE",
+                "value": "2026-03-31T15:35:12.042188843Z"
+              },
+              "reason": "date",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "API unavailable",
+                "text": "API unavailable",
+                "type": "CAVEAT",
+                "value": "api unavailable"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "API unavailable/error",
+                "text": "API unavailable/error",
+                "type": "CAVEAT",
+                "value": "api unavailable/error"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "cannot verify live state",
+                "text": "cannot verify live state",
+                "type": "CAVEAT",
+                "value": "cannot verify live state"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Live API verification was not executed",
+                "text": "Live API verification was not executed",
+                "type": "CAVEAT",
+                "value": "live api verification was not executed"
+              },
+              "reason": "llm_ambiguous_claim_judge",
+              "status": "NEEDS_CAVEAT"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Birthday Message",
+                "text": "Birthday Message",
+                "type": "ENTITY_NAME",
+                "value": "Birthday Message"
+              },
+              "reason": "entity_name",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Gold Tier Welcome Email",
+                "text": "Gold Tier Welcome Email",
+                "type": "ENTITY_NAME",
+                "value": "Gold Tier Welcome Email"
+              },
+              "reason": "entity_name",
+              "status": "SUPPORTED"
+            }
+          ]
+        },
+        "needs_caveat_claims": [
+          {
+            "hardness": "HARD",
+            "span": "Live API verification was not executed",
+            "text": "Live API verification was not executed",
+            "type": "CAVEAT",
+            "value": "live api verification was not executed"
+          }
+        ],
+        "ok": false,
+        "over_specified_claims": [],
+        "supported_claims": [
+          {
+            "hardness": "HARD",
+            "span": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+            "text": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+            "type": "ID",
+            "value": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6"
+          },
+          {
+            "hardness": "HARD",
+            "span": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+            "text": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+            "type": "ID",
+            "value": "3f277603-ac4d-4022-a993-8cbd3afc0d62"
+          },
+          {
+            "hardness": "HARD",
+            "span": "2026-03-31T06:07:32.838462639Z",
+            "text": "2026-03-31T06:07:32.838462639Z",
+            "type": "DATE",
+            "value": "2026-03-31T06:07:32.838462639Z"
+          },
+          {
+            "hardness": "HARD",
+            "span": "2026-03-31T15:35:12.042188843Z",
+            "text": "2026-03-31T15:35:12.042188843Z",
+            "type": "DATE",
+            "value": "2026-03-31T15:35:12.042188843Z"
+          },
+          {
+            "hardness": "HARD",
+            "span": "API unavailable",
+            "text": "API unavailable",
+            "type": "CAVEAT",
+            "value": "api unavailable"
+          },
+          {
+            "hardness": "HARD",
+            "span": "API unavailable/error",
+            "text": "API unavailable/error",
+            "type": "CAVEAT",
+            "value": "api unavailable/error"
+          },
+          {
+            "hardness": "HARD",
+            "span": "cannot verify live state",
+            "text": "cannot verify live state",
+            "type": "CAVEAT",
+            "value": "cannot verify live state"
+          },
+          {
+            "hardness": "HARD",
+            "span": "Birthday Message",
+            "text": "Birthday Message",
+            "type": "ENTITY_NAME",
+            "value": "Birthday Message"
+          },
+          {
+            "hardness": "HARD",
+            "span": "Gold Tier Welcome Email",
+            "text": "Gold Tier Welcome Email",
+            "type": "ENTITY_NAME",
+            "value": "Gold Tier Welcome Email"
+          }
+        ],
+        "unsupported_claims": []
+      }
+    },
+    {
+      "api_calls": 1,
+      "backend_fallback_used": true,
+      "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+      "legacy_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+      "llm_generated_answer": "Results: {name=Birthday Message}; {name=Gold Tier Welcome Email}. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+      "llm_nonempty": true,
+      "prompt": "When was the journey 'Birthday Message' published?",
+      "query_id": "selection_fix_birthday_published",
+      "selected_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+      "selected_source": "LEGACY_SAFE_RENDERER",
+      "selector_reason_codes": [
+        "SELECT_LEGACY_LLM_UNSUPPORTED",
+        "STATUS_COVERAGE_ADVANTAGE",
+        "STATUS_FILTER_COVERAGE_ADVANTAGE",
+        "STATUS_COVERED",
+        "STATUS_FILTER_COVERED",
+        "CAVEAT_COVERED"
+      ],
+      "sql_calls": 1,
+      "verification_result": {
+        "action": "REWRITE_WITH_FEEDBACK",
+        "allowed_fact_index": {
+          "allowed_caveats": [
+            "API_ERROR"
+          ],
+          "api_error_scopes": [
+            "live api verification"
+          ],
+          "counts": [
+            "2"
+          ],
+          "dates": [],
+          "evidence_strings": [
+            "name==birthday message",
+            "birthday message",
+            "/ajo/journey",
+            "gold tier welcome email"
+          ],
+          "ids": [],
+          "live_empty_scopes": [],
+          "missing_roles": [],
+          "names": [
+            "birthday message",
+            "gold tier welcome email"
+          ],
+          "relationships": [],
+          "statuses": []
+        },
+        "ambiguous_claims": [],
+        "claim_extractor": {
+          "claim_count": 6,
+          "claims": [
+            {
+              "hardness": "HARD",
+              "span": "API unavailable",
+              "text": "API unavailable",
+              "type": "CAVEAT",
+              "value": "api unavailable"
+            },
+            {
+              "hardness": "HARD",
+              "span": "API unavailable/error",
+              "text": "API unavailable/error",
+              "type": "CAVEAT",
+              "value": "api unavailable/error"
+            },
+            {
+              "hardness": "HARD",
+              "span": "cannot verify live state",
+              "text": "cannot verify live state",
+              "type": "CAVEAT",
+              "value": "cannot verify live state"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Live API verification was not executed",
+              "text": "Live API verification was not executed",
+              "type": "CAVEAT",
+              "value": "live api verification was not executed"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Birthday Message",
+              "text": "Birthday Message",
+              "type": "ENTITY_NAME",
+              "value": "Birthday Message"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Gold Tier Welcome Email",
+              "text": "Gold Tier Welcome Email",
+              "type": "ENTITY_NAME",
+              "value": "Gold Tier Welcome Email"
+            }
+          ]
+        },
+        "claim_matcher": {
+          "matches": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "API unavailable",
+                "text": "API unavailable",
+                "type": "CAVEAT",
+                "value": "api unavailable"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "API unavailable/error",
+                "text": "API unavailable/error",
+                "type": "CAVEAT",
+                "value": "api unavailable/error"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "cannot verify live state",
+                "text": "cannot verify live state",
+                "type": "CAVEAT",
+                "value": "cannot verify live state"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Live API verification was not executed",
+                "text": "Live API verification was not executed",
+                "type": "CAVEAT",
+                "value": "live api verification was not executed"
+              },
+              "reason": "llm_ambiguous_claim_judge",
+              "status": "NEEDS_CAVEAT"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Birthday Message",
+                "text": "Birthday Message",
+                "type": "ENTITY_NAME",
+                "value": "Birthday Message"
+              },
+              "reason": "entity_name",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Gold Tier Welcome Email",
+                "text": "Gold Tier Welcome Email",
+                "type": "ENTITY_NAME",
+                "value": "Gold Tier Welcome Email"
+              },
+              "reason": "entity_name",
+              "status": "SUPPORTED"
+            }
+          ]
+        },
+        "needs_caveat_claims": [
+          {
+            "hardness": "HARD",
+            "span": "Live API verification was not executed",
+            "text": "Live API verification was not executed",
+            "type": "CAVEAT",
+            "value": "live api verification was not executed"
+          }
+        ],
+        "ok": false,
+        "over_specified_claims": [],
+        "supported_claims": [
+          {
+            "hardness": "HARD",
+            "span": "API unavailable",
+            "text": "API unavailable",
+            "type": "CAVEAT",
+            "value": "api unavailable"
+          },
+          {
+            "hardness": "HARD",
+            "span": "API unavailable/error",
+            "text": "API unavailable/error",
+            "type": "CAVEAT",
+            "value": "api unavailable/error"
+          },
+          {
+            "hardness": "HARD",
+            "span": "cannot verify live state",
+            "text": "cannot verify live state",
+            "type": "CAVEAT",
+            "value": "cannot verify live state"
+          },
+          {
+            "hardness": "HARD",
+            "span": "Birthday Message",
+            "text": "Birthday Message",
+            "type": "ENTITY_NAME",
+            "value": "Birthday Message"
+          },
+          {
+            "hardness": "HARD",
+            "span": "Gold Tier Welcome Email",
+            "text": "Gold Tier Welcome Email",
+            "type": "ENTITY_NAME",
+            "value": "Gold Tier Welcome Email"
+          }
+        ],
+        "unsupported_claims": []
+      }
+    },
+    {
+      "api_calls": 1,
+      "backend_fallback_used": true,
+      "final_answer": "Local snapshot count: 74. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+      "legacy_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+      "llm_generated_answer": "Local snapshot count: 74. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+      "llm_nonempty": true,
+      "prompt": "How many schema records are in the local snapshot?",
+      "query_id": "selection_fix_local_schema_count",
+      "selected_answer": "Local snapshot count: 74. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+      "selected_source": "DETERMINISTIC_FALLBACK",
+      "selector_reason_codes": [
+        "SELECT_LEGACY_LLM_UNSUPPORTED",
+        "SELECT_LEGACY_SAFETY_FALLBACK",
+        "COUNT_COVERED",
+        "LOCAL_SCOPE_COVERED",
+        "CAVEAT_COVERED"
+      ],
+      "sql_calls": 1,
+      "verification_result": {
+        "action": "REWRITE_WITH_FEEDBACK",
+        "allowed_fact_index": {
+          "allowed_caveats": [
+            "API_ERROR"
+          ],
+          "api_error_scopes": [
+            "live api verification"
+          ],
+          "counts": [
+            "74",
+            "1"
+          ],
+          "dates": [],
+          "evidence_strings": [
+            "74",
+            "/data/foundation/schemaregistry/tenant/schemas",
+            "25"
+          ],
+          "ids": [],
+          "live_empty_scopes": [],
+          "missing_roles": [],
+          "names": [],
+          "relationships": [],
+          "statuses": []
+        },
+        "ambiguous_claims": [],
+        "claim_extractor": {
+          "claim_count": 4,
+          "claims": [
+            {
+              "hardness": "HARD",
+              "span": "API unavailable",
+              "text": "API unavailable",
+              "type": "CAVEAT",
+              "value": "api unavailable"
+            },
+            {
+              "hardness": "HARD",
+              "span": "API unavailable/error",
+              "text": "API unavailable/error",
+              "type": "CAVEAT",
+              "value": "api unavailable/error"
+            },
+            {
+              "hardness": "HARD",
+              "span": "cannot verify live state",
+              "text": "cannot verify live state",
+              "type": "CAVEAT",
+              "value": "cannot verify live state"
+            },
+            {
+              "hardness": "HARD",
+              "span": "Live API verification was not executed",
+              "text": "Live API verification was not executed",
+              "type": "CAVEAT",
+              "value": "live api verification was not executed"
+            }
+          ]
+        },
+        "claim_matcher": {
+          "matches": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "API unavailable",
+                "text": "API unavailable",
+                "type": "CAVEAT",
+                "value": "api unavailable"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "API unavailable/error",
+                "text": "API unavailable/error",
+                "type": "CAVEAT",
+                "value": "api unavailable/error"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "cannot verify live state",
+                "text": "cannot verify live state",
+                "type": "CAVEAT",
+                "value": "cannot verify live state"
+              },
+              "reason": "api_error_or_unavailable_caveat",
+              "status": "SUPPORTED"
+            },
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "Live API verification was not executed",
+                "text": "Live API verification was not executed",
+                "type": "CAVEAT",
+                "value": "live api verification was not executed"
+              },
+              "reason": "llm_ambiguous_claim_judge",
+              "status": "NEEDS_CAVEAT"
+            }
+          ]
+        },
+        "needs_caveat_claims": [
+          {
+            "hardness": "HARD",
+            "span": "Live API verification was not executed",
+            "text": "Live API verification was not executed",
+            "type": "CAVEAT",
+            "value": "live api verification was not executed"
+          }
+        ],
+        "ok": false,
+        "over_specified_claims": [],
+        "supported_claims": [
+          {
+            "hardness": "HARD",
+            "span": "API unavailable",
+            "text": "API unavailable",
+            "type": "CAVEAT",
+            "value": "api unavailable"
+          },
+          {
+            "hardness": "HARD",
+            "span": "API unavailable/error",
+            "text": "API unavailable/error",
+            "type": "CAVEAT",
+            "value": "api unavailable/error"
+          },
+          {
+            "hardness": "HARD",
+            "span": "cannot verify live state",
+            "text": "cannot verify live state",
+            "type": "CAVEAT",
+            "value": "cannot verify live state"
+          }
+        ],
+        "unsupported_claims": []
+      }
+    }
+  ],
+  "unsupported_claim_count": 0
+}

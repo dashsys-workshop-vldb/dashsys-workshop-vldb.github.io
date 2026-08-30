@@ -1,0 +1,52 @@
+{
+  "baseline_score": 0.6553,
+  "best_isolated_score": 0.6558,
+  "candidate_name": "LLM Semantic Routing Helper",
+  "hypothesis": "Validated semantic hints may still be useful if applied more narrowly or only as candidate-priority metadata.",
+  "known_prior_result": {
+    "conclusion": "The first broad non-shadow semantic-router variant regressed; this does not disprove the entire semantic-router idea.",
+    "strict_delta": -0.0031,
+    "variant": "broad_non_shadow"
+  },
+  "report_type": "feedback_loop_semantic_router_plan",
+  "safety_controls": [
+    "Default packaged ENABLE_LLM_SEMANTIC_ROUTER remains false.",
+    "Default LLM_SEMANTIC_ROUTER_SHADOW_ONLY remains true.",
+    "All variant runs write only isolated outputs under outputs/llm_semantic_router_feedback_loop/.",
+    "No automatic promotion is performed.",
+    "Generated diagnostic prompts are coverage-only and not promotion evidence."
+  ],
+  "target_decision_stage": "Deterministic QueryRouter / QueryAnalysis semantic fallback",
+  "variants": [
+    {
+      "exact_isolated_change": "Apply hints only for UNKNOWN, confidence < 0.35, or explicit ambiguous phrase plus weak schema relevance.",
+      "hypothesis": "The first broad non-shadow semantic-router variant regressed; narrower eligibility may preserve useful fallback behavior while avoiding high-confidence perturbations.",
+      "iteration": 1,
+      "variant": "narrow_eligibility"
+    },
+    {
+      "exact_isolated_change": "Allow route/domain/candidate priority changes but keep helper intent as metadata only.",
+      "hypothesis": "The first trial changed intent metadata without improving SQL/API/answer; recording intent but not applying it may remove noise.",
+      "iteration": 2,
+      "variant": "no_intent_application"
+    },
+    {
+      "exact_isolated_change": "Only prepend validated candidate tables/APIs. Do not change route_type, domain_type, or answer intent.",
+      "hypothesis": "Validated semantic hints may be useful as table/API priority signals without changing route, domain, or intent.",
+      "iteration": 3,
+      "variant": "priority_only"
+    },
+    {
+      "exact_isolated_change": "Apply validated hints only when deterministic domain_type is UNKNOWN.",
+      "hypothesis": "The helper may be safest as a true fallback only when deterministic routing cannot identify a domain.",
+      "iteration": 4,
+      "variant": "unknown_only"
+    },
+    {
+      "exact_isolated_change": "Do not allow helper route changes into API_ONLY or SQL_THEN_API when the deterministic route is SQL_ONLY.",
+      "hypothesis": "Dry-run API behavior may hurt answers; semantic hints should not force API routes unless the existing route already expects API evidence.",
+      "iteration": 5,
+      "variant": "no_api_forcing"
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+{
+  "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
+  "compact_context_safe": true,
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "25",
+        "property": "schema.name"
+      },
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+  ],
+  "current_runtime": 0.0116,
+  "current_strict_score": 0.7272,
+  "current_tokens": 1154,
+  "current_tool_calls": 2,
+  "decision": "no_op_shadow_tie_keep_current",
+  "decision_hash": "e6033ce83757f84a",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "fallback_reason": "compact and fallback top candidates agree",
+  "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
+  "module_skipped_by_risk": [],
+  "offline_score_delta": 0.0,
+  "packaged_execution_changed": false,
+  "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+  "query_id": "example_006",
+  "rejection_reason": "Current and repaired plans are identical; keep the current plan.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "no_op_repair"
+    ],
+    "no_op": true,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Current and repaired plans are identical; keep the current plan."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
+  "repair_decision": {
+    "changed": false,
+    "reason": "top ranked endpoint already matches current API"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "25",
+        "property": "schema.name"
+      },
+      "path": "/data/foundation/catalog/dataSets"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+  ],
+  "repaired_runtime": 0.0116,
+  "repaired_strict_score": 0.7272,
+  "repaired_tokens": 1154,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "schema_vs_dataset_confusion",
+  "risk_efficiency_controller": {
+    "accuracy_risk": "high - risk_cluster:schema_vs_dataset_confusion",
+    "active": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.9246,
+      "endpoint_family_confidence": 0.8825,
+      "missing_candidate_signals": {},
+      "risk_cluster": "schema_vs_dataset_confusion",
+      "schema_link_risk": "low",
+      "score_margin": 0.41
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "high risk: value retrieval + shadow repair + verifier diagnostics",
+    "module_skipped_by_risk": [],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking",
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "risk_level": "high",
+    "risk_reasons": [
+      "risk_cluster:schema_vs_dataset_confusion"
+    ],
+    "runtime_saved_estimate_ms": 0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 0
+  },
+  "risk_level": "high",
+  "runtime_delta": 0.0,
+  "runtime_saved_estimate_ms": 0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.9765,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [],
+    "reasons": [
+      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    ],
+    "safe": true,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1",
+          "parsed_ok": true,
+          "selected_columns": [
+            "S.BLUEPRINTID",
+            "S.NAME",
+            "D.COLLECTIONID",
+            "DS.COLLECTIONID",
+            "DS.BLUEPRINTID"
+          ],
+          "selected_tables": [
+            "dim_collection",
+            "hkg_br_blueprint_collection",
+            "dim_blueprint"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "savings_are_estimates": true,
+  "schema_context_vote": {
+    "active": true,
+    "behavior_changed": false,
+    "compact_candidate_apis": [
+      "catalog_datasets",
+      "export_batch_files",
+      "schema_registry_schema",
+      "schema_registry_schemas",
+      "audit_events"
+    ],
+    "compact_candidate_tables": [
+      "hkg_br_blueprint_collection",
+      "dim_blueprint",
+      "hkg_br_blueprint_property",
+      "dim_collection",
+      "dim_campaign",
+      "br_campaign_segment",
+      "hkg_br_collection_property",
+      "hkg_br_collection_segment"
+    ],
+    "compact_context_safe": true,
+    "compact_context_tokens": 4744,
+    "diagnostic_only": true,
+    "fallback_candidate_apis": [
+      "catalog_datasets",
+      "export_batch_files",
+      "schema_registry_schema",
+      "schema_registry_schemas",
+      "audit_events",
+      "audit_events_short",
+      "catalog_batch_detail",
+      "catalog_batches"
+    ],
+    "fallback_candidate_tables": [
+      "hkg_br_blueprint_collection",
+      "dim_blueprint",
+      "hkg_br_blueprint_property",
+      "dim_collection",
+      "dim_campaign",
+      "dim_segment",
+      "br_campaign_segment",
+      "hkg_br_base_segment_used_by_dependent_segment"
+    ],
+    "fallback_context_tokens": 6025,
+    "fallback_reason": "compact and fallback top candidates agree",
+    "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+    "schema_vote_agreement": true,
+    "token_delta": 1281
+  },
+  "schema_vote_agreement": true,
+  "score_delta": 0.0,
+  "shadow_runtime": 0.0078,
+  "token_delta": 0,
+  "token_saved_estimate": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

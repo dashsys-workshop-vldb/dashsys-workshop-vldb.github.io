@@ -1,0 +1,239 @@
+{
+  "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
+  "compact_context_safe": true,
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "property": "assetType==destination"
+      },
+      "path": "/data/foundation/audit/events"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+  ],
+  "current_runtime": 0.0127,
+  "current_strict_score": 0.7287,
+  "current_tokens": 1200,
+  "current_tool_calls": 2,
+  "decision": "keep_current_repair_selector_rejected",
+  "decision_hash": "c336c0739a887c72",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "fallback_reason": "compact and fallback top candidates agree",
+  "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
+  "module_skipped_by_risk": [],
+  "offline_score_delta": -0.1658,
+  "packaged_execution_changed": false,
+  "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "query_id": "example_012",
+  "rejection_reason": "Repair safety verifier did not pass.; SQLGlot AST validation did not pass for the repaired SQL.; Offline shadow strict score regressed by -0.1658; keep the current plan.; Unknown columns: MONTH; Offline shadow strict score regressed by -0.1658; this score gate is used only when offline_score_delta is present.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "safety_verifier",
+      "score_regression",
+      "sql_ast_validation"
+    ],
+    "no_op": false,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Repair safety verifier did not pass.",
+      "SQLGlot AST validation did not pass for the repaired SQL.",
+      "Offline shadow strict score regressed by -0.1658; keep the current plan."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
+  "repair_decision": {
+    "changed": true,
+    "endpoint_id": "ups_audiences",
+    "kind": "replace_first_api",
+    "reason": "candidate-derived endpoint family rerank"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "endpoint_family": "segment_definitions",
+      "endpoint_id": "ups_audiences",
+      "method": "GET",
+      "params": {
+        "limit": 50,
+        "start": 0
+      },
+      "path": "/data/core/ups/audiences"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+  ],
+  "repaired_runtime": 0.0127,
+  "repaired_strict_score": 0.5629,
+  "repaired_tokens": 1200,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "missing_gold_api_in_top_k",
+  "risk_efficiency_controller": {
+    "accuracy_risk": "high - risk_cluster:missing_gold_api_in_top_k",
+    "active": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.758,
+      "endpoint_family_confidence": 1.0,
+      "missing_candidate_signals": {},
+      "risk_cluster": "missing_gold_api_in_top_k",
+      "schema_link_risk": "low",
+      "score_margin": 0.19
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "high risk: value retrieval + shadow repair + verifier diagnostics",
+    "module_skipped_by_risk": [],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking",
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "risk_level": "high",
+    "risk_reasons": [
+      "risk_cluster:missing_gold_api_in_top_k"
+    ],
+    "runtime_saved_estimate_ms": 0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 0
+  },
+  "risk_level": "high",
+  "runtime_delta": 0.0,
+  "runtime_saved_estimate_ms": 0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 0.8,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [
+      "score_regression",
+      "sql_validation"
+    ],
+    "reasons": [
+      "Unknown columns: MONTH",
+      "Offline shadow strict score regressed by -0.1658; this score gate is used only when offline_score_delta is present."
+    ],
+    "safe": false,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {
+            "MONTH": [
+              "CAMPAIGNACTIVITYCOUNT",
+              "ISACCOUNTSEGMENT",
+              "ISPEOPLESEGMENT",
+              "LABELSDEPENDENTSEGMENT"
+            ]
+          },
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3",
+          "parsed_ok": true,
+          "selected_columns": [
+            "A.SEGMENTID",
+            "A.NAME",
+            "D.TARGETID",
+            "D.NAME",
+            "AD.SEGMENTID",
+            "AD.TARGETID",
+            "D.CREATEDTIME",
+            "MONTH"
+          ],
+          "selected_tables": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "unknown_columns": [
+            "MONTH"
+          ],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [
+        "Unknown columns: MONTH"
+      ],
+      "ok": false
+    }
+  },
+  "savings_are_estimates": true,
+  "schema_context_vote": {
+    "active": true,
+    "behavior_changed": false,
+    "compact_candidate_apis": [
+      "ups_audiences",
+      "segment_definitions",
+      "export_batch_files",
+      "flowservice_flows",
+      "merge_policies"
+    ],
+    "compact_candidate_tables": [
+      "dim_target",
+      "hkg_br_blueprint_collection",
+      "hkg_br_blueprint_property",
+      "dim_connector",
+      "dim_blueprint",
+      "br_campaign_segment",
+      "hkg_br_segment_target",
+      "hkg_br_source_collection"
+    ],
+    "compact_context_safe": true,
+    "compact_context_tokens": 4847,
+    "diagnostic_only": true,
+    "fallback_candidate_apis": [
+      "ups_audiences",
+      "segment_definitions",
+      "export_batch_files",
+      "flowservice_flows",
+      "merge_policies",
+      "segment_jobs",
+      "journey_list",
+      "audit_events"
+    ],
+    "fallback_candidate_tables": [
+      "dim_target",
+      "hkg_br_blueprint_collection",
+      "hkg_br_blueprint_property",
+      "dim_connector",
+      "dim_blueprint",
+      "dim_campaign",
+      "dim_collection",
+      "dim_segment"
+    ],
+    "fallback_context_tokens": 6345,
+    "fallback_reason": "compact and fallback top candidates agree",
+    "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+    "schema_vote_agreement": true,
+    "token_delta": 1498
+  },
+  "schema_vote_agreement": true,
+  "score_delta": -0.1658,
+  "shadow_runtime": 0.0079,
+  "token_delta": 0,
+  "token_saved_estimate": 0,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

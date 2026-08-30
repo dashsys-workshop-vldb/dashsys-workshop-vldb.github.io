@@ -1,0 +1,247 @@
+{
+  "answer_policy": [
+    "Answer from tool evidence only.",
+    "Say not found when evidence is empty.",
+    "Explicitly mention SQL/API disagreement when both are used.",
+    "Do not invent IDs, counts, timestamps, states, or names."
+  ],
+  "constraints": [
+    "Use only known table names and columns.",
+    "Use only endpoint catalog entries unless fallback mode is explicitly enabled.",
+    "Validate SQL and API calls before execution.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "domain_type": "PROPERTY_FIELD",
+  "known_example_patterns": [
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "20"
+          },
+          "question": "How many tags exist in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "25"
+          },
+          "question": "List all tags in this sandbox."
+        },
+        {
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          },
+          "question": "Which tags belong to the category 'Uncategorized'?"
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 1,
+            "value": "20"
+          },
+          {
+            "count": 1,
+            "value": "25"
+          },
+          {
+            "count": 1,
+            "value": "100"
+          }
+        ],
+        "tagCategoryId": [
+          {
+            "count": 1,
+            "value": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          }
+        ]
+      },
+      "params": {
+        "limit": "20",
+        "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+      },
+      "path": "/unifiedtags/tags",
+      "query_keywords": [
+        "tags",
+        "sandbox",
+        "how",
+        "many",
+        "exist",
+        "which",
+        "belong",
+        "category",
+        "uncategorized"
+      ]
+    },
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "List all merge policies in this sandbox."
+        },
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "How many merge policies are configured in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "5"
+          },
+          "question": "Show the default merge policy for schema class '_xdm.context.profile'."
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 2,
+            "value": "10"
+          },
+          {
+            "count": 1,
+            "value": "5"
+          }
+        ]
+      },
+      "params": {
+        "limit": "10"
+      },
+      "path": "/data/core/ups/config/mergePolicies",
+      "query_keywords": [
+        "merge",
+        "policies",
+        "sandbox",
+        "how",
+        "many",
+        "are",
+        "configured",
+        "default",
+        "policy",
+        "schema",
+        "class",
+        "_xdm",
+        "context",
+        "profile"
+      ]
+    }
+  ],
+  "query": "show me the field for Person: Birthday Today 001",
+  "query_id": "probe_eff_8",
+  "route_type": "SQL_ONLY",
+  "selected_apis": [
+    {
+      "common_params": {},
+      "domains": [
+        "DATASET_SCHEMA",
+        "PROPERTY_FIELD"
+      ],
+      "examples": [
+        {
+          "path_params": {
+            "schema_id": "..."
+          },
+          "query": "schema by id"
+        }
+      ],
+      "id": "schema_registry_schema",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+      "path_params": [
+        "schema_id"
+      ],
+      "risk_notes": [
+        "Requires a schema ID; do not call with an unresolved placeholder."
+      ],
+      "use_when": "Fetch schema details when a concrete schema ID is known."
+    }
+  ],
+  "selected_columns": {
+    "dim_segment": [
+      "SEGMENTID",
+      "NAME"
+    ],
+    "hkg_br_segment_property": [
+      "SEGMENTID",
+      "PROPERTY"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "hkg_br_base_segment_used_by_dependent_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    }
+  ],
+  "selected_tables": [
+    "hkg_br_segment_property",
+    "dim_segment"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

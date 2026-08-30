@@ -1,0 +1,336 @@
+{
+  "page": "prompt_transformation_primary",
+  "panels": [
+    {
+      "after": {
+        "matching_text": "how many schema do i have?",
+        "normalized_query": "How many schemas do I have?",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "before": "How many schemas do I have?",
+      "impact": "accuracy + observability",
+      "technique": "query_normalizer",
+      "title": "Raw \u2192 normalized"
+    },
+    {
+      "after": {
+        "domains": {
+          "items": [
+            "schema_dataset"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "before": {
+        "matching_text": "how many schema do i have?",
+        "normalized_query": "How many schemas do I have?",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "impact": "accuracy",
+      "technique": "query_tokens",
+      "title": "Normalized \u2192 tokens/entities"
+    },
+    {
+      "after": {
+        "answer_family": "schema_dataset",
+        "api_templates": {
+          "items": [
+            "schema_list"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.8,
+        "domain_type": "DATASET_SCHEMA",
+        "fast_path": "schema_count+schema_list",
+        "route_type": "SQL_ONLY",
+        "sql_template": "schema_count",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "before": {
+        "domains": {
+          "items": [
+            "schema_dataset"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "impact": "accuracy",
+      "technique": "query_analysis",
+      "title": "Tokens/entities \u2192 query analysis"
+    },
+    {
+      "after": {
+        "estimated_metadata_tokens": 490,
+        "prompt_tokens": 1072,
+        "selected_apis": {
+          "items": [
+            "schema_registry_schemas"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTID"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "before": {
+        "analysis": "strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domain_type=DATASET_SCHEMA; answer_family=schema_dataset",
+        "lookup": "api_mode=required"
+      },
+      "impact": "accuracy + efficiency",
+      "technique": "metadata_selector + context cards",
+      "title": "Analysis \u2192 context card"
+    },
+    {
+      "after": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2779
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "before": {
+        "estimated_metadata_tokens": 490,
+        "prompt_tokens": 1072,
+        "selected_apis": {
+          "items": [
+            "schema_registry_schemas"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_blueprint": {
+            "items": [
+              "BLUEPRINTID"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_blueprint"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "impact": "efficiency + safety",
+      "technique": "planner + plan_ensemble",
+      "title": "Context \u2192 selected plan"
+    },
+    {
+      "after": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/schemaregistry/tenant/schemas",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/schemaregistry/tenant/schemas"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
+        "row_counts": {
+          "items": [
+            1
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [
+                  {
+                    "blueprint_count": 74
+                  }
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              },
+              "row_count": 1
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "before": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2779
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "impact": "safety",
+      "technique": "executor + API validator",
+      "title": "Plan \u2192 evidence"
+    },
+    {
+      "after": {
+        "answer_length": 102,
+        "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 18
+      },
+      "before": {
+        "evidence": "sql_calls_executed=1; api_calls_executed=1",
+        "slots": "answer_intent=COUNT"
+      },
+      "impact": "accuracy + safety",
+      "technique": "answer slots + verifier",
+      "title": "Evidence \u2192 final answer"
+    }
+  ],
+  "query_id": "example_011",
+  "raw_prompt": "How many schemas do I have?",
+  "steps": [
+    {
+      "impact": "observability",
+      "name": "Raw prompt",
+      "short_payload": "How many schemas do I have?",
+      "technique": "raw user query capture",
+      "what_changed": "Original test prompt enters the packaged SQL_FIRST_API_VERIFY path."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Prompt router view",
+      "short_payload": "confidence=0.84; reason=Local snapshot keyword(s) can be answered from DuckDB/par...",
+      "technique": "prompt_router",
+      "what_changed": "Recognizes the prompt as a schema count/data question."
+    },
+    {
+      "impact": "safety",
+      "name": "Simple-prompt gate",
+      "short_payload": "confidence=0.84; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Local snapshot keyword(s) can be answered from DuckDB/par...",
+      "technique": "simple_prompt_gate",
+      "what_changed": "Sends the prompt into the evidence pipeline rather than a direct answer."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Normalized query",
+      "short_payload": "normalized_query=How many schemas do I have?; matching_text=how many schema do i have?",
+      "technique": "query_normalizer",
+      "what_changed": "Creates matching-friendly text while preserving original wording."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Tokens/entities/domains",
+      "short_payload": "domains=1 item(s)",
+      "technique": "query_tokens",
+      "what_changed": "Extracts schema/count intent for routing and SQL generation."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Query analysis",
+      "short_payload": "strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domain_type=DATASET_SCHEMA; answer_family=schema_dataset",
+      "technique": "query_analysis",
+      "what_changed": "Classifies the route and answer family for schema counting."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Lookup path / route intent",
+      "short_payload": "api_mode=required",
+      "technique": "lookup_path",
+      "what_changed": "Narrows to schema tables and schema API verification options."
+    },
+    {
+      "impact": "efficiency",
+      "name": "Context card",
+      "short_payload": "estimated_metadata_tokens=490; prompt_tokens=1072; selected_apis=1 item(s); selected_card_name=schema_dataset",
+      "technique": "metadata_selector + context_cards",
+      "what_changed": "Packs the endpoint catalog/context into metadata and prompt budget."
+    },
+    {
+      "impact": "efficiency",
+      "name": "Selected plan",
+      "short_payload": "selected_plan=generic_sql_first",
+      "technique": "planner + plan_ensemble",
+      "what_changed": "Selects a SQL-first plan with dry-run API verification."
+    },
+    {
+      "impact": "safety",
+      "name": "Evidence objects",
+      "short_payload": "sql_calls_executed=1; api_calls_executed=1",
+      "technique": "executor + evidence_bus",
+      "what_changed": "Executes SQL for the answer count and records dry-run API verification."
+    },
+    {
+      "impact": "accuracy",
+      "name": "Answer slots / intent",
+      "short_payload": "answer_intent=COUNT",
+      "technique": "answer_slots",
+      "what_changed": "Maps SQL count evidence into COUNT answer intent."
+    },
+    {
+      "impact": "safety",
+      "name": "Verified final answer",
+      "short_payload": "verifier_passed=True",
+      "technique": "answer_verifier + answer_reranker",
+      "what_changed": "Verifies the SQL-grounded count and preserves dry-run honesty."
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

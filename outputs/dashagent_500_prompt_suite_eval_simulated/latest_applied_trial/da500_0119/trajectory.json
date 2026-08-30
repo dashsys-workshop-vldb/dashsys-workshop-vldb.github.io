@@ -1,0 +1,520 @@
+{
+  "final_answer": "Diagnostic answer uses observable benchmark trace. SQL evidence is required or selected.",
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 1.0,
+    "expected_evidence_need_accuracy": 1.0,
+    "expected_observable_trace_score": 1.0,
+    "final_answer_correctness": 1.0,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 1.0,
+    "required_facts_coverage": 1.0,
+    "route_accuracy": 1.0,
+    "sql_required_used_accuracy": 1.0,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 0,
+    "tool_underuse": 0,
+    "unsupported_claims": 0
+  },
+  "latest_code_paths_enabled": {
+    "compact_json_llm_context": true,
+    "evidence_bus_answer_verifier_token_reduction": true,
+    "no_tool_safety_verifier": true,
+    "objective_prompt_features": true,
+    "post_sql_api_call_verifier": true,
+    "post_sql_deterministic_policy": true,
+    "post_sql_llm_advisor": false,
+    "routing_anti_hallucination_gate": true,
+    "routing_feedback_revision": false,
+    "semantic_intent_classifier": true,
+    "semantic_route_decision_ladder": true,
+    "staged_evidence_policy": true
+  },
+  "mode": "latest_applied_trial",
+  "observable_trace": {
+    "checkpoint_evidence_bus_answer_verifier_token_reduction": {
+      "answer_verifier_observed": true,
+      "evidence_bus_observed": true,
+      "token_reduction_behavior_observed": true,
+      "unsupported_claims": 0
+    },
+    "checkpoint_evidence_match_scores": {
+      "api_match": 0.45,
+      "api_match_codes": [
+        "API_DOMAIN_MATCH",
+        "API_CAPABILITY_MATCH"
+      ],
+      "concrete_data_signal": true,
+      "live_api_signal": false,
+      "sql_match": 1.0,
+      "sql_match_codes": [
+        "SQL_DOMAIN_MATCH",
+        "SQL_CAPABILITY_MATCH",
+        "CONCRETE_DATA_SIGNAL",
+        "SQL_CANDIDATE_AVAILABLE"
+      ]
+    },
+    "checkpoint_initial_evidence_branch_policy": {
+      "first_branch": "SQL",
+      "policy_codes": [
+        "SQL_HIGH_API_LOW"
+      ],
+      "second_branch_policy": "NONE"
+    },
+    "checkpoint_no_tool_safety_verifier": {
+      "action": "BLOCK_NO_TOOL",
+      "allow_no_tool": false,
+      "block": [
+        "DATE",
+        "REL",
+        "ENTITY_LOOKUP"
+      ],
+      "capability_match_score": 0.75,
+      "clear_safe_api_family": false,
+      "evidence_need_score": 0.57,
+      "has_concrete_data_signal": true,
+      "no_tool_safety_score": 0.43
+    },
+    "checkpoint_objective_prompt_features": {
+      "cap": [
+        "SQL_FLOW",
+        "API_FLOW_SERVICE",
+        "SQL_CONNECTOR"
+      ],
+      "count": [],
+      "cue": [],
+      "date": [
+        "WHEN",
+        "CREATED",
+        "UPDATED"
+      ],
+      "domain": [
+        "DATAFLOW",
+        "FLOW",
+        "CONNECTOR"
+      ],
+      "entity": [
+        "ID_LIKE"
+      ],
+      "fields": [],
+      "flags": [
+        "CONCRETE_ENTITY"
+      ],
+      "norm": "when were the most recent local connector records updated or created? use only local snapshot evidence for the workflow summary.",
+      "p": "When were the most recent local connector records updated or created? Use only local snapshot evidence for the workflow summary.",
+      "rel": [
+        "USES"
+      ],
+      "retr": [],
+      "status": []
+    },
+    "checkpoint_post_sql_api_call_verifier": {
+      "blocked_families": [],
+      "codes": [
+        "VERIFIED_CAVEAT_ONLY"
+      ],
+      "final_action": "CAVEAT_ONLY",
+      "selected_api_families": [],
+      "source": "LLM_ADVISOR_BLOCKED"
+    },
+    "checkpoint_post_sql_decision_card": {
+      "allowed_outputs": {
+        "mode": [
+          "CALL_API",
+          "SKIP_API",
+          "CAVEAT_ONLY"
+        ]
+      },
+      "answer_intent": "DATE",
+      "api_candidates": [
+        {
+          "can_fill_roles": [
+            "id",
+            "name",
+            "detail"
+          ],
+          "endpoint_id": "schema_registry_schemas",
+          "family": "schema_registry_schemas",
+          "live_health": "UNKNOWN",
+          "method": "GET",
+          "requires_path_param": false,
+          "safe_get": true
+        }
+      ],
+      "prompt_features": [
+        "WHEN",
+        "CREATED",
+        "UPDATED",
+        "USES",
+        "DATAFLOW",
+        "FLOW",
+        "CONNECTOR",
+        "ID_LIKE",
+        "SQL_FLOW",
+        "API_FLOW_SERVICE",
+        "SQL_CONNECTOR",
+        "CONCRETE_ENTITY"
+      ],
+      "sql_state": {
+        "direct_answer": false,
+        "execution": "SUCCESS",
+        "missing_roles": [
+          "timestamp"
+        ],
+        "partial_answer": true,
+        "returned_roles": [
+          "id",
+          "name",
+          "count"
+        ],
+        "row_count_bucket": "ONE",
+        "validation": "PASS",
+        "zero_rows": false
+      },
+      "task": "POST_SQL_API_DECISION"
+    },
+    "checkpoint_post_sql_deterministic_policy": {
+      "api_evidence_signal": 0.5,
+      "codes": [
+        "SQL_PARTIAL_ANSWER"
+      ],
+      "confidence": "MEDIUM",
+      "suggestion": "AMBIGUOUS"
+    },
+    "checkpoint_post_sql_llm_advisor": {
+      "codes": [
+        "SQL_PARTIAL_ANSWER"
+      ],
+      "conf": 0.0,
+      "endpoint_id": null,
+      "mode": "CAVEAT_ONLY",
+      "needed_roles": [],
+      "source": "DETERMINISTIC_FALLBACK"
+    },
+    "checkpoint_routing_anti_hallucination_gate": {
+      "fallback_action": null,
+      "feedback": {},
+      "final_decision": {
+        "api": true,
+        "codes": [
+          "FALLBACK"
+        ],
+        "conf": 0.82,
+        "intent": "MIXED",
+        "need": "SQL_API",
+        "no_tool": false,
+        "sql": true
+      },
+      "final_gate": {
+        "block": [],
+        "ok": true,
+        "support": {
+          "caps": true,
+          "intent": true,
+          "need": true
+        },
+        "unsupported_codes": []
+      },
+      "initial_decision": {
+        "api": true,
+        "codes": [
+          "FALLBACK"
+        ],
+        "conf": 0.82,
+        "intent": "MIXED",
+        "need": "SQL_API",
+        "no_tool": false,
+        "sql": true
+      },
+      "initial_gate": {
+        "block": [],
+        "ok": true,
+        "support": {
+          "caps": true,
+          "intent": true,
+          "need": true
+        },
+        "unsupported_codes": []
+      },
+      "revision_attempted": false,
+      "revision_success": false,
+      "revision_token_estimate": 0
+    },
+    "checkpoint_semantic_intent_context": {
+      "capability_count": 3,
+      "task": "SEMANTIC_INTENT_DECISION",
+      "token_estimate": 303
+    },
+    "checkpoint_semantic_intent_decision": {
+      "api": true,
+      "codes": [
+        "FALLBACK"
+      ],
+      "conf": 0.82,
+      "intent": "MIXED",
+      "need": "SQL_API",
+      "no_tool": false,
+      "sql": true
+    },
+    "checkpoint_semantic_route_decision_ladder": {
+      "action": "EVIDENCE_PIPELINE",
+      "ladder_result": {
+        "action": "EVIDENCE_PIPELINE",
+        "average_tier_used": 0.0,
+        "checkpoints": {
+          "checkpoint_no_tool_safety_verifier": {
+            "action": "BLOCK_NO_TOOL",
+            "allow_no_tool": false,
+            "block": [
+              "DATE",
+              "REL",
+              "ENTITY_LOOKUP"
+            ],
+            "capability_match_score": 0.75,
+            "clear_safe_api_family": false,
+            "evidence_need_score": 0.57,
+            "has_concrete_data_signal": true,
+            "no_tool_safety_score": 0.43
+          },
+          "checkpoint_objective_prompt_features": {
+            "cap": [
+              "SQL_FLOW",
+              "API_FLOW_SERVICE",
+              "SQL_CONNECTOR"
+            ],
+            "count": [],
+            "cue": [],
+            "date": [
+              "WHEN",
+              "CREATED",
+              "UPDATED"
+            ],
+            "domain": [
+              "DATAFLOW",
+              "FLOW",
+              "CONNECTOR"
+            ],
+            "entity": [
+              "ID_LIKE"
+            ],
+            "fields": [],
+            "flags": [
+              "CONCRETE_ENTITY"
+            ],
+            "norm": "when were the most recent local connector records updated or created? use only local snapshot evidence for the workflow summary.",
+            "p": "When were the most recent local connector records updated or created? Use only local snapshot evidence for the workflow summary.",
+            "rel": [
+              "USES"
+            ],
+            "retr": [],
+            "status": []
+          },
+          "checkpoint_routing_anti_hallucination_gate": {
+            "fallback_action": null,
+            "feedback": {},
+            "final_decision": {
+              "api": true,
+              "codes": [
+                "FALLBACK"
+              ],
+              "conf": 0.82,
+              "intent": "MIXED",
+              "need": "SQL_API",
+              "no_tool": false,
+              "sql": true
+            },
+            "final_gate": {
+              "block": [],
+              "ok": true,
+              "support": {
+                "caps": true,
+                "intent": true,
+                "need": true
+              },
+              "unsupported_codes": []
+            },
+            "initial_decision": {
+              "api": true,
+              "codes": [
+                "FALLBACK"
+              ],
+              "conf": 0.82,
+              "intent": "MIXED",
+              "need": "SQL_API",
+              "no_tool": false,
+              "sql": true
+            },
+            "initial_gate": {
+              "block": [],
+              "ok": true,
+              "support": {
+                "caps": true,
+                "intent": true,
+                "need": true
+              },
+              "unsupported_codes": []
+            },
+            "revision_attempted": false,
+            "revision_success": false,
+            "revision_token_estimate": 0
+          },
+          "checkpoint_semantic_intent_decision": {
+            "api": true,
+            "codes": [
+              "FALLBACK"
+            ],
+            "conf": 0.82,
+            "intent": "MIXED",
+            "need": "SQL_API",
+            "no_tool": false,
+            "sql": true
+          },
+          "checkpoint_semantic_route_decision_ladder": {
+            "action": "EVIDENCE_PIPELINE",
+            "shadow_only": false,
+            "tier_used": 0
+          }
+        },
+        "context_token_cost": 303,
+        "features": {
+          "cap": [
+            "SQL_FLOW",
+            "API_FLOW_SERVICE",
+            "SQL_CONNECTOR"
+          ],
+          "count": [],
+          "cue": [],
+          "date": [
+            "WHEN",
+            "CREATED",
+            "UPDATED"
+          ],
+          "domain": [
+            "DATAFLOW",
+            "FLOW",
+            "CONNECTOR"
+          ],
+          "entity": [
+            "ID_LIKE"
+          ],
+          "fields": [],
+          "flags": [
+            "CONCRETE_ENTITY"
+          ],
+          "norm": "when were the most recent local connector records updated or created? use only local snapshot evidence for the workflow summary.",
+          "p": "When were the most recent local connector records updated or created? Use only local snapshot evidence for the workflow summary.",
+          "rel": [
+            "USES"
+          ],
+          "retr": [],
+          "status": []
+        },
+        "low_low_case": false,
+        "no_tool_safety": {
+          "action": "BLOCK_NO_TOOL",
+          "allow_no_tool": false,
+          "block": [
+            "DATE",
+            "REL",
+            "ENTITY_LOOKUP"
+          ],
+          "capability_match_score": 0.75,
+          "clear_safe_api_family": false,
+          "evidence_need_score": 0.57,
+          "has_concrete_data_signal": true,
+          "no_tool_safety_score": 0.43
+        },
+        "promotion_allowed": false,
+        "routing_anti_hallucination_gate": {
+          "fallback_action": null,
+          "feedback": {},
+          "final_decision": {
+            "api": true,
+            "codes": [
+              "FALLBACK"
+            ],
+            "conf": 0.82,
+            "intent": "MIXED",
+            "need": "SQL_API",
+            "no_tool": false,
+            "sql": true
+          },
+          "final_gate": {
+            "block": [],
+            "ok": true,
+            "support": {
+              "caps": true,
+              "intent": true,
+              "need": true
+            },
+            "unsupported_codes": []
+          },
+          "initial_decision": {
+            "api": true,
+            "codes": [
+              "FALLBACK"
+            ],
+            "conf": 0.82,
+            "intent": "MIXED",
+            "need": "SQL_API",
+            "no_tool": false,
+            "sql": true
+          },
+          "initial_gate": {
+            "block": [],
+            "ok": true,
+            "support": {
+              "caps": true,
+              "intent": true,
+              "need": true
+            },
+            "unsupported_codes": []
+          },
+          "revision_attempted": false,
+          "revision_success": false,
+          "revision_token_estimate": 0
+        },
+        "safe_api_probe": {},
+        "semantic_intent_decision": {
+          "api": true,
+          "codes": [
+            "FALLBACK"
+          ],
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "shadow_only": false,
+        "tier_used": 0
+      },
+      "shadow_only": false
+    }
+  },
+  "old_generated_diagnostic_path_used": false,
+  "prompt_id": "da500_0119",
+  "runtime_prompt": {
+    "category": "sql_only_local_snapshot",
+    "difficulty": "medium",
+    "domain_family": "CONNECTOR",
+    "prompt": "When were the most recent local connector records updated or created? Use only local snapshot evidence for the workflow summary.",
+    "prompt_id": "da500_0119",
+    "split": "dev_generated",
+    "tags": [
+      "sql_required",
+      "date"
+    ]
+  },
+  "tool_counts": {
+    "api_calls": 0,
+    "sql_calls": 1,
+    "total_tool_calls": 1
+  }
+}

@@ -1,0 +1,45 @@
+flowchart TD
+  subgraph Input
+    A["User Prompt<br/>Is the &#x27;Birthday Message&#x27; journey published?"]
+    B["Prompt Router<br/>mode=SQL_PLUS_API<br/>policy=unknown"]
+    A -->|route_prompt| B
+  end
+  subgraph QueryUnderstanding[Query Understanding]
+    C["Query Normalization<br/>normalized_query + rewrites"]
+    D["Tokens / Entities<br/>names + ids + dates + metrics"]
+    E["Relevance / QueryAnalysis<br/>tables + APIs + answer family"]
+    B -->|normalized text| C
+    C -->|query_tokens| D
+    D -->|route/domain/family| E
+  end
+  subgraph ContextPlanning[Context And Planning]
+    F["Candidate / Context Card<br/>selected tables + APIs"]
+    G["LLM SQL or Template Plan<br/>candidate/full schema + fallback"]
+    H["Plan Optimization<br/>budget + dedupe + placeholders"]
+    E -->|selected_metadata| F
+    F -->|schema/API context| G
+    G -->|draft_plan| H
+  end
+  subgraph ValidationExecution[Validation And Execution]
+    I["SQL Validation<br/>SELECT &quot;NAME&quot; AS campaign_name, &quot;LASTDEPLOYEDTIME&quot; AS published_time FROM &quot;dim_campaign&quot; L"]
+    J["API Validation<br/>GET /ajo/journey"]
+    K["Tool Results<br/>sql_rows + api_payload/dry_run"]
+    H -->|optimized_plan| I
+    H -->|api_steps| J
+    I -->|execute_sql| K
+    J -->|call_api or dry-run| K
+  end
+  subgraph EvidenceAnswer[Evidence And Answer]
+    L["EvidenceBus<br/>IDs + names + counts + timestamps"]
+    M["Answer Slots<br/>entity + count + status + dry_run"]
+    N["Answer Verification<br/>claims + caveats + reranking"]
+    O["Final Answer<br/>The journey &quot;Birthday Message&quot; has not been published. The database shows a null published_time for this journey, and live API verification was not executed bec"]
+    K -->|extract structured facts| L
+    L -->|forward evidence_slots| M
+    M -->|verify claims| N
+    N -->|verified_answer| O
+  end
+  subgraph Artifacts
+    P["metadata.json<br/>filled_system_prompt.txt<br/>trajectory.json<br/>reports"]
+    O -->|write reproducible trace| P
+  end

@@ -1,0 +1,7 @@
+# Staged Evidence Policy Diagnostic
+
+- Packaged runtime changed: `false`
+- LLM advisor included: `false`
+- Summary counts: `{'API_OPTIONAL': 116, 'API_REQUIRED': 152, 'API_SKIP': 232, 'api_calls_saved': 21, 'api_scored_rows': 31, 'api_used': 34, 'combined_safe_applied_real_trial:api_calls': 306, 'combined_safe_applied_real_trial:api_calls_saved': 21, 'combined_safe_applied_real_trial:api_required_underuse': 0, 'combined_safe_applied_real_trial:sql_calls': 393, 'combined_safe_applied_real_trial:unsupported_claims': 0, 'combined_safe_deterministic_promotion_candidate_real:api_calls': 306, 'combined_safe_deterministic_promotion_candidate_real:api_calls_saved': 21, 'combined_safe_deterministic_promotion_candidate_real:api_required_underuse': 0, 'combined_safe_deterministic_promotion_candidate_real:sql_calls': 393, 'combined_safe_deterministic_promotion_candidate_real:unsupported_claims': 0, 'need:api': 112, 'need:mixed': 53, 'need:none': 70, 'need:sql': 162, 'need:sql_then_api': 103, 'packaged_baseline_real:api_calls': 327, 'packaged_baseline_real:api_calls_saved': 0, 'packaged_baseline_real:api_required_underuse': 0, 'packaged_baseline_real:sql_calls': 393, 'packaged_baseline_real:unsupported_claims': 0, 'potential_api_underuse': 85, 'rows_helped': 112, 'rows_hurt': 145, 'rows_neutral': 243, 'sql_used': 15, 'unsafe_unresolved_api_blocked': 1}`
+
+This report inspects actual trajectories and benchmark outputs after execution; it does not change packaged routing.

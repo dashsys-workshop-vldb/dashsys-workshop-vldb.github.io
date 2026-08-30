@@ -1,0 +1,300 @@
+{
+  "checkpoint_timeline": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "impact": "keeps later normalization from changing the user-facing question",
+      "input": "unavailable",
+      "order": 1,
+      "output": "query=How many schemas do I have?; query_id=example_011; strategy=SQL_FIRST_API_VERIFY",
+      "stage": "input",
+      "technique": "raw user query capture",
+      "what_changed": "preserves the original query for reproducibility"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "impact": "routes data questions to evidence tools instead of unsupported direct answers",
+      "input": "query=How many schemas do I have?",
+      "order": 2,
+      "output": "confidence=0.84; reason=Local snapshot keyword(s) can be answered from DuckDB/par...",
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "what_changed": "chooses whether the prompt can be answered directly or needs SQL/API evidence"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "impact": "prevents direct answers for data questions that need SQL/API evidence",
+      "input": "query=How many schemas do I have?",
+      "order": 3,
+      "output": "confidence=0.84; is_simple=False; suggested_action=USE_DATA_PIPELINE; reason=Local snapshot keyword(s) can be answered from Duc...",
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "what_changed": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "impact": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "input": "query=How many schemas do I have?",
+      "order": 4,
+      "output": "cap=3 item(s); count=1 item(s); domain=1 item(s); norm=how many schemas do i have?",
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "what_changed": "records fact-only prompt cues for semantic routing diagnostics"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "impact": "improves template and route matching across wording variants",
+      "input": "query=How many schemas do I have?",
+      "order": 5,
+      "output": "normalized_query=How many schemas do I have?; matching_text=how many schema do i have?",
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "what_changed": "creates matching-friendly text while preserving the original query"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "impact": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "input": "normalized_query=How many schemas do I have?",
+      "order": 6,
+      "output": "domains=1 item(s)",
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "what_changed": "extracts reusable query fields for routing, planning, and answers"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "impact": "keeps high-signal tables and endpoints near the planner",
+      "input": "tokens=1 field(s)",
+      "order": 7,
+      "output": "top_answer_families=1 item(s); top_apis=3 item(s); top_join_hints=3 item(s); top_tables=3 item(s)",
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "what_changed": "selects a smaller, more relevant schema/API context"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "impact": "aligns routing, metadata, planning, and reporting decisions",
+      "input": "route_type=SQL_ONLY; domain_type=DATASET_SCHEMA",
+      "order": 8,
+      "output": "strategy=SQL_FIRST_API_VERIFY; route_type=SQL_ONLY; domain_type=DATASET_SCHEMA; answer_family=schema_dataset",
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "what_changed": "computes shared query understanding once"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "impact": "guides relationship-heavy SQL/API selection",
+      "input": "domain_type=DATASET_SCHEMA; answer_family=schema_dataset",
+      "order": 9,
+      "output": "api_mode=required",
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "what_changed": "predicts the relevant table/join/API path"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "impact": "keeps required tables, columns, joins, and API candidates visible",
+      "input": "lookup_path=schema_dataset",
+      "order": 10,
+      "output": "estimated_metadata_tokens=490; prompt_tokens=1072; selected_apis=1 item(s); selected_card_name=schema_dataset",
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "what_changed": "packs family-relevant context into metadata.json and the filled prompt"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "impact": "prefers validated, family-matched plans",
+      "input": "strategy=SQL_FIRST_API_VERIFY",
+      "order": 11,
+      "output": "selected_plan=generic_sql_first",
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "what_changed": "selects one plan before execution"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "impact": "drops unresolved placeholder calls unless explicitly warned",
+      "input": "original_step_count=2",
+      "order": 12,
+      "output": "call_budget_applied=False; optimized_step_count=2; optimizer_actions=1 item(s); original_step_count=2",
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "what_changed": "removes duplicate, skippable, or unsafe calls before validation"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "impact": "keeps API calls for API-only/live families",
+      "input": "route_type=SQL_ONLY; answer_family=schema_dataset",
+      "order": 13,
+      "output": "reason=Query family requires Adobe API evidence.",
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "what_changed": "decides when API evidence is required, optional, or unnecessary"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "impact": "preserves required grounding steps",
+      "input": "planned_steps=2 item(s)",
+      "order": 14,
+      "output": "planned_sql_calls=1; planned_api_calls=1",
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "what_changed": "keeps tool calls within per-family limits"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "impact": "blocks unsafe SQL and unknown/unresolved API calls",
+      "input": "optimized_steps=2 item(s)",
+      "order": 15,
+      "output": "api_validation_status=1 item(s); sql_validation_status=1 item(s)",
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "what_changed": "records whether planned SQL/API calls were safe to execute"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "impact": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "input": "sql_call_count=1",
+      "order": 16,
+      "output": "destructive_sql_detected=False; parsed_ok=True; selected_columns=1 item(s); selected_tables=1 item(s)",
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "what_changed": "adds AST-level table and column extraction after existing SQL validation"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "impact": "records row counts, dry-run state, and API status for final answer grounding",
+      "input": "validated_step_count=2",
+      "order": 17,
+      "output": "sql_calls_executed=1; api_calls_executed=1",
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "what_changed": "captures the actual SQL/API evidence gathered by the backend"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+      "impact": "separates data and mixed prompts from pure direct concept/meta bypasses",
+      "input": "strategy=SQL_FIRST_API_VERIFY",
+      "order": 18,
+      "output": "evidence_bus_built=True; evidence_pipeline_bypassed=False; post_evidence_answer_router_ran=False",
+      "stage": "evidence forwarding",
+      "technique": "pre-evidence routing boundary",
+      "what_changed": "records that the prompt continued into the evidence-backed answer path"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "impact": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "input": "tool_result_count=2",
+      "order": 19,
+      "output": "evidence=4 field(s)",
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "what_changed": "forwards structured facts to API params and answer slots"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "impact": "makes final response generation evidence-grounded",
+      "input": "tool_result_count=2",
+      "order": 20,
+      "output": "answer_intent=COUNT",
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "what_changed": "turns raw tool results into typed evidence fields"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "impact": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "input": "claim_count=1; slots_present=4 item(s)",
+      "order": 21,
+      "output": "verifier_passed=True",
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "what_changed": "checks final-answer claims against SQL/API evidence"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "impact": "prefers verifier-passing and intent-matched answers",
+      "input": "answer_family=schema_dataset",
+      "order": 22,
+      "output": "candidate_count=0; selected_candidate_type=base; selection_reason=best verifier-passing answer",
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "what_changed": "selects the safest answer from same-evidence candidates"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "impact": "final answer remains tied to evidence and caveats",
+      "input": "verifier_passed=True",
+      "order": 23,
+      "output": "answer_length=102; final_answer=You have 74 schemas. Live API verification was not execut...",
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "what_changed": "returns the final concise answer to the agent harness"
+    },
+    {
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "impact": "observability",
+      "input": "unavailable",
+      "order": 24,
+      "output": "unavailable",
+      "stage": "query understanding",
+      "technique": "unavailable",
+      "what_changed": "Recorded the stage output in trajectory."
+    }
+  ],
+  "decision_flow": [
+    {
+      "decision": "Route selected",
+      "reason": "Schema count prompt classified as SQL-backed schema_dataset family.",
+      "value": "SQL_ONLY"
+    },
+    {
+      "decision": "SQL used?",
+      "reason": "SQL provides the schema count answer source.",
+      "value": "yes"
+    },
+    {
+      "decision": "API used?",
+      "reason": "Packaged SQL_FIRST_API_VERIFY attempts API verification but credentials are unavailable.",
+      "value": "yes, dry-run"
+    },
+    {
+      "decision": "Dry-run happened?",
+      "reason": "Adobe credentials unavailable, so live verification payload was not executed.",
+      "value": "yes"
+    },
+    {
+      "decision": "Answer rewrite promoted?",
+      "reason": "Packaged answer already states SQL count and dry-run honesty.",
+      "value": "no"
+    }
+  ],
+  "evidence_flow": [
+    {
+      "detail": "items=1 item(s); total_items=1; truncated_items=False",
+      "name": "SQL evidence",
+      "status": "answer source"
+    },
+    {
+      "detail": "sql_calls_executed=1; api_calls_executed=1",
+      "name": "API evidence",
+      "status": "dry-run verification"
+    },
+    {
+      "detail": "No promoted local-evidence answer path for this row.",
+      "name": "Local evidence",
+      "status": "not in packaged final answer"
+    },
+    {
+      "detail": "answer_intent=COUNT",
+      "name": "Answer slots",
+      "status": "SQL count grounded"
+    }
+  ],
+  "flowchart": "\nflowchart LR\n  A[\"Raw prompt\"] --> B[\"Routing\"]\n  B --> C[\"Normalize + tokens\"]\n  C --> D[\"Query analysis\"]\n  D --> E[\"Metadata/context\"]\n  E --> F[\"Planning\"]\n  F --> G[\"Validation + budget\"]\n  G --> H[\"Execution\"]\n  H --> I[\"Evidence bus\"]\n  I --> J[\"Answer synthesis\"]\n  J --> K[\"Verifier/reranker\"]\n  K --> L[\"Final answer\"]\n  L --> M[\"Trajectory + reports\"]\n",
+  "page": "end_to_end_execution_primary",
+  "query_id": "example_011",
+  "raw_prompt": "How many schemas do I have?",
+  "route_type": "SQL_ONLY",
+  "sequence_diagram": "\nsequenceDiagram\n  participant User\n  participant Router\n  participant Normalizer\n  participant Analysis as Query Analysis\n  participant Metadata as Metadata Selector\n  participant Planner\n  participant SQL as SQL Template\n  participant API as API Template\n  participant Validator\n  participant Executor\n  participant Evidence as Evidence Bus\n  participant Answer as Answer Synthesizer\n  participant Verify as Verifier/Reranker\n  participant Output as Final Output\n  User->>Router: raw prompt\n  Router->>Normalizer: use data pipeline\n  Normalizer->>Analysis: normalized text + tokens\n  Analysis->>Metadata: route intent + answer family\n  Metadata->>Planner: compact context\n  Planner->>SQL: schema count SQL\n  Planner->>API: schema verification call\n  SQL->>Validator: read-only count query\n  API->>Validator: method/path/params\n  Validator->>Executor: safe SQL + API verification\n  Executor->>Evidence: SQL count + dry-run API label\n  Evidence->>Answer: count evidence + dry-run status\n  Answer->>Verify: SQL-grounded answer\n  Verify->>Output: final answer + trajectory\n",
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

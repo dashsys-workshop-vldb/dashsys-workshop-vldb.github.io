@@ -1,0 +1,180 @@
+{
+  "answer_time": 4.292000085115433e-06,
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 873,
+  "execution_time": 0.0004159579984843731,
+  "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me all entities created by download",
+  "planning_time": 0.00030104198958724737,
+  "preprocessing_time": 0.0005972919752821326,
+  "query_id": "example_014",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0015352089540101588,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "audit_events",
+          "audit_events_short"
+        ],
+        "lookup_paths": [
+          "audit",
+          "journey_campaign"
+        ],
+        "tables": [
+          "dim_collection",
+          "dim_segment"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "audit",
+          "batch"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 517,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_04/eval/example_014/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 779
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "collection_created_by",
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
+        },
+        {
+          "action": "api",
+          "family": "audit_create_events",
+          "method": "GET",
+          "params": {
+            "limit": "20",
+            "property": "action==create"
+          },
+          "purpose": "API parameter template: audit_create_events.",
+          "url": "/data/foundation/audit/events"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2703
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 0
+      },
+      "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "20",
+        "property": "action==create"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/audit/events",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "20",
+          "property": "action==create"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/audit/events"
+      },
+      "url": "/data/foundation/audit/events",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 4.292000085115433e-06,
+    "execution_time": 0.0004159579984843731,
+    "planning_time": 0.00030104198958724737,
+    "preprocessing_time": 0.0005972919752821326
+  },
+  "tool_call_count": 2
+}

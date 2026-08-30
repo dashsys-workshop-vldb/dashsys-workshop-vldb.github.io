@@ -1,0 +1,195 @@
+{
+  "report": "answer_contract_stability_fix",
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "packaged_default_unchanged": true,
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "provider": {
+    "name": "openai",
+    "base_url": "http://localhost:8000/v1",
+    "model": "/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+    "sdk_toolcall_probe": {
+      "ok": true,
+      "sdk_path_used": true,
+      "toolcall_supported": true,
+      "tool_calls_count": 1,
+      "tool_name": "submit_probe_result"
+    }
+  },
+  "files_changed_runtime": [
+    "dashagent/v2_answer_contract.py",
+    "dashagent/v2_answer_contract_planner.py",
+    "dashagent/v2_semantic_ir_planner.py",
+    "dashagent/v2_semantic_ir_validator.py",
+    "scripts/run_hermes_v2_toolcall_smoke.py"
+  ],
+  "files_changed_tests": [
+    "tests/test_v2_answer_contract.py",
+    "tests/test_v2_semantic_ir.py",
+    "tests/test_hermes_v2_toolcall_smoke.py"
+  ],
+  "implementation": {
+    "contract_only_toolcall_added": true,
+    "contract_tool_name": "submit_answer_contract",
+    "semantic_ir_primary_kept": true,
+    "atomic_protocol_made_primary": false,
+    "backend_semantic_routing_added": false,
+    "backend_answer_contract_inference_used": false,
+    "backend_table_or_endpoint_replacement_used": false,
+    "primary_parse_allows_missing_contract_only_intermediately": true,
+    "final_evidence_plan_requires_valid_answer_contract": true,
+    "compact_contract_mechanical_defaults_added": true,
+    "unknown_table_repair_metadata_added": true,
+    "smoke_runner_continues_after_row_exception": true
+  },
+  "fresh_smoke": {
+    "command": "DASHAGENT_LLM_PROVIDER=openai OPENAI_BASE_URL=http://localhost:8000/v1 OPENAI_MODEL=/Users/tanqinyang/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit OPENAI_API_KEY=local-token LLM_TIMEOUT_SECONDS=180 HERMES_LLM_CALL_TIMEOUT_SEC=180 HERMES_SMOKE_PROMPT_TIMEOUT_SEC=180 .venv/bin/python scripts/run_hermes_v2_toolcall_smoke.py",
+    "ok": false,
+    "row_count": 7,
+    "passed_count": 3,
+    "failed_count": 4,
+    "timeout_count": 0,
+    "unsupported_claims": 0,
+    "no_tool_fp": 0,
+    "final_semantic_gate_final_failures": 0,
+    "final_semantic_gate_initial_failures": 1,
+    "missing_answer_contract_count": 0,
+    "unknown_table_count": 0,
+    "sql_calls": 5,
+    "api_calls": 1,
+    "compiled_sql_count": 5,
+    "compiled_api_count": 0,
+    "runtime_fact_count": 4,
+    "local_snapshot_fact_count": 4,
+    "live_api_fact_count": 0,
+    "raw_sql_fallback_used_count": 0,
+    "rows": [
+      {
+        "prompt_id": "pure_concept_schema",
+        "prompt": "What is a schema?",
+        "pass": true,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "final_answer_summary": "Concept definition of schema",
+        "failure_note": null
+      },
+      {
+        "prompt_id": "pure_meta_list_schemas",
+        "prompt": "In the phrase \"list schemas\", what does \"list\" mean?",
+        "pass": true,
+        "route": "LLM_DIRECT",
+        "sql_calls": 0,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "final_answer_summary": "Explains the word list generally",
+        "failure_note": null
+      },
+      {
+        "prompt_id": "ambiguous_user_schemas",
+        "prompt": "What schemas do I have?",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "final_answer_summary": "No matching runtime evidence was available for this query/scope.",
+        "failure_note": "LLM selected hkg_br_base_segment_used_by_dependent_segment.SEGMENTID; SQL returned zero rows."
+      },
+      {
+        "prompt_id": "local_schema_count",
+        "prompt": "How many schema records are in the local snapshot?",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 0,
+        "runtime_fact_count": 1,
+        "final_answer_summary": "There are 0 schema records in the local snapshot.",
+        "failure_note": "LLM counted the segment-dependency table; smoke expected answer containing 74."
+      },
+      {
+        "prompt_id": "birthday_message_published",
+        "prompt": "When was the journey \"Birthday Message\" published?",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "final_answer_summary": "No matching runtime evidence was available for this query/scope.",
+        "failure_note": "Repair fixed validation, but final lookup used dim_blueprint.UPDATEDCLIENTID = Birthday Message and returned zero rows."
+      },
+      {
+        "prompt_id": "mixed_inactive_journeys",
+        "prompt": "Explain what inactive journey means and show inactive journeys.",
+        "pass": true,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 0,
+        "runtime_fact_count": 3,
+        "final_answer_summary": "Concept caveat plus local inactive journey evidence",
+        "failure_note": null
+      },
+      {
+        "prompt_id": "compare_local_live_birthday_status",
+        "prompt": "Compare local and live status of Birthday Message if both are available.",
+        "pass": false,
+        "route": "EVIDENCE_PIPELINE",
+        "sql_calls": 1,
+        "api_calls": 1,
+        "runtime_fact_count": 0,
+        "final_answer_summary": "Local zero rows plus live API unavailable caveat.",
+        "failure_note": "Semantic IR repair failed on unknown field NAME for dim_blueprint; live API was dry-run unavailable."
+      }
+    ]
+  },
+  "strict_dev_eval": {
+    "ran": false,
+    "reason": "Fresh smoke did not satisfy continuation gate: passed_count was 3, required 7."
+  },
+  "validation": {
+    "focused_red_green_tests": {
+      "command": ".venv/bin/python -m pytest -q tests/test_v2_answer_contract.py::test_compact_count_slot_normalizes_mechanical_defaults tests/test_v2_answer_contract.py::test_compact_list_and_relation_slots_normalize_positive_assertion_guard tests/test_v2_answer_contract.py::test_compact_slot_still_requires_task_reference_and_source_scope tests/test_v2_semantic_ir.py::test_missing_answer_contract_uses_secondary_contract_toolcall tests/test_v2_semantic_ir.py::test_invalid_secondary_answer_contract_fails_closed_without_atomic_fallback tests/test_v2_semantic_ir.py::test_direct_route_does_not_require_secondary_answer_contract tests/test_v2_semantic_ir.py::test_semantic_ir_validator_checks_existence_without_correction tests/test_v2_semantic_ir.py::test_llm_unified_planner_repairs_invalid_semantic_ir_once tests/test_hermes_v2_toolcall_smoke.py::test_smoke_records_row_failure_and_continues_all_prompts",
+      "passed": 9,
+      "failed": 0
+    },
+    "focused_module_tests": {
+      "command": ".venv/bin/python -m pytest -q tests/test_v2_answer_contract.py tests/test_final_answer_contract_gate.py tests/test_v2_semantic_ir.py tests/test_v2_semantic_ir_support.py tests/test_hermes_v2_toolcall_smoke.py tests/test_robust_generalized_candidate.py tests/test_llm_owned_v2_workflow.py tests/test_llm_final_answer_composer.py",
+      "passed": 160,
+      "failed": 0
+    },
+    "full_pytest": {
+      "command": ".venv/bin/python -m pytest -q",
+      "passed": 1213,
+      "skipped": 1,
+      "failed": 0,
+      "duration_sec": 94.34
+    },
+    "check_submission_ready": {
+      "command": ".venv/bin/python scripts/check_submission_ready.py",
+      "ok": true,
+      "default_strategy_is_sql_first_api_verify": true,
+      "query_output_count": 73,
+      "secret_scan_ok": true
+    },
+    "sdk_usage_audit": {
+      "command": ".venv/bin/python scripts/generate_sdk_usage_audit.py",
+      "runtime_llm_direct_http_hits": 0
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "passed": true
+    }
+  },
+  "remaining_blockers": [
+    "LLM-owned table/source choice still selects poor local tables for schema prompts.",
+    "Local schema count returns 0 because the selected table has no matching rows, while smoke expects 74.",
+    "Birthday Message date/status prompts still fail due to weak field/table selection and zero-row local evidence.",
+    "Compare local/live row has scoped caveats and no unsupported claims, but Semantic IR repair remains invalid on unknown field NAME."
+  ],
+  "recommendation": {
+    "safe_to_keep_shadow_only": true,
+    "safe_to_run_strict_dev_eval": false,
+    "safe_to_promote": false,
+    "reason": "Contract stability fixes validate, but focused smoke is 3/7 and must pass 7/7 before strict dev eval."
+  }
+}

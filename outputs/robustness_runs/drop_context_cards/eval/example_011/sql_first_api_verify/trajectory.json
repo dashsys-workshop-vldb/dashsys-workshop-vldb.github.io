@@ -1,0 +1,189 @@
+{
+  "answer_time": 8.541974239051342e-06,
+  "api_call_count": 1,
+  "domain_type": "DATASET_SCHEMA",
+  "errors": [],
+  "estimated_tokens": 840,
+  "execution_time": 0.00034195801708847284,
+  "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "How many schemas do I have?",
+  "planning_time": 0.00025283399736508727,
+  "preprocessing_time": 0.007182833040133119,
+  "query_id": "example_011",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.001328374957665801,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "catalog_datasets",
+          "method": "GET",
+          "path": "/data/foundation/catalog/dataSets"
+        },
+        {
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+        },
+        {
+          "id": "schema_registry_schemas",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        {
+          "id": "schemas_short",
+          "method": "GET",
+          "path": "/schemas"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_collection_segment",
+        "hkg_br_source_collection"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DATASET_SCHEMA",
+      "kind": "route",
+      "reason": "Keyword routing using DATASET_SCHEMA:1, COUNT_AGGREGATION:1.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "audit_events",
+          "audit_events_short"
+        ],
+        "lookup_paths": [
+          "schema_dataset"
+        ],
+        "tables": [
+          "dim_blueprint",
+          "dim_collection"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "schema_dataset"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 293,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_context_cards/eval/example_011/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 508
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: schema_count+schema_list.",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "schema_count",
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+        },
+        {
+          "action": "api",
+          "family": "schema_list",
+          "method": "GET",
+          "params": {
+            "limit": "25"
+          },
+          "purpose": "API parameter template: schema_list.",
+          "url": "/schemas"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2877
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "blueprint_count": 74
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "25"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/schemas",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "25"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/schemas"
+      },
+      "url": "/schemas",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 8.541974239051342e-06,
+    "execution_time": 0.00034195801708847284,
+    "planning_time": 0.00025283399736508727,
+    "preprocessing_time": 0.007182833040133119
+  },
+  "tool_call_count": 2
+}

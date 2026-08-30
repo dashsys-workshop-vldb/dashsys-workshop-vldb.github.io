@@ -1,0 +1,144 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Merge policies are API evidence; do not infer defaults from absent API payloads.",
+    "api_families": [
+      "merge_policies"
+    ],
+    "api_mode": "required",
+    "family": "merge_policy",
+    "join_path": [],
+    "required_ids": [
+      "merge_policy_id"
+    ],
+    "tables": []
+  },
+  "domain_type": "UNKNOWN",
+  "known_example_patterns": [],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "merge_policy",
+        "batch"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "List all merge policies in this sandbox.",
+  "query_id": "example_019",
+  "route_type": "API_ONLY",
+  "selected_apis": [
+    {
+      "id": "merge_policies",
+      "method": "GET",
+      "path": "/data/core/ups/config/mergePolicies"
+    }
+  ],
+  "selected_columns": {
+    "br_campaign_segment": [
+      "SEGMENTID",
+      "CAMPAIGNID"
+    ],
+    "dim_blueprint": [
+      "BLUEPRINTTYPE",
+      "UPDATEDCLIENTID",
+      "UPDATEDTIME",
+      "BLUEPRINTID",
+      "NAME",
+      "ISBEHAVIORTIMESERIESTYPE",
+      "ISBEHAVIORRECORDTYPE",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_campaign": [
+      "UPDATEDTIME",
+      "STARTDATE",
+      "IMSORGID",
+      "LASTDEPLOYEDTIME",
+      "STATE",
+      "CAMPAIGNTYPE",
+      "STOPPEDTIME",
+      "FINISHEDTIME",
+      "SANDBOXNAME",
+      "NAME",
+      "SANDBOXID",
+      "STATUS",
+      "CAMPAIGNID",
+      "CAMPAIGNACTIVITYCOUNT",
+      "CREATEDTIME"
+    ],
+    "dim_collection": [
+      "ISIDENTITYENABLED",
+      "ROWCOUNT",
+      "UPDATEDTIME",
+      "NAME",
+      "COLLECTIONID",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_connector": [
+      "DATAFLOWNAME",
+      "UPDATEDTIME",
+      "CONNECTIONSPECNAME",
+      "STATE",
+      "SOURCEID",
+      "NAME",
+      "DATAFLOWID",
+      "SOURCEACCOUNTNAME",
+      "CREATEDTIME"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.98,
+      "left_column": "CAMPAIGNID",
+      "left_table": "dim_campaign",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "CAMPAIGNID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    }
+  ],
+  "selected_tables": [
+    "br_campaign_segment",
+    "dim_blueprint",
+    "dim_campaign",
+    "dim_collection",
+    "dim_connector"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

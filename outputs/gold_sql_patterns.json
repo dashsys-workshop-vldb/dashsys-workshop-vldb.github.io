@@ -1,0 +1,357 @@
+[
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "When was the journey 'Birthday Message' published?",
+        "sql": "SELECT name AS campaign_name,\n       lastdeployedtime AS published_time\nFROM dim_campaign\nWHERE name IN ('Birthday Message', 'Gold Tier Welcome Email')\nLIMIT 50"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "when",
+      "was",
+      "journey",
+      "birthday",
+      "message",
+      "published"
+    ],
+    "tables": [
+      "dim_campaign"
+    ],
+    "template": "SELECT name AS campaign_name, lastdeployedtime AS published_time FROM dim_campaign WHERE name IN ('<literal>', '<literal>') LIMIT 50"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Give me inactive journeys",
+        "sql": "SELECT J.CAMPAIGNID AS campaign_id,\n       J.NAME AS campaign_name,\n       J.STATE AS campaign_state,\n       J.UPDATEDTIME AS updated_time\nFROM DIM_CAMPAIGN AS J\nWHERE LOWER(J.STATE) NOT IN ('deployed', 'redeployed')\nLIMIT 50"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "inactive",
+      "journeys"
+    ],
+    "tables": [
+      "DIM_CAMPAIGN"
+    ],
+    "template": "SELECT J.CAMPAIGNID AS campaign_id, J.NAME AS campaign_name, J.STATE AS campaign_state, J.UPDATEDTIME AS updated_time FROM DIM_CAMPAIGN AS J WHERE LOWER(J.STATE) NOT IN ('<literal>', '<literal>') LIMIT 50"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "List all journeys",
+        "sql": "SELECT CAMPAIGN.NAME AS CAMPAIGNNAME,\n       CAMPAIGN.CAMPAIGNID\nFROM DIM_CAMPAIGN AS CAMPAIGN\nLIMIT 10"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "journeys"
+    ],
+    "tables": [
+      "DIM_CAMPAIGN"
+    ],
+    "template": "SELECT CAMPAIGN.NAME AS CAMPAIGNNAME, CAMPAIGN.CAMPAIGNID FROM DIM_CAMPAIGN AS CAMPAIGN LIMIT 10"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+        "sql": "SELECT \n    a.segmentid AS segment_id,\n    a.name AS segment_name,\n    a.totalmembers AS total_profiles,\n    a.createdTime AS created_time,\n    a.updatedTime AS updated_time\nFROM dim_segment a\nJOIN hkg_br_segment_target ad ON a.segmentid = ad.segmentid\nJOIN dim_target d ON ad.targetId = d.targetId\nWHERE d.dataflowName = 'SMS Opt-In'\nORDER BY a.name"
+      }
+    ],
+    "joins": [
+      "dim_target d  ad.targetId = d.targetId",
+      "hkg_br_segment_target ad  a.segmentid = ad.segmentid"
+    ],
+    "query_keywords": [
+      "audience",
+      "segment",
+      "audiences",
+      "connected",
+      "destination",
+      "named",
+      "sms",
+      "opt",
+      "showing",
+      "audienceid",
+      "name",
+      "totalprofiles"
+    ],
+    "tables": [
+      "dim_segment",
+      "dim_target",
+      "hkg_br_segment_target"
+    ],
+    "template": "SELECT a.segmentid AS segment_id, a.name AS segment_name, a.totalmembers AS total_profiles, a.createdTime AS created_time, a.updatedTime AS updated_time FROM dim_segment a JOIN hkg_br_segment_target ad ON a.segmentid = ad.segmentid JOIN dim_target d ON ad.targetId = d.targetId WHERE d.dataflowName = '<literal>' ORDER BY a.name"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Show me the IDs of failed dataflow runs",
+        "sql": "SELECT DISTINCT S.DATAFLOWID AS dataflow_id\nFROM DIM_CONNECTOR AS S\nWHERE S.STATE ILIKE '%loyalty%'\nLIMIT 50"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "ids",
+      "failed",
+      "dataflow",
+      "runs"
+    ],
+    "tables": [
+      "DIM_CONNECTOR"
+    ],
+    "template": "SELECT DISTINCT S.DATAFLOWID AS dataflow_id FROM DIM_CONNECTOR AS S WHERE S.STATE ILIKE '<literal>' LIMIT 50"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+        "sql": "SELECT D.targetId AS target_id,\n       D.dataflowName AS dataflow_name,\n       D.name AS target_name,\n       D.description,\n       D.state,\n       D.connectionSpecId AS connection_spec_id,\n       D.createdTime AS created_time,\n       D.updatedTime AS modified,\n       D.interval,\n       D.frequency\nFROM dim_target AS D\nORDER BY D.updatedTime DESC\nLIMIT 50"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "modified",
+      "export",
+      "destinations",
+      "b2b",
+      "prod",
+      "sandbox",
+      "sorted",
+      "most",
+      "recently",
+      "including",
+      "columns",
+      "associated"
+    ],
+    "tables": [
+      "dim_target"
+    ],
+    "template": "SELECT D.targetId AS target_id, D.dataflowName AS dataflow_name, D.name AS target_name, D.description, D.state, D.connectionSpecId AS connection_spec_id, D.createdTime AS created_time, D.updatedTime AS modified, D.interval, D.frequency FROM dim_target AS D ORDER BY D.updatedTime DESC LIMIT 50"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+        "sql": "SELECT S.blueprintid AS blueprint_id,\n       S.name AS blueprint_name,\n       COUNT(DISTINCT DS.collectionid) AS collection_count\nFROM dim_collection AS D\nJOIN hkg_br_blueprint_collection AS DS ON D.collectionid = DS.collectionid\nJOIN dim_blueprint AS S ON DS.blueprintid = S.blueprintid\nGROUP BY S.blueprintid,\n         S.name\nHAVING COUNT(DISTINCT DS.collectionid) > 1"
+      }
+    ],
+    "joins": [
+      "dim_blueprint S  DS.blueprintid = S.blueprintid",
+      "hkg_br_blueprint_collection DS  D.collectionid = DS.collectionid"
+    ],
+    "query_keywords": [
+      "how",
+      "many",
+      "datasets",
+      "ingested",
+      "using",
+      "same",
+      "schema",
+      "prod",
+      "sandbox"
+    ],
+    "tables": [
+      "dim_blueprint",
+      "dim_collection",
+      "hkg_br_blueprint_collection"
+    ],
+    "template": "SELECT S.blueprintid AS blueprint_id, S.name AS blueprint_name, COUNT(DISTINCT DS.collectionid) AS collection_count FROM dim_collection AS D JOIN hkg_br_blueprint_collection AS DS ON D.collectionid = DS.collectionid JOIN dim_blueprint AS S ON DS.blueprintid = S.blueprintid GROUP BY S.blueprintid, S.name HAVING COUNT(DISTINCT DS.collectionid) > 1"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+        "sql": "SELECT DISTINCT D.collectionid AS collection_id,\n       D.name AS collection_name\nFROM hkg_br_blueprint_collection AS SD\nJOIN dim_collection AS D ON SD.collectionid = D.collectionid\nJOIN dim_blueprint AS S ON SD.blueprintid = S.blueprintid\nWHERE S.name = 'hkg_adls_profile_count_history'\nLIMIT 3"
+      }
+    ],
+    "joins": [
+      "dim_blueprint S  SD.blueprintid = S.blueprintid",
+      "dim_collection D  SD.collectionid = D.collectionid"
+    ],
+    "query_keywords": [
+      "datasets",
+      "use",
+      "schema",
+      "hkg_adls_profile_count_history"
+    ],
+    "tables": [
+      "dim_blueprint",
+      "dim_collection",
+      "hkg_br_blueprint_collection"
+    ],
+    "template": "SELECT DISTINCT D.collectionid AS collection_id, D.name AS collection_name FROM hkg_br_blueprint_collection AS SD JOIN dim_collection AS D ON SD.collectionid = D.collectionid JOIN dim_blueprint AS S ON SD.blueprintid = S.blueprintid WHERE S.name = '<literal>' LIMIT 3"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "show me the field for Person: Birthday Today 001",
+        "sql": "SELECT DISTINCT aa.property AS property_name, a.name AS segment_name\nFROM hkg_br_segment_property aa\nJOIN dim_segment a ON aa.segmentid = a.segmentid\nWHERE a.name = 'Person: Birthday Today 001'\nLIMIT 20"
+      }
+    ],
+    "joins": [
+      "dim_segment a  aa.segmentid = a.segmentid"
+    ],
+    "query_keywords": [
+      "field",
+      "person",
+      "birthday",
+      "today",
+      "001"
+    ],
+    "tables": [
+      "dim_segment",
+      "hkg_br_segment_property"
+    ],
+    "template": "SELECT DISTINCT aa.property AS property_name, a.name AS segment_name FROM hkg_br_segment_property aa JOIN dim_segment a ON aa.segmentid = a.segmentid WHERE a.name = '<literal>' LIMIT 20"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Provide more details for the schema 'weRetail: Customer Actions'",
+        "sql": "SELECT S.BLUEPRINTID AS blueprint_id,\n       S.NAME,\n       S.CLASS,\n       S.ISPROFILEENABLED,\n       S.UPDATEDTIME AS updated_time,\n       S.REQUIREDFIELDS AS required_fields,\n       COUNT(DISTINCT SD.COLLECTIONID) AS collection_count,\n       COUNT(DISTINCT SA.PROPERTY) AS property_count\nFROM DIM_BLUEPRINT AS S\nLEFT JOIN HKG_BR_BLUEPRINT_COLLECTION AS SD ON S.BLUEPRINTID = SD.BLUEPRINTID\nLEFT JOIN HKG_BR_BLUEPRINT_PROPERTY AS SA ON S.BLUEPRINTID = SA.BLUEPRINTID\nWHERE LOWER(S.NAME) = LOWER('weRetail: Customer Actions')\nGROUP BY S.BLUEPRINTID,\n         S.NAME,\n         S.CLASS,\n         S.ISPROFILEENABLED,\n         S.UPDATEDTIME,\n         S.REQUIREDFIELDS\nLIMIT 3"
+      }
+    ],
+    "joins": [
+      "HKG_BR_BLUEPRINT_COLLECTION SD  S.BLUEPRINTID = SD.BLUEPRINTID\nLEFT",
+      "HKG_BR_BLUEPRINT_PROPERTY SA  S.BLUEPRINTID = SA.BLUEPRINTID"
+    ],
+    "query_keywords": [
+      "provide",
+      "more",
+      "details",
+      "schema",
+      "weretail",
+      "customer",
+      "actions"
+    ],
+    "tables": [
+      "DIM_BLUEPRINT",
+      "HKG_BR_BLUEPRINT_COLLECTION",
+      "HKG_BR_BLUEPRINT_PROPERTY"
+    ],
+    "template": "SELECT S.BLUEPRINTID AS blueprint_id, S.NAME, S.CLASS, S.ISPROFILEENABLED, S.UPDATEDTIME AS updated_time, S.REQUIREDFIELDS AS required_fields, COUNT(DISTINCT SD.COLLECTIONID) AS collection_count, COUNT(DISTINCT SA.PROPERTY) AS property_count FROM DIM_BLUEPRINT AS S LEFT JOIN HKG_BR_BLUEPRINT_COLLECTION AS SD ON S.BLUEPRINTID = SD.BLUEPRINTID LEFT JOIN HKG_BR_BLUEPRINT_PROPERTY AS SA ON S.BLUEPRINTID = SA.BLUEPRINTID WHERE LOWER(S.NAME) = LOWER('<literal>') GROUP BY S.BLUEPRINTID, S.NAME, S.CLASS"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+        "sql": "SELECT COUNT(DISTINCT S.BLUEPRINTID) AS num_experience_event_profile_enabled_blueprints\nFROM DIM_BLUEPRINT AS S\nWHERE LOWER(S.CLASS) LIKE LOWER('%download%')\n  AND S.ISPROFILEENABLED = TRUE"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "count",
+      "number",
+      "xdm",
+      "experience",
+      "event",
+      "schemas",
+      "are",
+      "enabled",
+      "profile"
+    ],
+    "tables": [
+      "DIM_BLUEPRINT"
+    ],
+    "template": "SELECT COUNT(DISTINCT S.BLUEPRINTID) AS num_experience_event_profile_enabled_blueprints FROM DIM_BLUEPRINT AS S WHERE LOWER(S.CLASS) LIKE LOWER('<literal>') AND S.ISPROFILEENABLED = TRUE"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "How many schemas do I have?",
+        "sql": "SELECT COUNT(DISTINCT S.blueprintid) AS blueprint_count\nFROM dim_blueprint AS S"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "how",
+      "many",
+      "schemas"
+    ],
+    "tables": [
+      "dim_blueprint"
+    ],
+    "template": "SELECT COUNT(DISTINCT S.blueprintid) AS blueprint_count FROM dim_blueprint AS S"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+        "sql": "SELECT DISTINCT A.segmentid AS segment_id, A.name AS segment_name, D.targetId AS target_id, D.name AS target_name\nFROM dim_segment AS A\nJOIN hkg_br_segment_target AS AD ON A.segmentid = AD.segmentid\nJOIN dim_target AS D ON AD.targetId = D.targetId\nWHERE D.createdTime >= DATEADD(MONTH, -3, CURRENT_DATE)\nLIMIT 3"
+      }
+    ],
+    "joins": [
+      "dim_target D  AD.targetId = D.targetId",
+      "hkg_br_segment_target AD  A.segmentid = AD.segmentid"
+    ],
+    "query_keywords": [
+      "audiences",
+      "sandbox",
+      "mapped",
+      "new",
+      "destinations",
+      "last",
+      "months"
+    ],
+    "tables": [
+      "dim_segment",
+      "dim_target",
+      "hkg_br_segment_target"
+    ],
+    "template": "SELECT DISTINCT A.segmentid AS segment_id, A.name AS segment_name, D.targetId AS target_id, D.name AS target_name FROM dim_segment AS A JOIN hkg_br_segment_target AS AD ON A.segmentid = AD.segmentid JOIN dim_target AS D ON AD.targetId = D.targetId WHERE D.createdTime >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Show recent changes in datasets.",
+        "sql": "SELECT DISTINCT D.COLLECTIONID AS collection_id,\n       D.NAME AS collection_name,\n       D.UPDATEDTIME AS updated_time\nFROM DIM_COLLECTION AS D\nWHERE D.UPDATEDTIME >= DATEADD(DAY, -90, CURRENT_DATE)\nORDER BY D.UPDATEDTIME DESC\nLIMIT 50"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "recent",
+      "changes",
+      "datasets"
+    ],
+    "tables": [
+      "DIM_COLLECTION"
+    ],
+    "template": "SELECT DISTINCT D.COLLECTIONID AS collection_id, D.NAME AS collection_name, D.UPDATEDTIME AS updated_time FROM DIM_COLLECTION AS D WHERE D.UPDATEDTIME >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.UPDATEDTIME DESC LIMIT 50"
+  },
+  {
+    "count": 1,
+    "examples": [
+      {
+        "query": "Show me all entities created by download",
+        "sql": "SELECT DISTINCT collectionid AS collection_id, name AS collection_name, createdtime AS created_time\nFROM dim_collection\nWHERE createdby ILIKE '%download%'\nLIMIT 20"
+      }
+    ],
+    "joins": [],
+    "query_keywords": [
+      "entities",
+      "created",
+      "download"
+    ],
+    "tables": [
+      "dim_collection"
+    ],
+    "template": "SELECT DISTINCT collectionid AS collection_id, name AS collection_name, createdtime AS created_time FROM dim_collection WHERE createdby ILIKE '<literal>' LIMIT 20"
+  }
+]

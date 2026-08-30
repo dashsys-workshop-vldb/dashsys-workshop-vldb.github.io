@@ -1,0 +1,172 @@
+{
+  "answer_time": 8.750008419156075e-06,
+  "api_call_count": 1,
+  "domain_type": "COUNT_AGGREGATION",
+  "errors": [],
+  "estimated_tokens": 890,
+  "execution_time": 0.00041037495248019695,
+  "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show ingestion record counts and batch success counts for the last 90 days.",
+  "planning_time": 0.00015333399642258883,
+  "preprocessing_time": 0.0007147499709390104,
+  "query_id": "example_034",
+  "route_type": "API_ONLY",
+  "runtime": 0.0015729579608887434,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.5,
+      "domain_type": "COUNT_AGGREGATION",
+      "kind": "route",
+      "reason": "Keyword routing using COUNT_AGGREGATION:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "observability_metrics",
+          "ups_audiences"
+        ],
+        "lookup_paths": [
+          "observability",
+          "batch"
+        ]
+      },
+      "rewrites": [
+        "\\bbatch\\s+success\\b->batchsuccess"
+      ],
+      "tokens": {
+        "domains": [
+          "batch",
+          "observability"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 873,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/threshold_runs/run_04/eval/example_034/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1201
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: observability_metrics.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "observability_metrics",
+          "method": "POST",
+          "params": {
+            "end": "2026-04-01T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              },
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.batchsuccess.count"
+              }
+            ],
+            "start": "2026-03-01T00:00:00.000Z"
+          },
+          "purpose": "API parameter template: observability_metrics.",
+          "url": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3534
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "POST",
+      "params": {
+        "end": "2026-04-01T23:59:59.000Z",
+        "granularity": "day",
+        "metrics": [
+          {
+            "aggregator": "sum",
+            "filters": [],
+            "name": "timeseries.ingestion.dataset.recordsuccess.count"
+          },
+          {
+            "aggregator": "sum",
+            "filters": [],
+            "name": "timeseries.ingestion.dataset.batchsuccess.count"
+          }
+        ],
+        "start": "2026-03-01T00:00:00.000Z"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/infrastructure/observability/insights/metrics",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "POST",
+        "ok": false,
+        "params": {
+          "end": "2026-04-01T23:59:59.000Z",
+          "granularity": "day",
+          "metrics": {
+            "items": [
+              {
+                "aggregator": "sum",
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              },
+              {
+                "aggregator": "sum",
+                "name": "timeseries.ingestion.dataset.batchsuccess.count"
+              }
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "start": "2026-03-01T00:00:00.000Z"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/infrastructure/observability/insights/metrics"
+      },
+      "url": "/data/infrastructure/observability/insights/metrics",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 8.750008419156075e-06,
+    "execution_time": 0.00041037495248019695,
+    "planning_time": 0.00015333399642258883,
+    "preprocessing_time": 0.0007147499709390104
+  },
+  "tool_call_count": 1
+}

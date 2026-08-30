@@ -1,0 +1,561 @@
+from __future__ import annotations
+
+import re
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+from .answer_slots import AnswerSlots, normalize_text
+from .answer_verifier import verify_answer
+
+
+@dataclass(frozen=True)
+class AnswerCandidateSelection:
+    selected_answer: str
+    selected_source: str
+    coverage_score: float
+    unsupported_claims: int = 0
+    selection_codes: list[str] = field(default_factory=list)
+    candidates: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["coverage_score"] = round(float(self.coverage_score), 4)
+        return payload
+
+
+def select_answer_candidate(
+    *,
+    prompt: str,
+    slots: AnswerSlots,
+    evidence_bus: Any | None = None,
+    llm_answer: str | None = None,
+    llm_verification: Any | None = None,
+    hybrid_answer: str | None = None,
+    hybrid_verification: Any | None = None,
+    legacy_answer: str | None = None,
+    grounded_answer: str | None = None,
+    deterministic_answer: str | None = None,
+) -> AnswerCandidateSelection:
+    """Select the safest fact-complete answer using only runtime evidence.
+
+    This selector deliberately does not inspect evaluator-only benchmark fields.
+    It ranks same-evidence answers by claim
+    safety and coverage of requested roles already present in AnswerSlots.
+    """
+
+    roles = _requested_roles(prompt, slots)
+    candidates = [
+        _candidate("HYBRID_ANSWER", hybrid_answer, slots, roles, hybrid_verification),
+        _candidate("LLM_EVIDENCE_GROUNDED", llm_answer, slots, roles, llm_verification),
+        _candidate("LEGACY_SAFE_RENDERER", legacy_answer, slots, roles, None),
+        _candidate("DETERMINISTIC_FALLBACK", grounded_answer or deterministic_answer, slots, roles, None),
+    ]
+    hybrid = next((item for item in candidates if item["source"] == "HYBRID_ANSWER"), None)
+    legacy = next((item for item in candidates if item["source"] == "LEGACY_SAFE_RENDERER"), None)
+    if hybrid_answer is not None and hybrid is not None:
+        selected, codes = _select_structured_hybrid_or_legacy(prompt, slots, roles, hybrid, legacy)
+        return AnswerCandidateSelection(
+            selected_answer=str(selected["answer"]),
+            selected_source=str(selected["source"]),
+            coverage_score=float(selected["coverage_score"]),
+            unsupported_claims=int(selected["unsupported_claims"]),
+            selection_codes=_dedupe(codes + list(selected.get("coverage_codes") or [])),
+            candidates=candidates,
+        )
+    usable = [candidate for candidate in candidates if candidate["answer"] and candidate["unsupported_claims"] == 0]
+    if not usable:
+        fallback = _candidate("DETERMINISTIC_FALLBACK", deterministic_answer or grounded_answer or legacy_answer or "", slots, roles, None)
+        return AnswerCandidateSelection(
+            selected_answer=str(fallback["answer"]),
+            selected_source="DETERMINISTIC_FALLBACK",
+            coverage_score=float(fallback["coverage_score"]),
+            unsupported_claims=int(fallback["unsupported_claims"]),
+            selection_codes=["NO_VERIFIED_CANDIDATE", *fallback["coverage_codes"]],
+            candidates=candidates,
+        )
+
+    llm = next((item for item in candidates if item["source"] == "LLM_EVIDENCE_GROUNDED"), None)
+    best = max(usable, key=lambda item: (float(item["coverage_score"]), _source_preference(str(item["source"]))))
+    if (
+        llm
+        and legacy
+        and str(best.get("source")) == "LLM_EVIDENCE_GROUNDED"
+        and not _llm_selection_allowed(llm, legacy, roles)
+        and legacy in usable
+    ):
+        best = legacy
+    codes: list[str] = []
+    codes.extend(_selection_reason_codes(best, llm, legacy))
+    codes.extend(str(code) for code in best.get("coverage_codes", []))
+    if not codes:
+        codes.append("SELECTED_VERIFIED_HIGHEST_COVERAGE")
+
+    return AnswerCandidateSelection(
+        selected_answer=str(best["answer"]),
+        selected_source=str(best["source"]),
+        coverage_score=float(best["coverage_score"]),
+        unsupported_claims=int(best["unsupported_claims"]),
+        selection_codes=_dedupe(codes),
+        candidates=candidates,
+    )
+
+
+def _candidate(
+    source: str,
+    answer: str | None,
+    slots: AnswerSlots,
+    roles: list[str],
+    external_verification: Any | None,
+) -> dict[str, Any]:
+    text = str(answer or "").strip()
+    verification = _external_verification(external_verification)
+    if verification is None and text:
+        checked = verify_answer(text, slots)
+        verification = {"ok": checked.ok, "unsupported_claims_count": checked.unsupported_count, "errors": checked.errors[:5]}
+    unsupported = int((verification or {}).get("unsupported_claims_count", 0) or 0)
+    if verification is not None and not bool(verification.get("ok", True)):
+        unsupported = max(unsupported, 1)
+    if _has_live_empty_global_overreach(text, slots):
+        unsupported = max(unsupported, 1)
+        verification = {
+            **(verification or {}),
+            "ok": False,
+            "unsupported_claims_count": unsupported,
+            "action": "FALLBACK_DETERMINISTIC",
+            "selector_safety_reason": "live_empty_global_overreach",
+        }
+    coverage = _coverage(text, slots, roles)
+    return {
+        "source": source,
+        "answer": text,
+        "verification": verification or {"ok": not text, "unsupported_claims_count": 0},
+        "unsupported_claims": unsupported,
+        "coverage_score": coverage["score"],
+        "covered_roles": coverage["covered_roles"],
+        "missing_roles": coverage["missing_roles"],
+        "coverage_codes": coverage["codes"],
+    }
+
+
+def _external_verification(value: Any | None) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    payload = value.to_dict() if hasattr(value, "to_dict") else dict(value)
+    unsupported = payload.get("unsupported_claims")
+    count = payload.get("unsupported_claims_count")
+    if count is None and isinstance(unsupported, list):
+        count = len(unsupported)
+    return {
+        "ok": bool(payload.get("ok", count in (None, 0))),
+        "unsupported_claims_count": int(count or 0),
+        "action": payload.get("action"),
+    }
+
+
+def _requested_roles(prompt: str, slots: AnswerSlots) -> list[str]:
+    norm = normalize_text(prompt)
+    roles: list[str] = []
+    if re.search(r"\b(how many|count|counts|total|number of)\b", norm):
+        roles.append("count")
+    if slots.answer_family == "observability_metrics" and slots.metrics:
+        roles.append("metric_values")
+    positive_count_available = any(_numeric_value(value) > 0 for value in slots.counts)
+    zero_result_lookup = (
+        slots.sql_row_count == 0
+        and not positive_count_available
+        and not slots.entity_names
+        and re.search(r"\b(list|show|return|provide|available|records?|which|what)\b", norm)
+    )
+    if zero_result_lookup:
+        roles.append("no_result")
+    if "default" in norm and slots.answer_family == "merge_policy":
+        roles.append("default_detail")
+    if (
+        re.search(r"\b(list|show|return)\b", norm)
+        and "all" in norm
+        and slots.api_item_count is not None
+        and slots.api_item_count > 10
+        and slots.api_item_count > len(slots.api_items or slots.important_items or [])
+    ):
+        roles.append("result_count_context")
+    if re.search(r"\b(status|state|active|inactive|failed|succeeded|published|deployed)\b", norm):
+        roles.append("status")
+    if re.search(r"\b(active|inactive|failed|succeeded|published|deployed)\b", norm):
+        roles.append("status_filter")
+    if re.search(r"\b(when|created|updated|modified|published|deployed|timestamp|date|recent|latest)\b", norm):
+        roles.append("date")
+    if re.search(r"\b(list|show|return|provide|available|records?|which|what)\b", norm) and slots.entity_names:
+        roles.append("name")
+    if re.search(r"\b(id|ids|identifier)\b", norm) and slots.entity_ids:
+        roles.append("id")
+    if "local snapshot" in norm:
+        roles.append("local_scope")
+    if re.search(r"\b(current|live|platform|adobe experience platform)\b", norm) and slots.sql_row_count is not None and (slots.dry_run or slots.api_error):
+        roles.append("live_scope_caveat")
+    if (slots.api_error and not slots.live_api_evidence_available) or slots.dry_run:
+        roles.append("caveat")
+    return _dedupe(roles)
+
+
+def _coverage(answer: str, slots: AnswerSlots, roles: list[str]) -> dict[str, Any]:
+    if not answer:
+        return {"score": -1.0, "covered_roles": [], "missing_roles": roles, "codes": ["EMPTY_ANSWER"]}
+    norm = normalize_text(answer)
+    covered: list[str] = []
+    missing: list[str] = []
+    codes: list[str] = []
+    for role in roles:
+        ok = _role_covered(role, norm, slots)
+        if ok:
+            covered.append(role)
+            codes.append(f"{role.upper()}_COVERED")
+        else:
+            missing.append(role)
+    covered_weight = sum(_role_weight(role) for role in covered)
+    total_weight = sum(_role_weight(role) for role in roles) or 1.0
+    score = float(covered_weight)
+    if roles:
+        score += covered_weight / total_weight
+    score += min(1.0, _value_density(norm, slots))
+    score += _answer_shape_quality(answer)
+    if missing:
+        score -= sum(_role_weight(role) * 0.35 for role in missing)
+    return {"score": score, "covered_roles": covered, "missing_roles": missing, "codes": codes}
+
+
+def _role_covered(role: str, answer_norm: str, slots: AnswerSlots) -> bool:
+    if role == "count":
+        allowed = {re.sub(r"[^\d.]", "", str(value)) for value in slots.counts}
+        if not allowed and slots.sql_row_count is not None:
+            allowed.add(str(slots.sql_row_count))
+        if not allowed and slots.api_item_count is not None:
+            allowed.add(str(slots.api_item_count))
+        return any(value and re.search(rf"(?<!\d){re.escape(value)}(?!\d)", answer_norm) for value in allowed)
+    if role == "metric_values":
+        metric_ok = all(normalize_text(metric) in answer_norm for metric in slots.metrics[:2])
+        evidence_numbers = [
+            value
+            for value in sorted(str(item) for item in slots.evidence_numbers)
+            if value and value not in {str(count) for count in slots.counts}
+        ]
+        number_ok = any(normalize_text(value) in answer_norm for value in evidence_numbers[:8])
+        timestamp_ok = not slots.timestamps or any(normalize_text(value)[:10] in answer_norm for value in slots.timestamps[:5])
+        return metric_ok and number_ok and timestamp_ok
+    if role == "result_count_context":
+        if slots.api_item_count is None:
+            return False
+        value = str(slots.api_item_count)
+        return bool(re.search(rf"(?<!\d){re.escape(value)}(?!\d)", answer_norm))
+    if role == "no_result":
+        if "globally" in answer_norm or "anywhere" in answer_norm:
+            return False
+        return any(
+            phrase in answer_norm
+            for phrase in (
+                "no data",
+                "no matching",
+                "zero rows",
+                "0 matching",
+                "no entities",
+                "none were",
+                "not found",
+            )
+        )
+    if role == "default_detail":
+        return "default merge polic" in answer_norm
+    if role in {"status", "status_filter"}:
+        valid_statuses = _status_terms(slots)
+        return any(status in answer_norm for status in valid_statuses) or bool(
+            re.search(r"\b(active|inactive|failed|succeeded|published|unpublished|draft|deployed)\b", answer_norm)
+        )
+    if role == "date":
+        return any(normalize_text(value)[:10] and normalize_text(value)[:10] in answer_norm for value in slots.timestamps)
+    if role == "name":
+        return any(normalize_text(name) in answer_norm for name in slots.entity_names[:5])
+    if role == "id":
+        return any(str(value).lower() in answer_norm for value in slots.entity_ids[:5])
+    if role == "local_scope":
+        return "local" in answer_norm and "snapshot" in answer_norm
+    if role == "live_scope_caveat":
+        return ("local" in answer_norm and "snapshot" in answer_norm) and (
+            "cannot verify" in answer_norm or "not executed" in answer_norm or "unavailable" in answer_norm
+        )
+    if role == "caveat":
+        if slots.api_error:
+            return any(token in answer_norm for token in ("api unavailable", "api error", "could not verify", "did not provide usable data"))
+        if slots.dry_run:
+            return "credentials" in answer_norm or "dry run" in answer_norm or "not executed" in answer_norm
+        if str(slots.api_evidence_state or "").lower() in {"live_empty", "live_empty_result"}:
+            return "no matching" in answer_norm or "returned no" in answer_norm
+    return False
+
+
+def _value_density(answer_norm: str, slots: AnswerSlots) -> float:
+    values: list[str] = []
+    values.extend(str(value) for value in slots.counts[:3])
+    values.extend(slots.entity_names[:5])
+    values.extend(slots.entity_ids[:5])
+    values.extend(slots.statuses[:3])
+    values.extend(slots.timestamps[:3])
+    values.extend(slots.metrics[:2])
+    values.extend(sorted(str(value) for value in slots.evidence_numbers)[:8])
+    present = sum(1 for value in values if value and normalize_text(value) in answer_norm)
+    return present / max(1, min(len(values), 6))
+
+
+def _answer_shape_quality(answer: str) -> float:
+    text = str(answer or "").strip()
+    lowered = text.lower()
+    score = 0.0
+    if re.fullmatch(r"count:\s*[-+]?\d+(?:\.\d+)?\.", text, flags=re.I):
+        score -= 0.75
+    if lowered.startswith("results: {"):
+        score -= 0.85
+    if lowered.startswith("based on the sql evidence"):
+        score -= 0.1
+    if "api returned no matching records for this query/scope" in lowered:
+        score -= 0.5
+    if re.search(r"\b1[0-9]{12}\b", lowered) and lowered.startswith("date/time:"):
+        score -= 4.0
+    return score
+
+
+def _coverage_advantage_codes(llm: dict[str, Any], legacy: dict[str, Any]) -> list[str]:
+    missing_llm = set(str(role) for role in llm.get("missing_roles") or [])
+    covered_legacy = set(str(role) for role in legacy.get("covered_roles") or [])
+    return [f"{role.upper()}_COVERAGE_ADVANTAGE" for role in sorted(missing_llm & covered_legacy)]
+
+
+def _selection_reason_codes(best: dict[str, Any], llm: dict[str, Any] | None, legacy: dict[str, Any] | None) -> list[str]:
+    codes: list[str] = []
+    if not llm:
+        return codes
+    llm_answer = str(llm.get("answer") or "").strip()
+    llm_unsupported = int(llm.get("unsupported_claims") or 0)
+    selected = str(best.get("source") or "")
+    if not llm_answer:
+        codes.append("SELECT_LEGACY_LLM_EMPTY")
+    elif llm_unsupported > 0:
+        codes.append("SELECT_LEGACY_LLM_UNSUPPORTED")
+    if selected == "LLM_EVIDENCE_GROUNDED":
+        if legacy and _same_role_coverage(llm, legacy) and _shape_score(llm) > _shape_score(legacy):
+            codes.append("SELECT_LLM_EQUAL_COVERAGE_BETTER_SHAPE")
+        else:
+            codes.append("SELECT_LLM_BETTER_COVERAGE")
+        return codes
+    if legacy and selected == "LEGACY_SAFE_RENDERER":
+        if llm_answer and llm_unsupported == 0 and set(llm.get("missing_roles") or []) & set(legacy.get("covered_roles") or []):
+            codes.append("SELECT_LEGACY_LLM_OMITS_ROLE")
+        elif llm_answer and llm_unsupported == 0 and float(legacy.get("coverage_score") or 0) > float(llm.get("coverage_score") or 0):
+            codes.append("SELECT_LEGACY_BETTER_COVERAGE")
+        elif llm_answer and llm_unsupported == 0:
+            codes.append("SELECT_LEGACY_SAFETY_FALLBACK")
+        if float(legacy.get("coverage_score") or 0) > float(llm.get("coverage_score") or 0):
+            codes.extend(_coverage_advantage_codes(llm, legacy))
+    elif selected == "DETERMINISTIC_FALLBACK":
+        codes.append("SELECT_LEGACY_SAFETY_FALLBACK")
+    return codes
+
+
+def _same_role_coverage(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    return set(left.get("covered_roles") or []) == set(right.get("covered_roles") or []) and set(left.get("missing_roles") or []) == set(right.get("missing_roles") or [])
+
+
+def _llm_selection_allowed(llm: dict[str, Any], legacy: dict[str, Any], roles: list[str]) -> bool:
+    llm_score = float(llm.get("coverage_score") or 0)
+    legacy_score = float(legacy.get("coverage_score") or 0)
+    if int(llm.get("unsupported_claims") or 0) > 0 or not str(llm.get("answer") or "").strip():
+        return False
+    if _same_role_coverage(llm, legacy):
+        return _shape_score(llm) > _shape_score(legacy)
+    llm_covered = set(llm.get("covered_roles") or [])
+    legacy_covered = set(legacy.get("covered_roles") or [])
+    llm_missing = set(llm.get("missing_roles") or [])
+    newly_covered = llm_covered - legacy_covered
+    if legacy_score < 0 and llm_score > legacy_score and not llm_missing:
+        return True
+    simple_count_roles = set(roles) <= {"count", "local_scope", "scope", "caveat", "live_scope_caveat"}
+    if simple_count_roles and "count" in newly_covered and not llm_missing:
+        return True
+    if _shape_score(legacy) <= -0.75 and llm_score >= legacy_score and _shape_score(llm) > _shape_score(legacy):
+        return True
+    return False
+
+
+def _shape_score(candidate: dict[str, Any]) -> float:
+    return _answer_shape_quality(str(candidate.get("answer") or ""))
+
+
+def _source_preference(source: str) -> int:
+    return {"HYBRID_ANSWER": 4, "LLM_EVIDENCE_GROUNDED": 3, "LEGACY_SAFE_RENDERER": 2, "DETERMINISTIC_FALLBACK": 1}.get(source, 0)
+
+
+def _select_structured_hybrid_or_legacy(
+    prompt: str,
+    slots: AnswerSlots,
+    roles: list[str],
+    hybrid: dict[str, Any],
+    legacy: dict[str, Any] | None,
+) -> tuple[dict[str, Any], list[str]]:
+    fallback = legacy if legacy and legacy.get("answer") else hybrid
+    if int(hybrid.get("unsupported_claims") or 0) > 0 or not str(hybrid.get("answer") or "").strip():
+        return fallback, ["SELECT_LEGACY_STRUCTURED_DEFAULT", "REJECT_HYBRID_UNSUPPORTED"]
+    if legacy is None or not str(legacy.get("answer") or "").strip():
+        return hybrid, ["SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE"]
+    reject_codes = _hybrid_rejection_codes(prompt, slots, hybrid, legacy)
+    if reject_codes:
+        return legacy, ["SELECT_LEGACY_STRUCTURED_DEFAULT", *reject_codes]
+    hybrid_covered = set(str(role) for role in hybrid.get("covered_roles") or [])
+    legacy_covered = set(str(role) for role in legacy.get("covered_roles") or [])
+    if hybrid_covered - legacy_covered:
+        return hybrid, ["SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE"]
+    if float(hybrid.get("coverage_score") or 0) > float(legacy.get("coverage_score") or 0) + 0.25 and not set(hybrid.get("missing_roles") or []):
+        return hybrid, ["SELECT_HYBRID_EXTRA_RUNTIME_COVERAGE"]
+    return legacy, ["SELECT_LEGACY_STRUCTURED_DEFAULT"]
+
+
+def _hybrid_rejection_codes(prompt: str, slots: AnswerSlots, hybrid: dict[str, Any], legacy: dict[str, Any]) -> list[str]:
+    hybrid_answer = normalize_text(hybrid.get("answer") or "")
+    legacy_answer = normalize_text(legacy.get("answer") or "")
+    prompt_norm = normalize_text(prompt)
+    codes: list[str] = []
+    if _legacy_is_scoped_no_result(legacy_answer, slots) and not _hybrid_preserves_no_result(hybrid_answer):
+        codes.append("REJECT_HYBRID_UNSUPPORTED")
+    for value in _exact_facts(slots):
+        normalized = normalize_text(value)
+        if normalized and normalized in legacy_answer and normalized not in hybrid_answer:
+            codes.append("REJECT_HYBRID_MISSING_EXACT_FACT")
+            break
+    prompt_labels = _object_labels(prompt_norm)
+    if prompt_labels:
+        legacy_labels = _object_labels(legacy_answer)
+        hybrid_labels = _object_labels(hybrid_answer)
+        if prompt_labels & legacy_labels and not prompt_labels & hybrid_labels:
+            codes.append("REJECT_HYBRID_WRONG_OBJECT_LABEL")
+    if _adds_unneeded_scope_caveat(prompt_norm, slots, hybrid_answer, legacy_answer):
+        codes.append("REJECT_HYBRID_EXTRA_SCOPE_CAVEAT")
+    return _dedupe(codes)
+
+
+def _legacy_is_scoped_no_result(legacy_answer: str, slots: AnswerSlots) -> bool:
+    if slots.sql_row_count != 0:
+        return False
+    return any(
+        phrase in legacy_answer
+        for phrase in (
+            "no data available",
+            "zero rows",
+            "no matching",
+            "no entities",
+            "not found",
+            "none were",
+        )
+    )
+
+
+def _hybrid_preserves_no_result(hybrid_answer: str) -> bool:
+    return any(
+        phrase in hybrid_answer
+        for phrase in (
+            "no data available",
+            "zero rows",
+            "no matching",
+            "no entities",
+            "not found",
+            "none were",
+        )
+    )
+
+
+def _exact_facts(slots: AnswerSlots) -> list[str]:
+    facts: list[str] = []
+    facts.extend(str(value) for value in slots.counts[:8])
+    facts.extend(str(value) for value in slots.entity_names[:8])
+    facts.extend(str(value) for value in slots.entity_ids[:8])
+    facts.extend(str(value) for value in slots.statuses[:8])
+    facts.extend(str(value)[:10] for value in slots.timestamps[:8])
+    facts.extend(str(value) for value in sorted(slots.evidence_numbers)[:10])
+    return _dedupe([fact for fact in facts if fact and fact != "None"])
+
+
+def _object_labels(text: str) -> set[str]:
+    labels: set[str] = set()
+    groups = {
+        "schema": ("schema", "schemas"),
+        "dataset": ("dataset", "datasets"),
+        "journey": ("journey", "journeys"),
+        "campaign": ("campaign", "campaigns"),
+        "audience": ("audience", "audiences"),
+        "segment": ("segment", "segments"),
+        "flow": ("flow", "flows", "dataflow", "dataflows"),
+        "batch": ("batch", "batches"),
+        "tag": ("tag", "tags"),
+        "policy": ("policy", "policies"),
+        "record": ("record", "records"),
+    }
+    for label, forms in groups.items():
+        if any(re.search(rf"\b{re.escape(form)}\b", text) for form in forms):
+            labels.add(label)
+    return labels
+
+
+def _adds_unneeded_scope_caveat(prompt_norm: str, slots: AnswerSlots, hybrid_answer: str, legacy_answer: str) -> bool:
+    if "local snapshot" in prompt_norm or any(token in prompt_norm for token in ("current", "live", "platform", "api", "sandbox")):
+        return False
+    if slots.api_error or slots.dry_run:
+        return False
+    if "local snapshot" in hybrid_answer and "local snapshot" not in legacy_answer:
+        return True
+    caveat_phrases = ("api unavailable", "api error", "cannot verify", "could not verify", "no matching records were returned")
+    return any(phrase in hybrid_answer and phrase not in legacy_answer for phrase in caveat_phrases)
+
+
+def _role_weight(role: str) -> float:
+    if role == "status_filter":
+        return 5.0
+    if role == "metric_values":
+        return 4.0
+    if role == "result_count_context":
+        return 3.0
+    if role in {"no_result", "default_detail"}:
+        return 3.0
+    if role in {"count", "status", "date", "name", "id", "live_scope_caveat"}:
+        return 2.0
+    if role == "local_scope":
+        return 1.25
+    if role == "caveat":
+        return 0.5
+    return 1.0
+
+
+def _numeric_value(value: Any) -> float:
+    try:
+        text = re.sub(r"[^\d.-]", "", str(value))
+        return float(text) if text else 0.0
+    except Exception:
+        return 0.0
+
+
+def _has_live_empty_global_overreach(answer: str, slots: AnswerSlots) -> bool:
+    if str(slots.api_evidence_state or "").lower() not in {"live_empty", "live_empty_result"}:
+        return False
+    norm = normalize_text(answer)
+    return ("globally" in norm or "anywhere" in norm) and ("no matching" in norm or "there are no" in norm or "no data" in norm)
+
+
+def _status_terms(slots: AnswerSlots) -> list[str]:
+    known = {"active", "inactive", "failed", "succeeded", "published", "unpublished", "draft", "deployed", "queued"}
+    terms = [normalize_text(value) for value in slots.statuses if normalize_text(value) in known]
+    query_norm = normalize_text(slots.query)
+    terms.extend(status for status in known if re.search(rf"\b{re.escape(status)}\b", query_norm))
+    return _dedupe(terms)
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            out.append(value)
+    return out

@@ -1,0 +1,54 @@
+flowchart TD
+  subgraph Input
+    input_prompt["User Prompt<br/>List all journeys"]
+  end
+  subgraph Routing
+    router["Prompt Router<br/>mode=LOCAL_DB_ONLY<br/>api=n/a - no API policy recorded"]
+    input_prompt -->|route_prompt| router
+  end
+  subgraph QueryUnderstanding["Query Understanding"]
+    normalizer["Query Normalizer<br/>normalized query"]
+    tokens["Query Tokens<br/>domains=journey_campaign&lt;br/&gt;entities=none"]
+    router -->|clean + extract| normalizer --> tokens
+  end
+  subgraph ContextSelection["Context Selection"]
+    context["Context Mode<br/>candidate"]
+    candidates["Context<br/>tables=dim_campaign&lt;br/&gt;apis=journey_list,catalog_batches+1"]
+    tokens -->|score relevance| context --> candidates
+  end
+  subgraph Planning
+    planner["Planner<br/>SQL_FIRST_API_VERIFY"]
+    optimizer["Plan Optimizer<br/>selected=generic_sql_first"]
+    candidates -->|metadata + policy| planner --> optimizer
+  end
+  subgraph SQLPath["SQL Path"]
+    sqlgen["SQL Generator<br/>tables=dim_campaign&lt;br/&gt;rows=2"]
+    sqlval["SQL Validator<br/>ok"]
+    optimizer -->|SQL step if needed| sqlgen --> sqlval
+  end
+  subgraph APIPath["API Path"]
+    apisel["API Selector<br/>endpoint=/ajo/journey"]
+    apival["API Validator<br/>ok<br/>dry_run=True"]
+    optimizer -->|API policy| apisel --> apival
+  end
+  subgraph ToolExecution["Tool Execution"]
+    tools["Tool Calls<br/>sql=1 api=1<br/>invalid=n/a - no invalid-call metric recorded"]
+    sqlval -->|execute_sql| tools
+    apival -->|call_api / dry-run| tools
+  end
+  subgraph EvidenceBus
+    evidence["EvidenceBus<br/>SQL evidence: yes&lt;br/&gt;Live API evidence: no&lt;br/&gt;Dry-run API: yes"]
+    tools -->|extract facts| evidence
+  end
+  subgraph AnswerVerification["Answer Verification"]
+    verifier["Verifier<br/>passed=yes&lt;br/&gt;unsupported=0"]
+    evidence -->|answer slots + claims| verifier
+  end
+  subgraph FinalAnswer["Final Answer"]
+    answer["Final Answer<br/>Based on the available evidence, there are 2 journeys found in the database: Birthday Message an"]
+    verifier -->|safe answer| answer
+  end
+  subgraph Metrics
+    metrics["Metrics<br/>tools=2<br/>tokens=814<br/>runtime=0.011884917039424181"]
+    answer -->|record trajectory| metrics
+  end

@@ -1,0 +1,2323 @@
+{
+  "bottleneck_categories_allowed": [
+    "answer_shape_weak",
+    "answer_uses_dry_run_poorly",
+    "api_only_needs_live_credentials",
+    "api_optional_dry_run_noise",
+    "api_required_but_credentials_missing",
+    "confidence_miscalibrated",
+    "domain_mismatch",
+    "evidencebus_api_gap",
+    "live_api_readiness_gap",
+    "no_clear_bottleneck",
+    "response_parser_gap",
+    "route_mismatch",
+    "semantic_router_no_effect",
+    "sql_complete_but_dry_run_caveat_noisy",
+    "token_cost_high",
+    "tool_count_high",
+    "unsupported_answer_claim",
+    "weak_relevance_selection",
+    "wrong_api_template",
+    "wrong_sql_template"
+  ],
+  "bottleneck_distribution": {
+    "answer_shape_weak": 1,
+    "answer_uses_dry_run_poorly": 5,
+    "api_only_needs_live_credentials": 20,
+    "api_optional_dry_run_noise": 1,
+    "api_required_but_credentials_missing": 8
+  },
+  "highest_priority_candidates": [
+    {
+      "affected_rows": 20,
+      "bottleneck": "api_only_needs_live_credentials",
+      "candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline"
+    },
+    {
+      "affected_rows": 8,
+      "bottleneck": "api_required_but_credentials_missing",
+      "candidate": "Live Adobe API readiness / response parser / EvidenceBus API evidence pipeline"
+    },
+    {
+      "affected_rows": 5,
+      "bottleneck": "answer_uses_dry_run_poorly",
+      "candidate": "Dry-run fallback wording polish after live readiness"
+    },
+    {
+      "affected_rows": 1,
+      "bottleneck": "api_optional_dry_run_noise",
+      "candidate": "Live Adobe API readiness first; dry-run wording remains fallback polish"
+    },
+    {
+      "affected_rows": 1,
+      "bottleneck": "answer_shape_weak",
+      "candidate": "Answer-only rewrite with invariant hashes"
+    }
+  ],
+  "methodology_rule": "Do not reject serious candidates after one failed trial; run 3-5 controlled variants before final evidence-backed decisions.",
+  "report_type": "workflow_decision_audit",
+  "rows": [
+    {
+      "answer_family": "journey_published",
+      "answer_intent": "WHEN",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==Birthday Message"
+          },
+          "url": "/ajo/journey"
+        }
+      ],
+      "baseline_api_hash": "bd5cb4f97681d55d",
+      "baseline_sql_hash": "28bc63596ffef9f1",
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The journey \"Birthday Message\" has not been published. The database shows a null published_time for this journey, and live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
+      "prompt": "When was the journey 'Birthday Message' published?",
+      "query_id": "example_000",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2787
+      },
+      "route_type": "SQL_THEN_API",
+      "router_confidence": 0.65,
+      "runtime": 0.0132,
+      "selected_apis": [
+        "journey_list",
+        "schema_registry_schema",
+        "/ajo/journey"
+      ],
+      "selected_evidence_hash": "5491fd25e3e59364",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_published+journey_by_name.",
+        "step_families": [
+          "journey_campaign_published",
+          "journey_by_name"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_campaign",
+        "br_campaign_segment"
+      ],
+      "sql_calls": [
+        "SELECT \"NAME\" AS campaign_name, \"LASTDEPLOYEDTIME\" AS published_time FROM \"dim_campaign\" LIMIT 50"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.4875,
+        "api_score": null,
+        "correctness_score": 0.7232,
+        "final_score": 0.6905,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 915,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "inactive_journeys",
+      "answer_intent": "STATUS",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "status!=live"
+          },
+          "url": "/ajo/journey"
+        }
+      ],
+      "baseline_api_hash": "54d2b68aa6f05eb3",
+      "baseline_sql_hash": "d78bb14ea5836070",
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "There are 2 inactive campaigns: Birthday Message (last updated 2026-03-31) and Gold Tier Welcome Email (last updated 2026-03-31). Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
+      "prompt": "Give me inactive journeys",
+      "query_id": "example_001",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2654
+      },
+      "route_type": "SQL_THEN_API",
+      "router_confidence": 0.65,
+      "runtime": 0.0121,
+      "selected_apis": [
+        "journey_list",
+        "/ajo/journey"
+      ],
+      "selected_evidence_hash": "e24f9a044b8b867f",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_inactive+journey_inactive.",
+        "step_families": [
+          "journey_campaign_inactive",
+          "journey_inactive"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_campaign",
+        "br_campaign_segment"
+      ],
+      "sql_calls": [
+        "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.545,
+        "api_score": 1.0,
+        "correctness_score": 0.8235,
+        "final_score": 0.7909,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 906,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "list_journeys",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "pageSize": "10"
+          },
+          "url": "/ajo/journey"
+        }
+      ],
+      "baseline_api_hash": "5ff2ae74ddd96f3b",
+      "baseline_sql_hash": "a01bf7de60ac478b",
+      "domain_type": "JOURNEY_CAMPAIGN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the available evidence, there are 2 journeys found in the database: Birthday Message and Gold Tier Welcome Email. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
+      "prompt": "List all journeys",
+      "query_id": "example_002",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2814
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0116,
+      "selected_apis": [
+        "journey_list",
+        "catalog_batches",
+        "/ajo/journey"
+      ],
+      "selected_evidence_hash": "ddc6acbe569b4364",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: journey_campaign_list+journey_list.",
+        "step_families": [
+          "journey_campaign_list",
+          "journey_list"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_campaign",
+        "br_campaign_segment"
+      ],
+      "sql_calls": [
+        "SELECT CAMPAIGN.\"NAME\" AS CAMPAIGNNAME, CAMPAIGN.\"CAMPAIGNID\" AS CAMPAIGNID FROM \"dim_campaign\" AS CAMPAIGN"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.4427,
+        "api_score": 1.0,
+        "correctness_score": 0.7928,
+        "final_score": 0.7615,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 750,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "segment_destination",
+      "answer_intent": "WHEN",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "destinationId==<destination_id>"
+          },
+          "url": "/data/core/ups/audiences"
+        },
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "baseline_api_hash": "23cc1972d1166c76",
+      "baseline_sql_hash": "aa5509704eb38648",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, there is no data available to answer this question. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable, so audience and flow service evidence could not be checked.",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "query_id": "example_003",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 16.4234
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.95,
+      "runtime": 0.0178,
+      "selected_apis": [
+        "merge_policies",
+        "segment_jobs",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/core/ups/audiences",
+        "/data/foundation/flowservice/flows"
+      ],
+      "selected_evidence_hash": "e339eae649c37418",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_OPTIONAL. Known multi-call verification family. Fast path: segment_destination_relationship+audience_by_destination_id+destination_flows.",
+        "step_families": [
+          "segment_destination_relationship",
+          "audience_by_destination_id",
+          "destination_flows"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_target",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "sql_calls": [
+        "SELECT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, A.\"TOTALMEMBERS\" AS total_profiles, A.\"CREATEDTIME\" AS created_time, A.\"UPDATEDTIME\" AS updated_time FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"DATAFLOWNAME\" = 'SMS Opt-In' OR D.\"NAME\" = 'SMS Opt-In' ORDER BY A.\"NAME\""
+      ],
+      "strict_score_components": {
+        "answer_score": 0.3559,
+        "api_score": 1.0,
+        "correctness_score": 0.7668,
+        "final_score": 0.7161,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 1571,
+      "tool_count": 3
+    },
+    {
+      "answer_family": "failed_dataflow_runs",
+      "answer_intent": "STATUS",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "state eq 'failed'",
+            "limit": "50"
+          },
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "baseline_api_hash": "91a3b551e7d98733",
+      "baseline_sql_hash": "7d6ba096455d02c1",
+      "domain_type": "DESTINATION_DATAFLOW",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "answer_uses_dry_run_poorly",
+      "likely_improvement_candidate": "fallback_dry_run_answer_polish",
+      "prompt": "Show me the IDs of failed dataflow runs",
+      "query_id": "example_004",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2735
+      },
+      "route_type": "SQL_THEN_API",
+      "router_confidence": 0.65,
+      "runtime": 0.0114,
+      "selected_apis": [
+        "flowservice_runs",
+        "audit_events",
+        "flowservice_flows",
+        "/data/foundation/flowservice/flows"
+      ],
+      "selected_evidence_hash": "6df2e02796ce17c5",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: failed_dataflow_flows.",
+        "step_families": [
+          null,
+          "failed_dataflow_flows"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_connector",
+        "dim_target",
+        "hkg_br_segment_target",
+        "hkg_br_target_property"
+      ],
+      "sql_calls": [
+        "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.4492,
+        "api_score": null,
+        "correctness_score": 0.7068,
+        "final_score": 0.6746,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 863,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "destination_export",
+      "answer_intent": "WHEN",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "baseline_api_hash": "02824b23df9387f8",
+      "baseline_sql_hash": "8ce13187a9d01561",
+      "domain_type": "DESTINATION_DATAFLOW",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_optional_dry_run_noise",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial_then_fallback_wording",
+      "prompt": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+      "query_id": "example_005",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2425
+      },
+      "route_type": "SQL_THEN_API",
+      "router_confidence": 0.65,
+      "runtime": 0.0146,
+      "selected_apis": [
+        "export_batch_files",
+        "export_batch_failed",
+        "flowservice_flows",
+        "flowservice_runs",
+        "audit_events",
+        "/data/foundation/flowservice/flows"
+      ],
+      "selected_evidence_hash": "9dd7242ed6b33566",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve the answer. Fast path: destination_export_recent+recent_destination_flows.",
+        "step_families": [
+          "destination_export_recent",
+          "recent_destination_flows"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_connector",
+        "dim_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection"
+      ],
+      "sql_calls": [
+        "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.8314,
+        "api_score": 1.0,
+        "correctness_score": 0.9494,
+        "final_score": 0.9134,
+        "sql_score": 1.0,
+        "validation_failures": 0
+      },
+      "tokens": 1319,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25",
+            "property": "schema.name"
+          },
+          "url": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "baseline_api_hash": "80bba8d7d07229d4",
+      "baseline_sql_hash": "5ff06c3eaa4413ad",
+      "domain_type": "DATASET_SCHEMA",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, 2 datasets have been ingested using the same schema. These datasets use \"Journey Inbound External Segment Profile Schema\". Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many datasets have been ingested using the same schema in the prod sandbox?",
+      "query_id": "example_006",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.244
+      },
+      "route_type": "SQL_THEN_API",
+      "router_confidence": 0.65,
+      "runtime": 0.0131,
+      "selected_apis": [
+        "export_batch_files",
+        "audit_events",
+        "catalog_datasets",
+        "schema_registry_schema",
+        "schema_registry_schemas",
+        "/data/foundation/catalog/dataSets"
+      ],
+      "selected_evidence_hash": "cf389a155d80d60e",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: blueprint_collection_same_schema_count+datasets_by_schema.",
+        "step_families": [
+          "blueprint_collection_same_schema_count",
+          "datasets_by_schema"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "sql_calls": [
+        "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\" AS blueprint_name, COUNT(DISTINCT DS.\"COLLECTIONID\") AS collection_count FROM \"dim_collection\" AS D JOIN \"hkg_br_blueprint_collection\" AS DS ON D.\"COLLECTIONID\" = DS.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS S ON DS.\"BLUEPRINTID\" = S.\"BLUEPRINTID\" GROUP BY S.\"BLUEPRINTID\", S.\"NAME\" HAVING COUNT(DISTINCT DS.\"COLLECTIONID\") > 1"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.4725,
+        "api_score": 0.7337,
+        "correctness_score": 0.7619,
+        "final_score": 0.7279,
+        "sql_score": 1.0,
+        "validation_failures": 0
+      },
+      "tokens": 1073,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "schemaName==\"hkg_adls_profile_count_history\"",
+            "limit": "3"
+          },
+          "url": "/data/foundation/catalog/dataSets"
+        }
+      ],
+      "baseline_api_hash": "6741a6b7eabe290f",
+      "baseline_sql_hash": "7688dcc4bd700350",
+      "domain_type": "DATASET_SCHEMA",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, no datasets use the schema 'hkg_adls_profile_count_history'. The SQL query returned zero results, and live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+      "query_id": "example_007",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2513
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.8,
+      "runtime": 0.0143,
+      "selected_apis": [
+        "catalog_batches",
+        "catalog_datasets",
+        "schema_registry_schema",
+        "schema_registry_schemas",
+        "/data/foundation/catalog/dataSets"
+      ],
+      "selected_evidence_hash": "50cedda58ac1aaaa",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: blueprint_collection_list+datasets_by_schema.",
+        "step_families": [
+          "blueprint_collection_list",
+          "datasets_by_schema"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "sql_calls": [
+        "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name FROM \"hkg_br_blueprint_collection\" AS BC JOIN \"dim_collection\" AS C ON BC.\"COLLECTIONID\" = C.\"COLLECTIONID\" JOIN \"dim_blueprint\" AS B ON BC.\"BLUEPRINTID\" = B.\"BLUEPRINTID\" WHERE B.\"NAME\" = 'hkg_adls_profile_count_history'"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.4857,
+        "api_score": 0.6175,
+        "correctness_score": 0.691,
+        "final_score": 0.656,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 1192,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "property_field",
+      "answer_intent": "DETAIL",
+      "api_calls": [],
+      "baseline_api_hash": "4f53cda18c2baa0c",
+      "baseline_sql_hash": "3e730379afb16adf",
+      "domain_type": "PROPERTY_FIELD",
+      "dry_run_label": "not_dry_run",
+      "dry_run_status": "no_api_calls",
+      "final_answer": "The field for \"Person: Birthday Today 001\" is person.birthDate. This is the birth date property from the SQL evidence. This field captures when a person was born and is used to identify birthday-related audiences.",
+      "likely_decision_stage_bottleneck": "answer_shape_weak",
+      "likely_improvement_candidate": "answer_only_rewrite_trial",
+      "prompt": "show me the field for Person: Birthday Today 001",
+      "query_id": "example_008",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3662
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0104,
+      "selected_apis": [
+        "audit_events",
+        "audit_events_short",
+        "schema_registry_schema"
+      ],
+      "selected_evidence_hash": "1613753ca2130b47",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_SKIP. No API template matched and SQL/local evidence is preferred.",
+        "step_families": [
+          "segment_property_fields"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_collection",
+        "dim_segment",
+        "dim_property",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_property_property",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [
+        "SELECT DISTINCT SP.\"PROPERTY\" AS property_name, S.\"NAME\" AS segment_name FROM \"hkg_br_segment_property\" AS SP JOIN \"dim_segment\" AS S ON SP.\"SEGMENTID\" = S.\"SEGMENTID\" WHERE S.\"NAME\" = 'Person: Birthday Today 001' LIMIT 20"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.482,
+        "api_score": null,
+        "correctness_score": 0.7209,
+        "final_score": 0.703,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 639,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "DETAIL",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "name==weRetail: Customer Actions",
+            "limit": "5"
+          },
+          "url": "/schemas"
+        }
+      ],
+      "baseline_api_hash": "71ea012026ecd922",
+      "baseline_sql_hash": "6a72ec830d818df2",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The 'weRetail: Customer Actions' schema has class https://ns.adobe.com/xdm/context/experienceevent, has 6 properties, across 1 collection(s), and was last updated on 2026-03-29. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
+      "query_id": "example_009",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2228
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0149,
+      "selected_apis": [
+        "audit_events",
+        "audit_events_short",
+        "ups_audiences",
+        "segment_definitions",
+        "merge_policies",
+        "/schemas"
+      ],
+      "selected_evidence_hash": "d83991ce629f2148",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: schema_detail_counts+schema_by_name.",
+        "step_families": [
+          "schema_detail_counts",
+          "schema_by_name"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "sql_calls": [
+        "SELECT S.\"BLUEPRINTID\" AS blueprint_id, S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\" AS updated_time, S.\"REQUIREDFIELDS\" AS required_fields, COUNT(DISTINCT SD.\"COLLECTIONID\") AS collection_count, COUNT(DISTINCT SA.\"PROPERTY\") AS property_count FROM \"dim_blueprint\" AS S LEFT JOIN \"hkg_br_blueprint_collection\" AS SD ON S.\"BLUEPRINTID\" = SD.\"BLUEPRINTID\" LEFT JOIN \"hkg_br_blueprint_property\" AS SA ON S.\"BLUEPRINTID\" = SA.\"BLUEPRINTID\" WHERE LOWER(S.\"NAME\") = LOWER('weRetail: Customer Actions') GROUP BY S.\"BLUEPRINTID\", S.\"NAME\", S.\"CLASS\", S.\"ISPROFILEENABLED\", S.\"UPDATEDTIME\", S.\"REQUIREDFIELDS\" LIMIT 3"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.5246,
+        "api_score": null,
+        "correctness_score": 0.7963,
+        "final_score": 0.7582,
+        "sql_score": 1.0,
+        "validation_failures": 0
+      },
+      "tokens": 1561,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "filter": "class==ExperienceEvent;isProfileEnabled==true",
+            "limit": "25"
+          },
+          "url": "/data/foundation/schemaregistry/tenant/schemas"
+        }
+      ],
+      "baseline_api_hash": "c78eb7a42c8bbfd0",
+      "baseline_sql_hash": "cd011369841f1493",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the SQL query result, there are 0 XDM Experience Event schemas enabled for profile in your environment.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+      "query_id": "example_010",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2511,
+        "lookup_path": 12.3624
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.8,
+      "runtime": 0.013,
+      "selected_apis": [
+        "audit_events",
+        "audit_events_short",
+        "ups_audiences",
+        "segment_definitions",
+        "merge_policies",
+        "/data/foundation/schemaregistry/tenant/schemas"
+      ],
+      "selected_evidence_hash": "f7613ae3acd3d41d",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: profile_enabled_experience_event_schema_count+profile_enabled_experience_event_schemas.",
+        "step_families": [
+          "profile_enabled_experience_event_schema_count",
+          "profile_enabled_experience_event_schemas"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "sql_calls": [
+        "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS num_experience_event_profile_enabled_blueprints FROM \"dim_blueprint\" AS B WHERE LOWER(B.\"CLASS\") LIKE LOWER('%download%') AND B.\"ISPROFILEENABLED\" = TRUE"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.5456,
+        "api_score": 1.0,
+        "correctness_score": 0.8237,
+        "final_score": 0.7904,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 984,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25"
+          },
+          "url": "/schemas"
+        }
+      ],
+      "baseline_api_hash": "facca7657641567f",
+      "baseline_sql_hash": "2e2275879e4655d8",
+      "domain_type": "DATASET_SCHEMA",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "You have 74 schemas. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many schemas do I have?",
+      "query_id": "example_011",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2877
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0113,
+      "selected_apis": [
+        "audit_events",
+        "audit_events_short",
+        "catalog_datasets",
+        "schema_registry_schema",
+        "schema_registry_schemas",
+        "/schemas"
+      ],
+      "selected_evidence_hash": "d280ae18eb75ee9f",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: schema_count+schema_list.",
+        "step_families": [
+          "schema_count",
+          "schema_list"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "sql_calls": [
+        "SELECT COUNT(DISTINCT B.\"BLUEPRINTID\") AS blueprint_count FROM \"dim_blueprint\" AS B"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.3915,
+        "api_score": 1.0,
+        "correctness_score": 0.7774,
+        "final_score": 0.7462,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 751,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "audit_destination_mapping",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "property": "assetType==destination"
+          },
+          "url": "/data/foundation/audit/events"
+        }
+      ],
+      "baseline_api_hash": "2e6e92144a7409ae",
+      "baseline_sql_hash": "e088da2e6d5cf4f1",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the SQL evidence, 1 audience(s) match: Gender: Male (ID f6b93428-c021-4058-a1a2-77c277aab564) mapped to amazon-s3. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+      "query_id": "example_012",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.247
+      },
+      "route_type": "SQL_THEN_API",
+      "router_confidence": 0.65,
+      "runtime": 0.0142,
+      "selected_apis": [
+        "audit_events",
+        "audit_events_short",
+        "ups_audiences",
+        "segment_definitions",
+        "merge_policies",
+        "/data/foundation/audit/events"
+      ],
+      "selected_evidence_hash": "0fb7a38f97cd399b",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: segment_new_destination_mapping+destination_audit_events.",
+        "step_families": [
+          "segment_new_destination_mapping",
+          "destination_audit_events"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_collection",
+        "dim_segment",
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_target",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "sql_calls": [
+        "SELECT DISTINCT A.\"SEGMENTID\" AS segment_id, A.\"NAME\" AS segment_name, D.\"TARGETID\" AS target_id, D.\"NAME\" AS target_name FROM \"dim_segment\" AS A JOIN \"hkg_br_segment_target\" AS AD ON A.\"SEGMENTID\" = AD.\"SEGMENTID\" JOIN \"dim_target\" AS D ON AD.\"TARGETID\" = D.\"TARGETID\" WHERE D.\"CREATEDTIME\" >= DATEADD(MONTH, -3, CURRENT_DATE) LIMIT 3"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.2124,
+        "api_score": 1.0,
+        "correctness_score": 0.7637,
+        "final_score": 0.7293,
+        "sql_score": 1.0,
+        "validation_failures": 0
+      },
+      "tokens": 1128,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "schema_dataset",
+      "answer_intent": "DETAIL",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "orderBy": "-timestamp",
+            "property": "assetType==dataset"
+          },
+          "url": "/audit/events"
+        }
+      ],
+      "baseline_api_hash": "c98e858a522ed796",
+      "baseline_sql_hash": "dd98bd7ef11c35ef",
+      "domain_type": "DATASET_SCHEMA",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, matching datasets are: hkg_adls_segment_profile_history, hkg_adls_profile_count_history, Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d, Profile Export For Destination - Merge Policy - 22a941a9-e598-45f8-846b-c9a8889f5035, BR_Segment_Destination, DIM_Destination, BR_Namespace_Destination, Segmentdefinition-Snapshot-Export-3405afd1-7c78-4aff-84e6-d2136ffcea93, weRetail: CRM, and weRetail: Customer Actions. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show recent changes in datasets.",
+      "query_id": "example_013",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2604,
+        "lookup_path": 12.3646
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0161,
+      "selected_apis": [
+        "audit_events",
+        "export_batch_files",
+        "catalog_datasets",
+        "schema_registry_schema",
+        "schema_registry_schemas",
+        "/audit/events"
+      ],
+      "selected_evidence_hash": "13c00f05caaeee17",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence. Fast path: recent_dataset_changes+dataset_audit_changes.",
+        "step_families": [
+          "recent_dataset_changes",
+          "dataset_audit_changes"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "sql_calls": [
+        "SELECT DISTINCT D.\"COLLECTIONID\" AS collection_id, D.\"NAME\" AS collection_name, D.\"UPDATEDTIME\" AS updated_time FROM \"dim_collection\" AS D WHERE D.\"UPDATEDTIME\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.1695,
+        "api_score": 1.0,
+        "correctness_score": 0.7509,
+        "final_score": 0.7167,
+        "sql_score": 1.0,
+        "validation_failures": 0
+      },
+      "tokens": 1088,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "audit_entity_created",
+      "answer_intent": "DETAIL",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20",
+            "property": "action==create"
+          },
+          "url": "/data/foundation/audit/events"
+        }
+      ],
+      "baseline_api_hash": "d56067c218028b6e",
+      "baseline_sql_hash": "13b10bd59a50e966",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_required_but_credentials_missing",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show me all entities created by download",
+      "query_id": "example_014",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2703
+      },
+      "route_type": "SQL_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0115,
+      "selected_apis": [
+        "audit_events",
+        "audit_events_short",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/foundation/audit/events"
+      ],
+      "selected_evidence_hash": "ce0161473e740213",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Query family requires Adobe API evidence.",
+        "step_families": [
+          "collection_created_by",
+          "audit_create_events"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_collection",
+        "dim_segment",
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_connector"
+      ],
+      "sql_calls": [
+        "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'"
+      ],
+      "strict_score_components": {
+        "answer_score": 0.4589,
+        "api_score": 1.0,
+        "correctness_score": 0.7977,
+        "final_score": 0.7661,
+        "sql_score": 0.9,
+        "validation_failures": 0
+      },
+      "tokens": 789,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "tags",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "url": "/unifiedtags/tags"
+        }
+      ],
+      "baseline_api_hash": "319db4b88aebb89e",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "COUNT_AGGREGATION",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The tag count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many tags exist in this sandbox?",
+      "query_id": "example_015",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3892
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0097,
+      "selected_apis": [
+        "unified_tag_categories",
+        "export_batch_files",
+        "/unifiedtags/tags"
+      ],
+      "selected_evidence_hash": "a65e6293610eeaeb",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_count.",
+        "step_families": [
+          "tag_count"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.3681,
+        "api_score": 1.0,
+        "correctness_score": 0.684,
+        "final_score": 0.6675,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 488,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "tags",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "25"
+          },
+          "url": "/unifiedtags/tags"
+        }
+      ],
+      "baseline_api_hash": "97cbf633c261205a",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The requested tag list requires live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List all tags in this sandbox.",
+      "query_id": "example_016",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3895
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.01,
+      "selected_apis": [
+        "unified_tag_categories",
+        "export_batch_files",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/unifiedtags/tags"
+      ],
+      "selected_evidence_hash": "7ad9cceaabb68d5c",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_list.",
+        "step_families": [
+          "tag_list"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.3598,
+        "api_score": 1.0,
+        "correctness_score": 0.6799,
+        "final_score": 0.6627,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 555,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "tags",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "url": "/unifiedtags/tagCategory"
+        },
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-[REDACTED_ORG_ID]"
+          },
+          "url": "/unifiedtags/tags"
+        }
+      ],
+      "baseline_api_hash": "58e0c892a480785e",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Details for the tag named 'Uncategorized' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Which tags belong to the category 'Uncategorized'?",
+      "query_id": "example_017",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 14.2764
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0124,
+      "selected_apis": [
+        "unified_tag_categories",
+        "unified_tag_detail",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/unifiedtags/tagCategory",
+        "/unifiedtags/tags"
+      ],
+      "selected_evidence_hash": "4b304de215b9ccdd",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_categories+tags_by_uncategorized_category.",
+        "step_families": [
+          "tag_categories",
+          "tags_by_uncategorized_category"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1246,
+        "api_score": 1.0,
+        "correctness_score": 0.5623,
+        "final_score": 0.5299,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 883,
+      "tool_count": 2
+    },
+    {
+      "answer_family": "tags",
+      "answer_intent": "DETAIL",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {},
+          "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+        }
+      ],
+      "baseline_api_hash": "24649d0c921dfda2",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Details for the tag named 'cool' require live API evidence, including the tag ID, name, category, and Adobe organization. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show me the details of the tag named 'cool'.",
+      "query_id": "example_018",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3858
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0108,
+      "selected_apis": [
+        "unified_tag_categories",
+        "unified_tag_detail",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+      ],
+      "selected_evidence_hash": "24ef35b9a4102a26",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: tag_details_by_id.",
+        "step_families": [
+          "tag_details_by_id"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.3685,
+        "api_score": 1.0,
+        "correctness_score": 0.6843,
+        "final_score": 0.6661,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 678,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "merge_policy",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "url": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "baseline_api_hash": "2e7894966db6af38",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Merge policy information requires Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List all merge policies in this sandbox.",
+      "query_id": "example_019",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.384
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0097,
+      "selected_apis": [
+        "merge_policies",
+        "export_batch_files",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/core/ups/config/mergePolicies"
+      ],
+      "selected_evidence_hash": "01930c941498dd0a",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: merge_policies.",
+        "step_families": [
+          "merge_policies"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1049,
+        "api_score": 1.0,
+        "correctness_score": 0.5524,
+        "final_score": 0.5351,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 579,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "merge_policy",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "url": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "baseline_api_hash": "2e7894966db6af38",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "COUNT_AGGREGATION",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The merge policy count cannot be determined from the available evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many merge policies are configured in this sandbox?",
+      "query_id": "example_020",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.384
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0098,
+      "selected_apis": [
+        "merge_policies",
+        "export_batch_files",
+        "/data/core/ups/config/mergePolicies"
+      ],
+      "selected_evidence_hash": "834c15b152b2e557",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: merge_policies.",
+        "step_families": [
+          "merge_policies"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1079,
+        "api_score": 1.0,
+        "correctness_score": 0.554,
+        "final_score": 0.5371,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 516,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "merge_policy",
+      "answer_intent": "DETAIL",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "5"
+          },
+          "url": "/data/core/ups/config/mergePolicies"
+        }
+      ],
+      "baseline_api_hash": "77d4a0d8dfb95cf7",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The default merge policy requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show the default merge policy for schema class '_xdm.context.profile'.",
+      "query_id": "example_021",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.38
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0116,
+      "selected_apis": [
+        "merge_policies",
+        "audit_events",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/core/ups/config/mergePolicies"
+      ],
+      "selected_evidence_hash": "bb223a287182b7f8",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Merge policies are Adobe API objects. Fast path: blueprint_collection_list+schema_by_name+merge_policies.",
+        "step_families": [
+          "merge_policies"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_collection",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.117,
+        "api_score": 1.0,
+        "correctness_score": 0.5585,
+        "final_score": 0.54,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 711,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "segment_definitions",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100"
+          },
+          "url": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "baseline_api_hash": "53533bda758b08e3",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Segment definition details require live Adobe API evidence with definition names, IDs, and counts. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many segment definitions exist in this sandbox?",
+      "query_id": "example_022",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8829
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0101,
+      "selected_apis": [
+        "segment_definitions",
+        "export_batch_files",
+        "ups_audiences",
+        "merge_policies",
+        "/data/core/ups/segment/definitions"
+      ],
+      "selected_evidence_hash": "854f058927a07539",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_definition_count.",
+        "step_families": [
+          "segment_definition_count"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1178,
+        "api_score": 1.0,
+        "correctness_score": 0.5589,
+        "final_score": 0.541,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 638,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "segment_definitions",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "url": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "baseline_api_hash": "2357480439c8930b",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The requested segment definition list requires live Adobe API evidence with definition names, IDs, and pagination counts. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List all segment definitions.",
+      "query_id": "example_023",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8833
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0102,
+      "selected_apis": [
+        "segment_definitions",
+        "merge_policies",
+        "ups_audiences",
+        "/data/core/ups/segment/definitions"
+      ],
+      "selected_evidence_hash": "b40726690f536dd0",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_definition_list.",
+        "step_families": [
+          "segment_definition_list"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1166,
+        "api_score": 1.0,
+        "correctness_score": 0.5583,
+        "final_score": 0.5406,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 624,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "segment_definitions",
+      "answer_intent": "WHEN",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "url": "/data/core/ups/segment/definitions"
+        }
+      ],
+      "baseline_api_hash": "838875f779a430a1",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The most recently updated segment definitions require live Adobe API evidence with names, IDs, and update times. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Which segment definitions were updated most recently?",
+      "query_id": "example_024",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8795
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0106,
+      "selected_apis": [
+        "segment_definitions",
+        "merge_policies",
+        "ups_audiences",
+        "/data/core/ups/segment/definitions"
+      ],
+      "selected_evidence_hash": "b40726690f536dd0",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: recent_segment_definitions.",
+        "step_families": [
+          "recent_segment_definitions"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1092,
+        "api_score": 1.0,
+        "correctness_score": 0.5546,
+        "final_score": 0.5366,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 654,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "segment_jobs",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "3"
+          },
+          "url": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "baseline_api_hash": "8ddb65f51ef267ad",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List all segment evaluation jobs.",
+      "query_id": "example_025",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8874
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0099,
+      "selected_apis": [
+        "segment_jobs",
+        "merge_policies",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/core/ups/segment/jobs"
+      ],
+      "selected_evidence_hash": "886a1397fa3f9b19",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_jobs.",
+        "step_families": [
+          "segment_jobs"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1075,
+        "api_score": 1.0,
+        "correctness_score": 0.5537,
+        "final_score": 0.536,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 631,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "segment_jobs",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "20"
+          },
+          "url": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "baseline_api_hash": "a1f67242b0bce64f",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The segment evaluation job count requires live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many segment jobs are currently processing?",
+      "query_id": "example_026",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8873
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0109,
+      "selected_apis": [
+        "segment_jobs",
+        "merge_policies",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/core/ups/segment/jobs"
+      ],
+      "selected_evidence_hash": "886a1397fa3f9b19",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_jobs.",
+        "step_families": [
+          "segment_jobs"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1186,
+        "api_score": 1.0,
+        "correctness_score": 0.5593,
+        "final_score": 0.5412,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 669,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "segment_jobs",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10"
+          },
+          "url": "/data/core/ups/segment/jobs"
+        }
+      ],
+      "baseline_api_hash": "ecd97131a2e56244",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "SEGMENT_AUDIENCE",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Segment evaluation job IDs, statuses, sandbox, and segment counts require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show all segment jobs with status 'QUEUED'.",
+      "query_id": "example_027",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8873
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0114,
+      "selected_apis": [
+        "segment_jobs",
+        "audit_events",
+        "ups_audiences",
+        "segment_definitions",
+        "merge_policies",
+        "/data/core/ups/segment/jobs"
+      ],
+      "selected_evidence_hash": "9c0cd6366bbd063f",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: segment_jobs.",
+        "step_families": [
+          "segment_jobs"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_segment",
+        "hkg_br_segment_target",
+        "br_campaign_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.2415,
+        "api_score": 1.0,
+        "correctness_score": 0.6208,
+        "final_score": 0.6022,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 717,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "batch",
+      "answer_intent": "WHEN",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "orderBy": "desc:created"
+          },
+          "url": "/data/foundation/catalog/batches"
+        }
+      ],
+      "baseline_api_hash": "b7b003eb66923b73",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "The requested batch detail is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=100, orderBy=desc:created. Live API unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "List the most recently created batches.",
+      "query_id": "example_028",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3834
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0107,
+      "selected_apis": [
+        "export_batch_failed",
+        "export_batch_files",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/foundation/catalog/batches"
+      ],
+      "selected_evidence_hash": "f2cd3cd80ee4229d",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: recent_batches.",
+        "step_families": [
+          "recent_batches"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.107,
+        "api_score": 1.0,
+        "correctness_score": 0.5535,
+        "final_score": 0.5357,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 630,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "batch",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {
+            "limit": "10",
+            "status": "success"
+          },
+          "url": "/data/foundation/catalog/batches"
+        }
+      ],
+      "baseline_api_hash": "789f7b2f1468a969",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "COUNT_AGGREGATION",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "success batch count is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches params limit=10, status=success. Live API unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "How many batches have status 'success'?",
+      "query_id": "example_029",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3817
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0117,
+      "selected_apis": [
+        "export_batch_failed",
+        "audit_events",
+        "/data/foundation/catalog/batches"
+      ],
+      "selected_evidence_hash": "42825c7eae75252f",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: successful_batch_count.",
+        "step_families": [
+          "successful_batch_count"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.1141,
+        "api_score": 1.0,
+        "correctness_score": 0.557,
+        "final_score": 0.5393,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 626,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "batch",
+      "answer_intent": "DETAIL",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {},
+          "url": "/data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F"
+        }
+      ],
+      "baseline_api_hash": "05e3ca394982d3e4",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "01KP69BPA5ZKFB7HCDYPE4GN6F batch detail is unavailable in dry-run mode. Endpoint: GET /data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F. Live API unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
+      "query_id": "example_030",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3865
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0113,
+      "selected_apis": [
+        "catalog_batch_detail",
+        "export_batch_failed",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/foundation/catalog/batches/01KP69BPA5ZKFB7HCDYPE4GN6F"
+      ],
+      "selected_evidence_hash": "13a1d5867450de62",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_details.",
+        "step_families": [
+          "batch_details"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.2802,
+        "api_score": 1.0,
+        "correctness_score": 0.6401,
+        "final_score": 0.6218,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 693,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "batch",
+      "answer_intent": "LIST",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {},
+          "url": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"
+        }
+      ],
+      "baseline_api_hash": "ce1fb05eb9e3a0a8",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "UNKNOWN",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "69de8a0e0cc6102b5d11f01e batch list is unavailable in dry-run mode. Endpoint: GET /data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files. Live API unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+      "query_id": "example_031",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3847
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.2,
+      "runtime": 0.0103,
+      "selected_apis": [
+        "export_batch_files",
+        "export_batch_failed",
+        "journey_list",
+        "ups_audiences",
+        "segment_definitions",
+        "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files"
+      ],
+      "selected_evidence_hash": "eb636b3668a8e4c1",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
+        "step_families": [
+          "batch_export_files"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.3449,
+        "api_score": 1.0,
+        "correctness_score": 0.6724,
+        "final_score": 0.6539,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 717,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "failed_dataflow_runs",
+      "answer_intent": "STATUS",
+      "api_calls": [
+        {
+          "method": "GET",
+          "params": {},
+          "url": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+        }
+      ],
+      "baseline_api_hash": "3cf927c943b41c35",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "STATUS_MONITORING",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+      "query_id": "example_032",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 11.8844
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0113,
+      "selected_apis": [
+        "export_batch_failed",
+        "export_batch_files",
+        "journey_list",
+        "flowservice_runs",
+        "audit_events",
+        "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed"
+      ],
+      "selected_evidence_hash": "4b579638297886ae",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: batch_export_files.",
+        "step_families": [
+          "batch_export_files"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_connector",
+        "dim_target",
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.381,
+        "api_score": 1.0,
+        "correctness_score": 0.6905,
+        "final_score": 0.6717,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 748,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "observability_metrics",
+      "answer_intent": "WHEN",
+      "api_calls": [
+        {
+          "method": "POST",
+          "params": {
+            "end": "2026-03-31T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              }
+            ],
+            "start": "2026-03-15T00:00:00.000Z"
+          },
+          "url": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "baseline_api_hash": "3ecb78e382df5186",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "DATASET_SCHEMA",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "query_id": "example_033",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3605
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.65,
+      "runtime": 0.0141,
+      "selected_apis": [
+        "observability_metrics",
+        "catalog_batches",
+        "catalog_datasets",
+        "schema_registry_schema",
+        "schema_registry_schemas",
+        "/data/infrastructure/observability/insights/metrics"
+      ],
+      "selected_evidence_hash": "a85b062879a4b47c",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: blueprint_collection_list+observability_metrics.",
+        "step_families": [
+          "observability_metrics"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.3878,
+        "api_score": 1.0,
+        "correctness_score": 0.6939,
+        "final_score": 0.6727,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 1040,
+      "tool_count": 1
+    },
+    {
+      "answer_family": "observability_metrics",
+      "answer_intent": "COUNT",
+      "api_calls": [
+        {
+          "method": "POST",
+          "params": {
+            "end": "2026-04-01T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              },
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.batchsuccess.count"
+              }
+            ],
+            "start": "2026-03-01T00:00:00.000Z"
+          },
+          "url": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "baseline_api_hash": "948c659712687f87",
+      "baseline_sql_hash": "e3b0c44298fc1c14",
+      "domain_type": "COUNT_AGGREGATION",
+      "dry_run_label": "dry_run",
+      "dry_run_status": "dry_run",
+      "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count and timeseries.ingestion.dataset.batchsuccess.count for the requested time window require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+      "likely_decision_stage_bottleneck": "api_only_needs_live_credentials",
+      "likely_improvement_candidate": "live_adobe_api_readiness_trial",
+      "prompt": "Show ingestion record counts and batch success counts for the last 90 days.",
+      "query_id": "example_034",
+      "rejected_plan_candidates": {
+        "generic_sql_first": 12.3534
+      },
+      "route_type": "API_ONLY",
+      "router_confidence": 0.5,
+      "runtime": 0.0119,
+      "selected_apis": [
+        "observability_metrics",
+        "ups_audiences",
+        "/data/infrastructure/observability/insights/metrics"
+      ],
+      "selected_evidence_hash": "f951f83aaf94149d",
+      "selected_plan": {
+        "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: observability_metrics.",
+        "step_families": [
+          "observability_metrics"
+        ],
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "selected_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "sql_calls": [],
+      "strict_score_components": {
+        "answer_score": 0.3645,
+        "api_score": 1.0,
+        "correctness_score": 0.6823,
+        "final_score": 0.6623,
+        "sql_score": null,
+        "validation_failures": 0
+      },
+      "tokens": 885,
+      "tool_count": 1
+    }
+  ],
+  "source_report": "outputs/eval_results_strict.json",
+  "status": "complete",
+  "total_queries": 35
+}

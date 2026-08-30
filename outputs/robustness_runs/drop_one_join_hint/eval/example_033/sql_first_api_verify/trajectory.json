@@ -1,0 +1,195 @@
+{
+  "answer_time": 1.425005029886961e-05,
+  "api_call_count": 1,
+  "domain_type": "DATASET_SCHEMA",
+  "errors": [],
+  "estimated_tokens": 1057,
+  "execution_time": 0.0003722079563885927,
+  "final_answer": "Values for timeseries.ingestion.dataset.recordsuccess.count between 2026-03-15 and 2026-03-31 require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+  "planning_time": 0.00019554200116544962,
+  "preprocessing_time": 0.0008147910120896995,
+  "query_id": "example_033",
+  "route_type": "API_ONLY",
+  "runtime": 0.0018040839931927621,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "catalog_datasets",
+          "method": "GET",
+          "path": "/data/foundation/catalog/dataSets"
+        },
+        {
+          "id": "schema_registry_schema",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}"
+        },
+        {
+          "id": "schema_registry_schemas",
+          "method": "GET",
+          "path": "/data/foundation/schemaregistry/tenant/schemas"
+        },
+        {
+          "id": "schemas_short",
+          "method": "GET",
+          "path": "/schemas"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "dim_blueprint",
+        "dim_collection",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_collection_segment",
+        "hkg_br_source_collection"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DATASET_SCHEMA",
+      "kind": "route",
+      "reason": "Keyword routing using DATASET_SCHEMA:1, COUNT_AGGREGATION:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "observability_metrics",
+          "catalog_batches"
+        ],
+        "lookup_paths": [
+          "observability",
+          "audit"
+        ]
+      },
+      "tokens": {
+        "dates": [
+          "2026-03-15",
+          "2026-03-31"
+        ],
+        "domains": [
+          "observability",
+          "schema_dataset"
+        ],
+        "metrics": [
+          "timeseries.ingestion.dataset.recordsuccess.count"
+        ],
+        "quoted_entities": [
+          "timeseries.ingestion.dataset.recordsuccess.count",
+          "2026-03-15",
+          "2026-03-31"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 796,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_one_join_hint/eval/example_033/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1095
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: blueprint_collection_list+observability_metrics.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "observability_metrics",
+          "method": "POST",
+          "params": {
+            "end": "2026-03-31T23:59:59.000Z",
+            "granularity": "day",
+            "metrics": [
+              {
+                "aggregator": "sum",
+                "filters": [],
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              }
+            ],
+            "start": "2026-03-15T00:00:00.000Z"
+          },
+          "purpose": "API parameter template: observability_metrics.",
+          "url": "/data/infrastructure/observability/insights/metrics"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3605
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "POST",
+      "params": {
+        "end": "2026-03-31T23:59:59.000Z",
+        "granularity": "day",
+        "metrics": [
+          {
+            "aggregator": "sum",
+            "filters": [],
+            "name": "timeseries.ingestion.dataset.recordsuccess.count"
+          }
+        ],
+        "start": "2026-03-15T00:00:00.000Z"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/infrastructure/observability/insights/metrics",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "POST",
+        "ok": false,
+        "params": {
+          "end": "2026-03-31T23:59:59.000Z",
+          "granularity": "day",
+          "metrics": {
+            "items": [
+              {
+                "aggregator": "sum",
+                "name": "timeseries.ingestion.dataset.recordsuccess.count"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "start": "2026-03-15T00:00:00.000Z"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/infrastructure/observability/insights/metrics"
+      },
+      "url": "/data/infrastructure/observability/insights/metrics",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.425005029886961e-05,
+    "execution_time": 0.0003722079563885927,
+    "planning_time": 0.00019554200116544962,
+    "preprocessing_time": 0.0008147910120896995
+  },
+  "tool_call_count": 1
+}

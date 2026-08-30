@@ -1,0 +1,795 @@
+{
+  "category_counts": {
+    "ambiguous_low_confidence": 40,
+    "api_only_live_platform": 90,
+    "conceptual_no_tool": 60,
+    "hard_stress": 60,
+    "mixed_conceptual_data": 40,
+    "sql_only_local_snapshot": 120,
+    "sql_then_api_verification": 90
+  },
+  "dedup": {
+    "accepted": 500,
+    "normalized_unique": 500,
+    "rejected": 0,
+    "rejected_report": "/Users/tanqinyang/Desktop/dashsys-workshop-vldb/outputs/reports/dashagent_500_prompt_rejected_duplicates.json",
+    "semantic_signature_unique": 500
+  },
+  "examples": {
+    "ambiguous_low_confidence": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "The prompt can be answered as a general schema concept without concrete platform facts."
+        ],
+        "expected_evidence_need": "none",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "SCHEMA",
+              "ID_LIKE",
+              "NUMBER",
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "CONCRETE_ENTITY",
+              "DOMAIN_ONLY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "LLM_SAFE_DIRECT",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "none",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "no SQL/API tool required",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "LLM_SAFE_DIRECT",
+        "expected_tool_calls": {
+          "api_optional": false,
+          "api_required": false,
+          "expected_api_families": [],
+          "expected_sql_tables": [],
+          "sql_required": false
+        },
+        "forbidden_claims": [
+          "fabricated data",
+          "clarification request"
+        ],
+        "gold_answer": "The prompt can be answered as a general schema concept without concrete platform facts.",
+        "gold_answer_type": "conceptual_rubric",
+        "grading_rubric": {
+          "correctness_points": [
+            "route resolves to LLM_SAFE_DIRECT",
+            "evidence need none"
+          ],
+          "evidence_points": [
+            "expected evidence need: none",
+            "expected route: LLM_SAFE_DIRECT"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": null,
+          "oracle_source": "static_conceptual_rubric",
+          "oracle_sql": null
+        },
+        "prompt_id": "da500_0401",
+        "required_facts": [
+          "route resolves to LLM_SAFE_DIRECT",
+          "evidence need none"
+        ],
+        "semantic_signature": {
+          "case_axis": "ambiguous_000",
+          "domain_family": "SCHEMA",
+          "entities": [],
+          "evidence_need": "none",
+          "intent": "AMBIG",
+          "operation": "ambiguous",
+          "requested_fields": []
+        }
+      },
+      "runtime_prompt": {
+        "category": "ambiguous_low_confidence",
+        "difficulty": "easy",
+        "domain_family": "SCHEMA",
+        "prompt": "Schemas, in plain language. Ambiguous case 1.",
+        "prompt_id": "da500_0401",
+        "split": "stress_generated",
+        "tags": [
+          "low_confidence_ladder",
+          "low_low_safe_direct"
+        ]
+      }
+    },
+    "api_only_live_platform": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "The correct behavior is to use safe GET evidence from schema_registry_schemas for schema. If live API evidence is unavailable or errors, report that API evidence is unavailable rather than saying no data."
+        ],
+        "expected_evidence_need": "api",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "LIST",
+              "USES",
+              "SCHEMA",
+              "ID_LIKE",
+              "NUMBER",
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "CONCRETE_ENTITY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "API_ONLY",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "api",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "call validated safe GET API only",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "API_ONLY",
+        "expected_tool_calls": {
+          "api_optional": false,
+          "api_required": true,
+          "expected_api_families": [
+            "schema_registry_schemas"
+          ],
+          "expected_sql_tables": [],
+          "sql_required": false
+        },
+        "forbidden_claims": [
+          "global no data without live_empty",
+          "mutating API call",
+          "unresolved path parameter"
+        ],
+        "gold_answer": "The correct behavior is to use safe GET evidence from schema_registry_schemas for schema. If live API evidence is unavailable or errors, report that API evidence is unavailable rather than saying no data.",
+        "gold_answer_type": "caveat",
+        "grading_rubric": {
+          "correctness_points": [
+            "schema_registry_schemas",
+            "safe GET evidence",
+            "do not treat API error as no data"
+          ],
+          "evidence_points": [
+            "expected evidence need: api",
+            "expected route: API_ONLY"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": "schema_registry_schemas",
+          "oracle_source": "live_api",
+          "oracle_sql": null
+        },
+        "prompt_id": "da500_0181",
+        "required_facts": [
+          "schema_registry_schemas",
+          "safe GET evidence",
+          "do not treat API error as no data"
+        ],
+        "semantic_signature": {
+          "case_axis": "api_000",
+          "domain_family": "SCHEMA",
+          "entities": [
+            "schema_registry_schemas"
+          ],
+          "evidence_need": "api",
+          "intent": "LIVE_API",
+          "operation": "api",
+          "requested_fields": []
+        }
+      },
+      "runtime_prompt": {
+        "category": "api_only_live_platform",
+        "difficulty": "easy",
+        "domain_family": "SCHEMA",
+        "prompt": "List current Adobe schema using the platform API. API case 1.",
+        "prompt_id": "da500_0181",
+        "split": "stress_generated",
+        "tags": [
+          "api_required",
+          "safe_get"
+        ]
+      }
+    },
+    "conceptual_no_tool": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "A schema is an Adobe data-platform concept. A correct answer explains the concept without asserting concrete counts, IDs, statuses, timestamps, or live platform state."
+        ],
+        "expected_evidence_need": "none",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "DEF",
+              "USES",
+              "SCHEMA",
+              "ID_LIKE",
+              "NUMBER",
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "DOMAIN_WITH_DEF_CUE",
+              "CONCRETE_ENTITY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "LLM_SAFE_DIRECT",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "none",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "no SQL/API tool required",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "LLM_SAFE_DIRECT",
+        "expected_tool_calls": {
+          "api_optional": false,
+          "api_required": false,
+          "expected_api_families": [],
+          "expected_sql_tables": [],
+          "sql_required": false
+        },
+        "forbidden_claims": [
+          "specific count",
+          "specific ID",
+          "live status",
+          "timestamp claim"
+        ],
+        "gold_answer": "A schema is an Adobe data-platform concept. A correct answer explains the concept without asserting concrete counts, IDs, statuses, timestamps, or live platform state.",
+        "gold_answer_type": "conceptual_rubric",
+        "grading_rubric": {
+          "correctness_points": [
+            "general explanation of schema",
+            "no concrete platform facts"
+          ],
+          "evidence_points": [
+            "expected evidence need: none",
+            "expected route: LLM_SAFE_DIRECT"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": null,
+          "oracle_source": "static_conceptual_rubric",
+          "oracle_sql": null
+        },
+        "prompt_id": "da500_0001",
+        "required_facts": [
+          "general explanation of schema",
+          "no concrete platform facts"
+        ],
+        "semantic_signature": {
+          "case_axis": "conceptual_000",
+          "domain_family": "SCHEMA",
+          "entities": [],
+          "evidence_need": "none",
+          "intent": "CONCEPT",
+          "operation": "conceptual",
+          "requested_fields": []
+        }
+      },
+      "runtime_prompt": {
+        "category": "conceptual_no_tool",
+        "difficulty": "easy",
+        "domain_family": "SCHEMA",
+        "prompt": "What is a schema in Adobe Experience Platform? Use general terms for concept case 1.",
+        "prompt_id": "da500_0001",
+        "split": "dev_generated",
+        "tags": [
+          "conceptual",
+          "no_tool_expected",
+          "domain_keyword_conceptual"
+        ]
+      }
+    },
+    "hard_stress": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "The local snapshot table dim_blueprint contains 74 rows."
+        ],
+        "expected_evidence_need": "mixed",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "DEF",
+              "LIST",
+              "SCHEMA",
+              "NUMBER",
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "DOMAIN_WITH_DEF_CUE",
+              "MIXED_CONCEPT_AND_RETRIEVAL",
+              "CONCRETE_ENTITY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "SQL_THEN_API",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "mixed",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "execute validated SQL; call safe GET API only if evidence policy needs it",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "SQL_THEN_API",
+        "expected_tool_calls": {
+          "api_optional": true,
+          "api_required": false,
+          "expected_api_families": [
+            "schema_registry_schemas"
+          ],
+          "expected_sql_tables": [
+            "dim_blueprint"
+          ],
+          "sql_required": true
+        },
+        "forbidden_claims": [
+          "unsupported concrete fact",
+          "reasoning transcript"
+        ],
+        "gold_answer": "The local snapshot table dim_blueprint contains 74 rows.",
+        "gold_answer_type": "caveat",
+        "grading_rubric": {
+          "correctness_points": [
+            "latest harness path exercised",
+            "expected route SQL_THEN_API"
+          ],
+          "evidence_points": [
+            "expected evidence need: mixed",
+            "expected route: SQL_THEN_API"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": "schema_registry_schemas",
+          "oracle_source": "mixed",
+          "oracle_sql": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
+        },
+        "prompt_id": "da500_0441",
+        "required_facts": [
+          "latest harness path exercised",
+          "expected route SQL_THEN_API"
+        ],
+        "semantic_signature": {
+          "case_axis": "stress_000",
+          "domain_family": "SCHEMA",
+          "entities": [
+            "schema_registry_schemas"
+          ],
+          "evidence_need": "mixed",
+          "intent": "STRESS",
+          "operation": "stress",
+          "requested_fields": [
+            "dim_blueprint"
+          ]
+        }
+      },
+      "runtime_prompt": {
+        "category": "hard_stress",
+        "difficulty": "easy",
+        "domain_family": "SCHEMA",
+        "prompt": "List schemas even though I first ask: what is a schema? Stress trigger 1.",
+        "prompt_id": "da500_0441",
+        "split": "stress_generated",
+        "tags": [
+          "hard_stress",
+          "anti_hallucination_no_tool_conflict"
+        ]
+      }
+    },
+    "mixed_conceptual_data": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "A correct answer includes a general concept explanation for merge policy and uses evidence for the requested current object list or reports API evidence unavailable."
+        ],
+        "expected_evidence_need": "mixed",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "EXPLAIN",
+              "LIST",
+              "MERGE_POLICY",
+              "ID_LIKE",
+              "NUMBER",
+              "API_MERGE_POLICIES",
+              "DOMAIN_WITH_DEF_CUE",
+              "MIXED_CONCEPT_AND_RETRIEVAL",
+              "CONCRETE_ENTITY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "EVIDENCE_PIPELINE",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "mixed",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "call validated safe GET API only",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "EVIDENCE_PIPELINE",
+        "expected_tool_calls": {
+          "api_optional": false,
+          "api_required": true,
+          "expected_api_families": [
+            "merge_policies"
+          ],
+          "expected_sql_tables": [],
+          "sql_required": false
+        },
+        "forbidden_claims": [
+          "pure no-tool concrete list",
+          "fabricated live object"
+        ],
+        "gold_answer": "A correct answer includes a general concept explanation for merge policy and uses evidence for the requested current object list or reports API evidence unavailable.",
+        "gold_answer_type": "caveat",
+        "grading_rubric": {
+          "correctness_points": [
+            "conceptual explanation",
+            "evidence-backed current object handling"
+          ],
+          "evidence_points": [
+            "expected evidence need: mixed",
+            "expected route: EVIDENCE_PIPELINE"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": "merge_policies",
+          "oracle_source": "mixed",
+          "oracle_sql": null
+        },
+        "prompt_id": "da500_0361",
+        "required_facts": [
+          "conceptual explanation",
+          "evidence-backed current object handling"
+        ],
+        "semantic_signature": {
+          "case_axis": "mixed_000",
+          "domain_family": "MERGE_POLICY",
+          "entities": [
+            "merge_policies"
+          ],
+          "evidence_need": "mixed",
+          "intent": "MIXED",
+          "operation": "mixed",
+          "requested_fields": [
+            "concept"
+          ]
+        }
+      },
+      "runtime_prompt": {
+        "category": "mixed_conceptual_data",
+        "difficulty": "easy",
+        "domain_family": "MERGE_POLICY",
+        "prompt": "Explain what a merge policy is and list current merge policy objects if the live endpoint supports it. Mixed case 1.",
+        "prompt_id": "da500_0361",
+        "split": "robustness_generated",
+        "tags": [
+          "mixed_conceptual_data",
+          "mixed_no_tool_block"
+        ]
+      }
+    },
+    "sql_only_local_snapshot": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "The local snapshot table dim_blueprint contains 74 rows."
+        ],
+        "expected_evidence_need": "sql",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "HOW_MANY",
+              "SCHEMA",
+              "ID_LIKE",
+              "NUMBER",
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "CONCRETE_ENTITY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "SQL_ONLY",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "sql",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "execute validated SQL only",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "SQL_ONLY",
+        "expected_tool_calls": {
+          "api_optional": false,
+          "api_required": false,
+          "expected_api_families": [],
+          "expected_sql_tables": [
+            "dim_blueprint"
+          ],
+          "sql_required": true
+        },
+        "forbidden_claims": [
+          "live API state",
+          "Adobe API returned no data"
+        ],
+        "gold_answer": "The local snapshot table dim_blueprint contains 74 rows.",
+        "gold_answer_type": "count",
+        "grading_rubric": {
+          "correctness_points": [
+            "The local snapshot table dim_blueprint contains 74 rows."
+          ],
+          "evidence_points": [
+            "expected evidence need: sql",
+            "expected route: SQL_ONLY"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": null,
+          "oracle_source": "local_db",
+          "oracle_sql": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
+        },
+        "prompt_id": "da500_0061",
+        "required_facts": [
+          "The local snapshot table dim_blueprint contains 74 rows."
+        ],
+        "semantic_signature": {
+          "case_axis": "count_000",
+          "domain_family": "SCHEMA",
+          "entities": [],
+          "evidence_need": "sql",
+          "intent": "DATA",
+          "operation": "count",
+          "requested_fields": [
+            "count"
+          ]
+        }
+      },
+      "runtime_prompt": {
+        "category": "sql_only_local_snapshot",
+        "difficulty": "easy",
+        "domain_family": "SCHEMA",
+        "prompt": "How many schema records are in the local snapshot? SQL case 1.",
+        "prompt_id": "da500_0061",
+        "split": "dev_generated",
+        "tags": [
+          "sql_required",
+          "count"
+        ]
+      }
+    },
+    "sql_then_api_verification": {
+      "gold": {
+        "acceptable_answer_variants": [
+          "The local snapshot table dim_blueprint contains 74 rows. API evidence is optional unless SQL is incomplete or live platform state is explicitly requested."
+        ],
+        "expected_evidence_need": "sql_then_api",
+        "expected_observable_trace": [
+          {
+            "expected_codes": [
+              "USES",
+              "SCHEMA",
+              "ID_LIKE",
+              "NUMBER",
+              "SQL_SCHEMA",
+              "API_SCHEMA_REGISTRY",
+              "CONCRETE_ENTITY"
+            ],
+            "stage": "objective_features"
+          },
+          {
+            "expected_behavior": "SQL_PRIMARY_API_VERIFY",
+            "stage": "semantic_routing"
+          },
+          {
+            "expected_behavior": "sql_then_api",
+            "stage": "evidence_policy"
+          },
+          {
+            "expected_behavior": "execute validated SQL; call safe GET API only if evidence policy needs it",
+            "stage": "tool_execution"
+          },
+          {
+            "expected_behavior": "use EvidenceBus facts and keep unsupported claims at zero",
+            "stage": "answer_grounding"
+          }
+        ],
+        "expected_route": "SQL_PRIMARY_API_VERIFY",
+        "expected_tool_calls": {
+          "api_optional": true,
+          "api_required": false,
+          "expected_api_families": [
+            "schema_registry_schemas"
+          ],
+          "expected_sql_tables": [
+            "dim_blueprint"
+          ],
+          "sql_required": true
+        },
+        "forbidden_claims": [
+          "API no data without API evidence",
+          "SQL unavailable without validation failure"
+        ],
+        "gold_answer": "The local snapshot table dim_blueprint contains 74 rows. API evidence is optional unless SQL is incomplete or live platform state is explicitly requested.",
+        "gold_answer_type": "caveat",
+        "grading_rubric": {
+          "correctness_points": [
+            "The local snapshot table dim_blueprint contains 74 rows.",
+            "API optional unless SQL is partial or live state is requested"
+          ],
+          "evidence_points": [
+            "expected evidence need: sql_then_api",
+            "expected route: SQL_PRIMARY_API_VERIFY"
+          ],
+          "format_points": [
+            "compact answer",
+            "no reasoning transcript"
+          ],
+          "partial_credit_rules": [
+            "credit objective feature extraction separately from final correctness",
+            "credit live_empty/api_error distinction when API is unavailable",
+            "do not award evidence credit for unsupported concrete claims"
+          ]
+        },
+        "oracle_evidence": {
+          "oracle_api_endpoint": "schema_registry_schemas",
+          "oracle_source": "mixed",
+          "oracle_sql": "SELECT COUNT(*) AS count FROM \"dim_blueprint\""
+        },
+        "prompt_id": "da500_0271",
+        "required_facts": [
+          "The local snapshot table dim_blueprint contains 74 rows.",
+          "API optional unless SQL is partial or live state is requested"
+        ],
+        "semantic_signature": {
+          "case_axis": "verify_000",
+          "domain_family": "SCHEMA",
+          "entities": [
+            "schema_registry_schemas"
+          ],
+          "evidence_need": "sql_then_api",
+          "intent": "DATA",
+          "operation": "verify",
+          "requested_fields": [
+            "count"
+          ]
+        }
+      },
+      "runtime_prompt": {
+        "category": "sql_then_api_verification",
+        "difficulty": "easy",
+        "domain_family": "SCHEMA",
+        "prompt": "Use the local snapshot for schema, then call the live API only if the SQL answer is incomplete. SQL/API policy case 1.",
+        "prompt_id": "da500_0271",
+        "split": "robustness_generated",
+        "tags": [
+          "sql_first",
+          "api_optional_verify",
+          "post_sql_direct_skip_optional_api",
+          "post_sql_partial_api_can_fill"
+        ]
+      }
+    }
+  },
+  "runtime_gold_separated": true,
+  "split_counts": {
+    "dev_generated": 180,
+    "robustness_generated": 130,
+    "stress_generated": 190
+  },
+  "stress_tags_present": {
+    "anti_hallucination_no_tool_conflict": 1,
+    "anti_hallucination_unknown_capability": 1,
+    "invalid_json_fallback": 1,
+    "low_low_safe_api_probe": 10,
+    "low_low_safe_direct": 10,
+    "mixed_no_tool_block": 41,
+    "post_sql_advisor_accept": 1,
+    "post_sql_advisor_block": 1
+  },
+  "suite_id": "dashagent_500_prompt_suite",
+  "total_prompts": 500
+}

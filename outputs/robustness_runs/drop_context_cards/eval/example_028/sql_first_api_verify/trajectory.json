@@ -1,0 +1,157 @@
+{
+  "answer_time": 5.542009603232145e-06,
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 679,
+  "execution_time": 0.00025812501553446054,
+  "final_answer": "Batch details and files require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "List the most recently created batches.",
+  "planning_time": 0.00013554200995713472,
+  "preprocessing_time": 0.0008947080350480974,
+  "query_id": "example_028",
+  "route_type": "API_ONLY",
+  "runtime": 0.0016048329998739064,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey"
+        },
+        {
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences"
+        },
+        {
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions"
+        },
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "export_batch_failed",
+          "export_batch_files"
+        ],
+        "lookup_paths": [
+          "batch",
+          "journey_campaign"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "audit",
+          "batch"
+        ]
+      }
+    },
+    {
+      "estimated_tokens": 899,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/robustness_runs/drop_context_cards/eval/example_028/sql_first_api_verify/metadata.json",
+      "prompt_tokens": 1232
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_REQUIRED. Route is API-only. Fast path: recent_batches.",
+      "steps": [
+        {
+          "action": "api",
+          "family": "recent_batches",
+          "method": "GET",
+          "params": {
+            "limit": "100",
+            "orderBy": "desc:created"
+          },
+          "purpose": "API parameter template: recent_batches.",
+          "url": "/data/foundation/catalog/batches"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 12.3834
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 1
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "100",
+        "orderBy": "desc:created"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/catalog/batches",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "100",
+          "orderBy": "desc:created"
+        },
+        "result_preview": null,
+        "url": "https://platform.adobe.io/data/foundation/catalog/batches"
+      },
+      "url": "/data/foundation/catalog/batches",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 5.542009603232145e-06,
+    "execution_time": 0.00025812501553446054,
+    "planning_time": 0.00013554200995713472,
+    "preprocessing_time": 0.0008947080350480974
+  },
+  "tool_call_count": 1
+}

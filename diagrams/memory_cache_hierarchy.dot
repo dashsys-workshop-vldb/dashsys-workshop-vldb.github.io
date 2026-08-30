@@ -1,0 +1,27 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.10, nodesep=0.48, ranksep=0.62, splines=ortho];
+  node [shape=rect, style="rounded,filled", fontname="Aptos", fontsize=19, margin="0.16,0.10", penwidth=2.0];
+  edge [fontname="Aptos", fontsize=12.5, color="#687386", fontcolor="#425466", penwidth=1.7, arrowsize=0.72];
+  request [label="Query request\n• query_id\n• strategy\n• file mtimes", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  l1 [label="L1 In-memory cache\n• QueryAnalysis cache\n• template selection cache", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  hit1 [label="L1 hit?", shape=diamond, fillcolor="#F2F4F7", color="#687386", width=1.95, height=1.00];
+  l2 [label="L2 Disk cache\n• schema_summary.json\n• join_graph.json\n• endpoint_catalog.json\n• gold patterns", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  fresh [label="fresh?\n• file mtimes\n• artifact version", shape=diamond, fillcolor="#F2F4F7", color="#687386", width=1.95, height=1.00];
+  l3 [label="L3 Local database\n• DuckDB\n• DBSnapshot parquet\n• dim_* tables\n• hkg_br_* bridge tables", shape=rect, fillcolor="#EAF3FF", color="#1769AA"];
+  l4 [label="L4 External API\n• Adobe Journey Optimizer\n• Adobe Experience Platform\n• dry-run or live", shape=rect, fillcolor="#FFF3E0", color="#D97706"];
+  store [label="Artifact Store\n• metadata.json\n• filled_system_prompt.txt\n• trajectory.json\n• eval reports\n• source_code.zip\n• final_submission_manifest.json", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  { rank=same; request; store; }
+  { rank=same; l1; hit1; }
+  { rank=same; l2; fresh; }
+  { rank=same; l3; l4; }
+  request -> l1 [label="lookup analysis"];
+  l1 -> hit1 [label="memory check"];
+  hit1 -> store [label="yes: reuse"];
+  hit1 -> l2 [label="no"];
+  l2 -> fresh [label="checksum/mtime check"];
+  fresh -> store [label="yes: load artifacts"];
+  fresh -> l3 [label="no: rebuild schema"];
+  l3 -> l2 [label="write fresh cache"];
+  l3 -> l4 [label="API only when needed"];
+  l4 -> store [label="log dry-run/live evidence"];
+}

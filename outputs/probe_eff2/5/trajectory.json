@@ -1,0 +1,203 @@
+{
+  "answer_time": 3.9082951843738556e-05,
+  "api_call_count": 1,
+  "domain_type": "DESTINATION_DATAFLOW",
+  "errors": [],
+  "estimated_tokens": 1654,
+  "execution_time": 0.0035619160044007003,
+  "final_answer": "Based on the evidence provided, 1 destination(s) were found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+  "planning_time": 7.658300455659628e-05,
+  "preprocessing_time": 0.0012242500088177621,
+  "query_id": "probe_eff2_5",
+  "route_type": "SQL_THEN_API",
+  "runtime": 0.08116045797942206,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "destination flows"
+            }
+          ],
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows",
+          "path_params": [],
+          "risk_notes": [
+            "Flow lists are paginated and may need property filters for production use."
+          ],
+          "use_when": "List destination/dataflow/activation flows and flow metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "failed flow runs"
+            }
+          ],
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs",
+          "path_params": [],
+          "risk_notes": [
+            "Run windows and sorting must be explicit for time-sensitive questions."
+          ],
+          "use_when": "Inspect dataflow run status, failed/succeeded runs, and recent execution state."
+        },
+        {
+          "common_params": {
+            "limit": 20
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "DATASET_SCHEMA",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "query": "new destinations in last 3 months"
+            }
+          ],
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "Audit events for destination/dataset/entity changes."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_target",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_blueprint_collection",
+        "hkg_br_blueprint_property",
+        "hkg_br_collection_property",
+        "hkg_br_collection_segment"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DESTINATION_DATAFLOW",
+      "kind": "route",
+      "reason": "Keyword routing using DESTINATION_DATAFLOW:1, RELATIONSHIP_TRAVERSAL:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "estimated_tokens": 926,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe_eff2/5/metadata.json",
+      "prompt_tokens": 1339
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then apply evidence policy before API verification. API decision: API_OPTIONAL (Live/platform verification may improve the answer.). Fast path: destination_export_recent+recent_destination_flows.",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": false,
+          "family": "destination_export_recent",
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Fast-path SQL grounding.",
+          "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+          "url": null,
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "family": "recent_destination_flows",
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "purpose": "API parameter template: recent_destination_flows.",
+          "sql": null,
+          "url": "/data/foundation/flowservice/flows",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "preview": "{\"error\": null, \"ok\": true, \"sql\": \"SELECT D.\\\"TARGETID\\\" AS target_id, D.\\\"DATAFLOWNAME\\\" AS dataflow_name, D.\\\"NAME\\\" AS target_name, D.\\\"DESCRIPTION\\\", D.\\\"STATE\\\", D.\\\"CONNECTIONSPECID\\\" AS connection_spec_id, D.\\\"CREATEDTIME\\\" AS created_time, D.\\\"UPDATEDTIME\\\" AS modified, D.\\\"INTERVAL\\\", D.\\\"FREQUENCY\\\" FROM \\\"dim_target\\\" AS D ORDER BY D.\\\"UPDATEDTIME\\\" DESC LIMIT 50\", \"original_sql\": \"SELECT D.\\\"TARGETID\\\" AS target_id, D.\\\"DATAFLOWNAME\\\" AS dataflow_name, D.\\\"NAME\\\" AS target_name, D.\\\"DESCRIPTION\\\", D.\\\"STATE\\\", D.\\\"CONNECTIONSPECID\\\" AS connection_spec_id, D.\\\"CREATEDTIME\\\" AS created_time, D.\\\"UPDATEDTIME\\\" AS modified, D.\\\"INTERVAL\\\", D.\\\"FREQUENCY\\\" FROM \\\"dim_target\\\" AS D ORDER BY D.\\\"UPDATEDTIME\\\" DESC LIMIT 50\", \"rows\": {\"items\": [{\"target_id\": \"139bece0-5266-46bd-8ed3-fc1dd5eb5dd4\", \"dataflow_name\": \"Activate segments to S3 Feed\", \"target_name\": \"amazon-s3\", \"DESCRIPTION\": \"This operation creates a dataflow S3 Feed\", \"STATE\": \"enabled\", \"connection_spec_id\": \"4890fc...",
+        "truncated": true
+      },
+      "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "50",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/flowservice/flows",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "50",
+          "property": "inheritedAttributes.properties.isDestinationFlow==true",
+          "sort": "updatedTime:desc"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/foundation/flowservice/flows"
+      },
+      "url": "/data/foundation/flowservice/flows",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 3.9082951843738556e-05,
+    "execution_time": 0.0035619160044007003,
+    "planning_time": 7.658300455659628e-05,
+    "preprocessing_time": 0.0012242500088177621
+  },
+  "tool_call_count": 2
+}

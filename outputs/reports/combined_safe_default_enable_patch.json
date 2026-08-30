@@ -1,0 +1,44 @@
+{
+  "broad_semantic_router_promoted": false,
+  "candidate_kept_as_default": false,
+  "current_default_strategy": "SQL_FIRST_API_VERIFY",
+  "default_wiring": {
+    "dashagent/agent_tools.py": "DEFAULT_AGENT_STRATEGY now uses PACKAGED_DEFAULT_STRATEGY",
+    "dashagent/executor.py": "AgentExecutor.run default strategy now uses PACKAGED_DEFAULT_STRATEGY",
+    "dashagent/planner.py": "PACKAGED_DEFAULT_STRATEGY constant set to candidate; strategy remains explicit applied-trial strategy with SQL_FIRST execution base",
+    "scripts/check_submission_ready.py": "readiness now expects the packaged default candidate and requires packaged trajectories to use it",
+    "scripts/package_query_outputs.py": "submission strategy env fallback now uses PACKAGED_DEFAULT_STRATEGY; internal da500 and diagnostic output dirs excluded from packaging discovery",
+    "scripts/run_one_query.py": "CLI default strategy now uses PACKAGED_DEFAULT_STRATEGY and choices include all explicit strategies"
+  },
+  "execution_base_strategy": "SQL_FIRST_API_VERIFY",
+  "files_changed": [
+    " M AGENTS.md",
+    " M README.md",
+    " M dashagent/agent_tools.py",
+    " M dashagent/executor.py",
+    " M dashagent/planner.py",
+    " M scripts/check_submission_ready.py",
+    " M scripts/package_query_outputs.py",
+    " M scripts/run_one_query.py",
+    " M skills/dashsys_project_skill/SKILL.md",
+    " M tests/test_templates_and_packaging.py",
+    "?? tests/test_combined_safe_default_enable.py"
+  ],
+  "final_status": "reverted_after_final_gate_failure",
+  "final_submission_schema_changed": false,
+  "generated_at": "2026-05-27T14:09:53.652134+00:00",
+  "llm_advisor_included": false,
+  "new_default_strategy": "COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE",
+  "old_default_strategy": "SQL_FIRST_API_VERIFY",
+  "report_type": "combined_safe_default_enable_patch",
+  "rollback_completed": true,
+  "rollback_instructions": [
+    "Set PACKAGED_DEFAULT_STRATEGY in dashagent/planner.py back to SQL_FIRST_API_VERIFY.",
+    "Reset AgentExecutor.run, DEFAULT_AGENT_STRATEGY, package_query_outputs, run_one_query, and check_submission_ready expectations to SQL_FIRST_API_VERIFY.",
+    "Regenerate package outputs with python3 scripts/package_query_outputs.py and rerun python3 scripts/check_submission_ready.py plus python3 scripts/run_dev_eval.py --strict."
+  ],
+  "rollback_validation": {
+    "check_submission_ready_ok": true,
+    "strict_sql_first_final_after_rollback": 0.6507
+  }
+}

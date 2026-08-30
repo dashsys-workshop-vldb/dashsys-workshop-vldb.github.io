@@ -1,0 +1,31 @@
+{
+  "check_submission_ready": {
+    "default_strategy_is_sql_first_api_verify": true,
+    "ok": true,
+    "query_output_count": 73
+  },
+  "clean_alternative": "Keep SQL/API path fixed, require non-empty verified LLM answer content, keep answer_candidate_selector fallback, and evaluate with empty-answer guard before considering any answer-layer port.",
+  "credentials_printed": false,
+  "decision": "old_result_invalid_due_to_evaluator_artifact",
+  "focused_tests": {
+    "command": "python3 -m pytest -q tests/test_sql_first_llm_answer_verifier_strategy.py tests/test_evidence_grounded_llm_answer_generator.py",
+    "ok": true,
+    "result": "14 passed in 1.82s"
+  },
+  "generated_at": "2026-05-28T02:05:58.757925+00:00",
+  "git_diff_check": {
+    "ok": true
+  },
+  "leakage_or_hardcoding_found": "No exact gold/category/tags/oracle/query_id metadata keys were found in the answer diagnostics payload; separate gold-pattern runtime scaffolding exists elsewhere in the repo and remains suspicious but is not the cause of this 0.8884 answer lift.",
+  "packaged_default_unchanged": true,
+  "recommendation": "old_result_invalid_due_to_leakage",
+  "recommendation_note": "The contamination is evaluator/report artifact rather than confirmed runtime gold leakage in the answer payload.",
+  "report_type": "historical_answer_grounding_reject_decision",
+  "what_was_found": [
+    "Tracked report with 0.8884 exists at fabcb0bcd1.",
+    "Local historical trajectories for both answer-grounding modes contain 35/35 empty final answers selected from the LLM generator with fallback false.",
+    "Historical score_answer_strict gave empty generated answers 0.85 because empty string is a substring of the gold answer.",
+    "Old commit rerun did not reproduce 0.8884; it produced answer_score 0.2182 and final_score about 0.6179 for LLM_ANSWER_WITH_VERIFIER."
+  ],
+  "why_0_8884_cannot_be_trusted": "The reported answer_score 0.85 can be explained entirely by empty final answers passing verifier claim extraction and historical strict substring scoring."
+}

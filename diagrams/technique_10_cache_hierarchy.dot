@@ -1,0 +1,20 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad=0.10, nodesep=0.48, ranksep=0.62, splines=ortho];
+  node [shape=rect, style="rounded,filled", fontname="Aptos", fontsize=19, margin="0.16,0.10", penwidth=2.0];
+  edge [fontname="Aptos", fontsize=12.5, color="#687386", fontcolor="#425466", penwidth=1.7, arrowsize=0.72];
+  request [label="Query Request\n• query_id\n• data mtimes\n• pattern version", shape=rect, fillcolor="#EFE7FF", color="#6D5BD0"];
+  l1 [label="L1 Memory Cache\n• query analysis\n• template choice", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  hit1 [label="L1 hit?", shape=diamond, fillcolor="#F2F4F7", color="#687386", width=1.95, height=1.00];
+  l2 [label="L2 Disk Cache\n• schema_summary.json\n• join_graph.json\n• endpoint_catalog.json\n• gold patterns", shape=rect, fillcolor="#F2F4F7", color="#687386"];
+  hit2 [label="L2 fresh?", shape=diamond, fillcolor="#F2F4F7", color="#687386", width=1.95, height=1.00];
+  rebuild [label="Rebuild\n• DBSnapshot file mtimes\n• data.json mtime\n• save artifacts", shape=rect, fillcolor="#EAF3FF", color="#1769AA"];
+  return [label="Cached Context\n• analysis\n• schema/API artifacts", shape=rect, fillcolor="#E8F7ED", color="#1A7F52"];
+  request -> l1 [label="lookup key"];
+  l1 -> hit1 [label="check memory"];
+  hit1 -> return [label="yes"];
+  hit1 -> l2 [label="no"];
+  l2 -> hit2 [label="freshness check"];
+  hit2 -> return [label="yes"];
+  hit2 -> rebuild [label="no"];
+  rebuild -> return [label="save + reuse"];
+}

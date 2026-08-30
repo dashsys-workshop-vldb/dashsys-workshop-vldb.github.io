@@ -1,0 +1,104 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "Combine the concept explanation from pass_1 with the inactive journey records from pass_2. Present the concept first, then list the matching inactive journeys with their metadata.",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "backend_route_inference_used": false,
+      "evidence_planner_called": true,
+      "llm_plan_self_check_used": true,
+      "llm_route_gate_used": true,
+      "plan_self_check_missing_parts": [],
+      "plan_self_check_ok": null,
+      "plan_self_check_parse_error": "Expecting ',' delimiter: line 27 column 6 (char 1649)",
+      "plan_self_check_revised": false,
+      "planner_json_fallback_used": true,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "content_json",
+      "planner_provider_latency_ms": 11692,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_gate_parse_error": null,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "claude-haiku-4-5",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "short concept explanation",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_1",
+        "path": "DIRECT",
+        "sql": null,
+        "subtask": "Explain the inactive journey concept in general terms."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "matching inactive journey records",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_2",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT NAME, STATUS, DESCRIPTION, UPDATEDTIME FROM dim_campaign WHERE LOWER(STATUS) = 'inactive' LIMIT 50"
+        },
+        "subtask": "Find inactive journeys from runtime evidence using database_schema."
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "preview": "\"```json\\n{\\n  \\\"route\\\": \\\"EVIDENCE_PIPELINE\\\",\\n  \\\"reason\\\": \\\"mixed concept plus data request requires both explanation and user-specific journey records\\\",\\n  \\\"evidence_order\\\": \\\"MULTI_PASS\\\",\\n  \\\"direct_answer\\\": null,\\n  \\\"passes\\\": [\\n    {\\n      \\\"pass_id\\\": \\\"pass_1\\\",\\n      \\\"path\\\": \\\"DIRECT\\\",\\n      \\\"subtask\\\": \\\"Explain the inactive journey concept in general terms.\\\",\\n      \\\"expected_result\\\": \\\"short concept explanation\\\",\\n      \\\"depends_on\\\": [],\\n      \\\"can_run_parallel\\\": true,\\n      \\\"optional\\\": false,\\n      \\\"fallback\\\": false,\\n      \\\"evidence_order\\\": \\\"NO_EVIDENCE\\\",\\n      \\\"sql\\\": null,\\n      \\\"api_request\\\": null\\n    },\\n    {\\n      \\\"pass_id\\\": \\\"pass_2\\\",\\n      \\\"path\\\": \\\"SQL\\\",\\n      \\\"subtask\\\": \\\"Find inactive journeys from runtime evidence using database_schema.\\\",\\n      \\\"expected_result\\\": \\\"matching inactive journey records\\\",\\n      \\\"depends_on\\\": [],\\n      \\\"can_run_parallel\\\": true,\\n      \\\"optional\\\": false,\\n      \\\"fal...",
+      "truncated": true
+    },
+    "reason": "mixed concept plus data request requires both explanation and user-specific journey records",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": null
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "Explain what inactive journey means and show inactive journeys.",
+  "query_id": "pioneer_sweep_claude_haiku_4_5_mixed_inactive_journeys",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T17:29:20.331979+00:00",
+    "deadline_at": "2026-06-01T17:29:50.331979+00:00",
+    "evidence_bus_id": "evidence_run_73725a204dab4fdaaa95b93ce3815e00",
+    "original_prompt": "Explain what inactive journey means and show inactive journeys.",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_claude_haiku_4_5_mixed_inactive_journeys",
+    "result_bundle_id": "bundle_run_73725a204dab4fdaaa95b93ce3815e00",
+    "run_id": "run_73725a204dab4fdaaa95b93ce3815e00",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

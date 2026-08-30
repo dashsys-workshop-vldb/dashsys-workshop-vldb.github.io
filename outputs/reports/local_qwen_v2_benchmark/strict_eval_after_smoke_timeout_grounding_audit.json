@@ -1,0 +1,1390 @@
+{
+  "summary": {
+    "source_eval": "outputs/reports/local_qwen_v2_benchmark/partials_after_smoke_timeout_fix/eval_results_partial.json",
+    "trajectory_root": "outputs/eval/example_*/robust_generalized_harness_candidate_v2/trajectory.json",
+    "classification_basis": "Manual objective answer grounding from runtime evidence, not raw organizer-style scores.",
+    "row_count": 35,
+    "verdict_counts": {
+      "PASS": 5,
+      "FAIL": 10,
+      "UNCLEAR": 20
+    },
+    "manual_issue_counts": {
+      "unsupported_claim": 3,
+      "missing_required_info": 10,
+      "missing_required_info_due_api_unavailable": 16,
+      "scope_caveat_error": 2,
+      "answer_shape_error": 1,
+      "possible_missing_required_info": 2,
+      "possible_scope_gap": 1,
+      "over_caveat": 2,
+      "evidence_gap": 2,
+      "partial_answer_with_api_unavailable": 1
+    },
+    "gate_reported_issue_counts": {
+      "unsupported_claims": 0,
+      "missing_required_fields": 0,
+      "scope_errors": 0,
+      "final_gate_initial_failures": 6,
+      "final_gate_final_failures": 0
+    },
+    "timeouts": [],
+    "initial_gate_failure_rows": [
+      {
+        "query_id": "example_003",
+        "verdict": "FAIL",
+        "rationale": "All lookup rows for SMS Opt-In audience/destination were empty; final answer nevertheless asserts a connected audience and omits requested audience fields."
+      },
+      {
+        "query_id": "example_006",
+        "verdict": "FAIL",
+        "rationale": "Final answer dumps raw pass evidence and relationships rather than answering the requested dataset count using the same schema."
+      },
+      {
+        "query_id": "example_009",
+        "verdict": "PASS",
+        "rationale": "Schema details in the final answer are supported by the dim_blueprint row."
+      },
+      {
+        "query_id": "example_010",
+        "verdict": "FAIL",
+        "rationale": "Prompt asks XDM Experience Event schemas enabled for profile; SQL queried dim_collection NAME equality and profile fields, so the final count does not establish the requested schema count."
+      },
+      {
+        "query_id": "example_021",
+        "verdict": "FAIL",
+        "rationale": "SQL returned zero rows for the schema class lookup and API was unavailable; final answer includes an unsupported examples-include phrase and does not provide a default merge policy."
+      },
+      {
+        "query_id": "example_034",
+        "verdict": "UNCLEAR",
+        "rationale": "Final answer gives a local count and scoped live-API-unavailable caveat. It is grounded to executed evidence, but the metric/source semantics are not strong enough to mark PASS."
+      }
+    ]
+  },
+  "rows": [
+    {
+      "query_id": "example_000",
+      "prompt": "When was the journey 'Birthday Message' published?",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "unsupported_claim",
+        "missing_required_info"
+      ],
+      "rationale": "SQL returned the journey name but no publication date. Final answer adds published status and still does not answer when.",
+      "final_answer": "The journey named 'Birthday Message' is published, but the local snapshot does not contain a value for the STARTDATE or LASTDEPLOYEDTIME fields, so the specific publication date is not available.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "NAME": "Birthday Message"
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_001",
+      "prompt": "Give me inactive journeys",
+      "verdict": "PASS",
+      "manual_issue_types": [],
+      "rationale": "Inactive/non-active journey names are directly supported by dim_campaign rows where STATUS != ACTIVE.",
+      "final_answer": "The inactive journeys are Birthday Message and Gold Tier Welcome Email.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 2,
+          "ok": true,
+          "sample_rows": [
+            {
+              "NAME": "Birthday Message",
+              "STATE": "updated",
+              "STATUS": "updated"
+            },
+            {
+              "NAME": "Gold Tier Welcome Email",
+              "STATE": "created",
+              "STATUS": "created"
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_002",
+      "prompt": "List all journeys",
+      "verdict": "PASS",
+      "manual_issue_types": [],
+      "rationale": "Journey names, IDs, and statuses are directly supported by the local dim_campaign rows.",
+      "final_answer": "The local snapshot contains two journeys: Birthday Message (ID 9f4ebca4-2fdd-4873-95f5-8d66bab358c6, status updated) and Gold Tier Welcome Email (ID 3f277603-ac4d-4022-a993-8cbd3afc0d62, status created).",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 2,
+          "ok": true,
+          "sample_rows": [
+            {
+              "CAMPAIGNID": "9f4ebca4-2fdd-4873-95f5-8d66bab358c6",
+              "NAME": "Birthday Message",
+              "STATE": "updated",
+              "STATUS": "updated"
+            },
+            {
+              "CAMPAIGNID": "3f277603-ac4d-4022-a993-8cbd3afc0d62",
+              "NAME": "Gold Tier Welcome Email",
+              "STATE": "created",
+              "STATUS": "created"
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_003",
+      "prompt": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results.",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "unsupported_claim",
+        "missing_required_info"
+      ],
+      "rationale": "All lookup rows for SMS Opt-In audience/destination were empty; final answer nevertheless asserts a connected audience and omits requested audience fields.",
+      "final_answer": "The segment audience named SMS Opt-In is connected to the SMS Opt-In destination and is used in 0 other audiences. Details such as audienceId, totalProfiles, createdTime, and updatedTime were not available in the local runtime evidence.",
+      "sql_call_count": 4,
+      "api_call_count": 0,
+      "tool_call_count": 4,
+      "planner_success": true,
+      "compiled_sql_count": 4,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 4,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 1,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        },
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        },
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        },
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "count": 0
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_004",
+      "prompt": "Show me the IDs of failed dataflow runs",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "API-only evidence was dry-run unavailable; final answer is a safe caveat with no concrete unsupported data.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/flowservice/runs",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_005",
+      "prompt": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info",
+        "scope_caveat_error"
+      ],
+      "rationale": "Prompt asks all b2b-prod destinations sorted by modified with all columns. Evidence query filtered STATE=ACTIVE and returned zero; final no-match caveat is not enough for requested scope.",
+      "final_answer": "No matching runtime evidence was available for this query/scope.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_006",
+      "prompt": "How many datasets have been ingested using the same schema in the prod sandbox?",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info",
+        "answer_shape_error"
+      ],
+      "rationale": "Final answer dumps raw pass evidence and relationships rather than answering the requested dataset count using the same schema.",
+      "final_answer": "Local snapshot evidence shows t2/SQL/LOCAL_SNAPSHOT: count: 0 | t3/SQL/LOCAL_SNAPSHOT: count: 27; relationship: COLLECTIONID:69c8db5194a54c8d91aa2ddc -> BLUEPRINTID:7e1625ee727af05a1eca4e214a3ad0d063a42c78ff4aab4a; relationship: LABELSBLUEPRINT:[] -> COLLECTIONID:69c8db5194a54c8d91aa2ddc; relationship: LABELSBLUEPRINT:[] -> BLUEPRINTID:7e1625ee727af05a1eca4e214a3ad0d063a42c78ff4aab4a; id: 69c8db5194a54c8d91aa2ddc; id: 7e1625ee727af05a1eca4e214a3ad0d063a42c78ff4aab4a. Some requested runtime evidence was unavailable for this query/scope.",
+      "sql_call_count": 2,
+      "api_call_count": 0,
+      "tool_call_count": 2,
+      "planner_success": true,
+      "compiled_sql_count": 2,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 3,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 1,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        },
+        {
+          "row_count": 27,
+          "ok": true,
+          "sample_rows": [
+            {
+              "BLUEPRINTID": "7e1625ee727af05a1eca4e214a3ad0d063a42c78ff4aab4a",
+              "COLLECTIONID": "69c8db5194a54c8d91aa2ddc",
+              "LABELSBLUEPRINT": "[]"
+            },
+            {
+              "BLUEPRINTID": "98e51cdd85b0d1bad17446a2c56e8d41d33980d1db461e56",
+              "COLLECTIONID": "69c8dad4aa7a59818543461a",
+              "LABELSBLUEPRINT": "[]"
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_007",
+      "prompt": "List all datasets that use the schema 'hkg_adls_profile_count_history'.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "possible_missing_required_info"
+      ],
+      "rationale": "SQL returned zero for a schema-label bridge lookup; final no-match caveat is safe, but coverage of the named schema is not proven complete.",
+      "final_answer": "No matching runtime evidence was available for this query/scope.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 2,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_008",
+      "prompt": "show me the field for Person: Birthday Today 001",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "possible_missing_required_info"
+      ],
+      "rationale": "SQL returned zero for ALTDISPLAYTITLE lookup; final no-match caveat is safe, but field lookup completeness is not proven.",
+      "final_answer": "No matching runtime evidence was available for this query/scope.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_009",
+      "prompt": "Provide more details for the schema 'weRetail: Customer Actions'",
+      "verdict": "PASS",
+      "manual_issue_types": [],
+      "rationale": "Schema details in the final answer are supported by the dim_blueprint row.",
+      "final_answer": "The schema named weRetail: Customer Actions has the ID d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f and is classified as an object type. It was created and last updated by acp_foundation_queryService@AdobeID on 2026-03-29T07:50:41.000+00:00 and 2026-03-29T07:51:00.000+00:00 respectively, with no associated labels.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 2,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 1,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "BLUEPRINTID": "d4327cfe6472e58dd10c532840541e66b09a0c1a636e1e0f",
+              "BLUEPRINTTYPE": "object",
+              "CREATEDBY": "acp_foundation_queryService@AdobeID",
+              "CREATEDTIME": "2026-03-29T07:50:41.000+00:00",
+              "LABELSBLUEPRINT": "[]",
+              "NAME": "weRetail: Customer Actions",
+              "UPDATEDBY": "acp_foundation_queryService@AdobeID",
+              "UPDATEDTIME": "2026-03-29T07:51:00.000+00:00"
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_010",
+      "prompt": "Count the number of XDM Experience Event schemas that are enabled for profile.",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info"
+      ],
+      "rationale": "Prompt asks XDM Experience Event schemas enabled for profile; SQL queried dim_collection NAME equality and profile fields, so the final count does not establish the requested schema count.",
+      "final_answer": "Local snapshot evidence shows t2/SQL/LOCAL_SNAPSHOT: count: 0; count:0 | t3/SQL/LOCAL_SNAPSHOT: count: 0. Some requested runtime evidence was unavailable for this query/scope.",
+      "sql_call_count": 2,
+      "api_call_count": 0,
+      "tool_call_count": 2,
+      "planner_success": true,
+      "compiled_sql_count": 2,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 3,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 1,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "count": 0
+            }
+          ]
+        },
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_011",
+      "prompt": "How many schemas do I have?",
+      "verdict": "PASS",
+      "manual_issue_types": [],
+      "rationale": "Count 74 is directly supported by COUNT(*) over dim_blueprint.",
+      "final_answer": "You have 74 schemas.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "count": 74
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_012",
+      "prompt": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "All required API evidence was dry-run unavailable; final answer is a safe runtime-unavailable caveat.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 3,
+      "tool_call_count": 3,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 3,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 4,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/audit/events",
+          "error": "Adobe credentials unavailable; API call not executed."
+        },
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/flowservice/flows",
+          "error": "Adobe credentials unavailable; API call not executed."
+        },
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/segment/definitions",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_013",
+      "prompt": "Show recent changes in datasets.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Audit API evidence was dry-run unavailable; final answer is a safe runtime-unavailable caveat.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/audit/events",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_014",
+      "prompt": "Show me all entities created by download",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "possible_scope_gap"
+      ],
+      "rationale": "Local schema entity query returned zero and final no-match caveat is safe, but all-entity scope may exceed dim_blueprint only.",
+      "final_answer": "No matching runtime evidence was available for this query/scope.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_015",
+      "prompt": "How many tags exist in this sandbox?",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Tags API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/unifiedtags/tags",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_016",
+      "prompt": "List all tags in this sandbox.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Tags API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/unifiedtags/tags",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_017",
+      "prompt": "Which tags belong to the category 'Uncategorized'?",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Tag category/tag API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 2,
+      "tool_call_count": 2,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 2,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 2,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/unifiedtags/tagCategory",
+          "error": "Adobe credentials unavailable; API call not executed."
+        },
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/unifiedtags/tags",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_018",
+      "prompt": "Show me the details of the tag named 'cool'.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Tag details API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/unifiedtags/tags/cool",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_019",
+      "prompt": "List all merge policies in this sandbox.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Merge policy API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/config/mergePolicies",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_020",
+      "prompt": "How many merge policies are configured in this sandbox?",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Merge policy API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/config/mergePolicies",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_021",
+      "prompt": "Show the default merge policy for schema class '_xdm.context.profile'.",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "unsupported_claim",
+        "missing_required_info",
+        "scope_caveat_error"
+      ],
+      "rationale": "SQL returned zero rows for the schema class lookup and API was unavailable; final answer includes an unsupported examples-include phrase and does not provide a default merge policy.",
+      "final_answer": "Local snapshot evidence shows task_schema_lookup/SQL/LOCAL_SNAPSHOT: count: 0; examples include _xdm.context.profile. Live API evidence was unavailable, so a live comparison cannot be completed.",
+      "sql_call_count": 1,
+      "api_call_count": 1,
+      "tool_call_count": 2,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 2,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 1,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 0,
+          "ok": true,
+          "sample_rows": []
+        }
+      ],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/config/mergePolicies",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_022",
+      "prompt": "How many segment definitions exist in this sandbox?",
+      "verdict": "PASS",
+      "manual_issue_types": [],
+      "rationale": "Count 13 is directly supported by COUNT(*) over dim_segment.",
+      "final_answer": "There are 13 segment definitions in this sandbox.",
+      "sql_call_count": 1,
+      "api_call_count": 0,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "count": 13
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_023",
+      "prompt": "List all segment definitions.",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info",
+        "over_caveat"
+      ],
+      "rationale": "Prompt asks list all segment definitions; V2 used only live API, but the same run proves local dim_segment evidence exists. Final global unavailable omits available local list evidence.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/segment/definitions",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_024",
+      "prompt": "Which segment definitions were updated most recently?",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info",
+        "over_caveat"
+      ],
+      "rationale": "Prompt asks most recently updated segment definitions; V2 used only live API despite local dim_segment being available for segment definitions. Final unavailable omits local evidence path.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/segment/definitions",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_025",
+      "prompt": "List all segment evaluation jobs.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Segment jobs API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/segment/jobs",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_026",
+      "prompt": "How many segment jobs are currently processing?",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Segment jobs API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/segment/jobs",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_027",
+      "prompt": "Show all segment jobs with status 'QUEUED'.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Segment jobs API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/core/ups/segment/jobs",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_028",
+      "prompt": "List the most recently created batches.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Catalog batches API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/catalog/batches",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_029",
+      "prompt": "How many batches have status 'success'?",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info",
+        "evidence_gap"
+      ],
+      "rationale": "Concrete batch-status count produced planner_success=false, compiled no SQL/API, executed no tools, and returned unavailable.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 0,
+      "tool_call_count": 0,
+      "planner_success": false,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_030",
+      "prompt": "Show the details of batch 01KP69BPA5ZKFB7HCDYPE4GN6F.",
+      "verdict": "FAIL",
+      "manual_issue_types": [
+        "missing_required_info",
+        "evidence_gap"
+      ],
+      "rationale": "Concrete batch detail prompt produced planner_success=false, compiled no SQL/API, executed no tools, and returned unavailable.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 0,
+      "tool_call_count": 0,
+      "planner_success": false,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": []
+    },
+    {
+      "query_id": "example_031",
+      "prompt": "Which files are available for download in batch 69de8a0e0cc6102b5d11f01e?",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Export batch files API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/export/batches/69de8a0e0cc6102b5d11f01e/files",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_032",
+      "prompt": "Show failed files for batch 01KP6MNQ3X71RP6MNH6FHWGHVE.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Failed-files API evidence was dry-run unavailable; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": false,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 0,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/export/batches/01KP6MNQ3X71RP6MNH6FHWGHVE/failed",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_033",
+      "prompt": "What are the daily 'timeseries.ingestion.dataset.recordsuccess.count' values between '2026-03-15' and '2026-03-31'?",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "missing_required_info_due_api_unavailable"
+      ],
+      "rationale": "Time-series metric evidence was dry-run unavailable through the selected API path; final answer is safe.",
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "sql_call_count": 0,
+      "api_call_count": 1,
+      "tool_call_count": 1,
+      "planner_success": true,
+      "compiled_sql_count": 0,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 1,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 0,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/audit/events",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    },
+    {
+      "query_id": "example_034",
+      "prompt": "Show ingestion record counts and batch success counts for the last 90 days.",
+      "verdict": "UNCLEAR",
+      "manual_issue_types": [
+        "partial_answer_with_api_unavailable"
+      ],
+      "rationale": "Final answer gives a local count and scoped live-API-unavailable caveat. It is grounded to executed evidence, but the metric/source semantics are not strong enough to mark PASS.",
+      "final_answer": "Local snapshot evidence shows task_ingestion_counts/SQL/LOCAL_SNAPSHOT: count: 0; count:0. Live API evidence was unavailable, so a live comparison cannot be completed.",
+      "sql_call_count": 1,
+      "api_call_count": 1,
+      "tool_call_count": 2,
+      "planner_success": true,
+      "compiled_sql_count": 1,
+      "compiled_api_count": 1,
+      "raw_sql_fallback_used": false,
+      "evidence_pipeline_bypassed": false,
+      "evidence_bus_built": true,
+      "pass_results_count": 2,
+      "gate_passed": true,
+      "gate_unsupported_claims": [],
+      "gate_missing_required_fields": [],
+      "gate_scope_errors": [],
+      "final_gate_initial_failures": 1,
+      "final_gate_final_failures": 0,
+      "sql_evidence_summary": [
+        {
+          "row_count": 1,
+          "ok": true,
+          "sample_rows": [
+            {
+              "count": 0
+            }
+          ]
+        }
+      ],
+      "api_evidence_summary": [
+        {
+          "ok": false,
+          "dry_run": true,
+          "endpoint": "/data/foundation/catalog/batches",
+          "error": "Adobe credentials unavailable; API call not executed."
+        }
+      ]
+    }
+  ]
+}

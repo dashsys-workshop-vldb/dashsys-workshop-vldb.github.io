@@ -1,0 +1,152 @@
+{
+  "answer_policy": [
+    "Answer from evidence only.",
+    "Say not found/dry-run when evidence is empty."
+  ],
+  "constraints": [
+    "Use validated SQL/API only.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "context_card": {
+    "answer_policy": "Audit events are API evidence; SQL may ground related local entities.",
+    "api_families": [
+      "audit_create_events",
+      "audit_events",
+      "dataset_audit_changes",
+      "destination_audit_events"
+    ],
+    "api_mode": "required",
+    "family": "audit",
+    "join_path": [],
+    "required_ids": [
+      "collection_id",
+      "segment_id",
+      "target_id"
+    ],
+    "tables": [
+      "dim_collection",
+      "dim_segment",
+      "hkg_br_segment_target",
+      "dim_target"
+    ]
+  },
+  "domain_type": "SEGMENT_AUDIENCE",
+  "known_example_patterns": [
+    {
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "property": "assetType==destination"
+      },
+      "path": "/data/foundation/audit/events"
+    }
+  ],
+  "nlp_diagnostics": {
+    "relevance": {
+      "lookup_paths": [
+        "audit",
+        "segment_destination"
+      ]
+    },
+    "rewrites": [
+      "important_plurals->singular"
+    ]
+  },
+  "query": "List all audiences in the sandbox that have been mapped to new destinations in the last 3 months.",
+  "query_id": "example_012",
+  "route_type": "SQL_THEN_API",
+  "selected_apis": [
+    {
+      "id": "audit_events",
+      "method": "GET",
+      "path": "/data/foundation/audit/events"
+    }
+  ],
+  "selected_columns": {
+    "dim_segment": [
+      "SEGMENTID",
+      "NAME"
+    ],
+    "dim_target": [
+      "TARGETID",
+      "NAME",
+      "CREATEDTIME"
+    ],
+    "hkg_br_segment_target": [
+      "SEGMENTID",
+      "TARGETID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "TARGETID",
+      "left_table": "dim_target",
+      "reason": "Curated: Segment to target bridge.",
+      "right_column": "TARGETID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.98,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Curated: Campaign to segment bridge.",
+      "right_column": "SEGMENTID",
+      "right_table": "br_campaign_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "dim_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.75,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Foreign-key-looking column references table root.",
+      "right_column": "DEPENDENTSEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_base_segment_used_by_dependent_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    }
+  ],
+  "selected_tables": [
+    "dim_segment",
+    "hkg_br_segment_target",
+    "dim_target"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

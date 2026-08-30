@@ -1,0 +1,179 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "api_candidate_cards": 1,
+      "backend_route_inference_used": false,
+      "backend_semantic_decomposition_used": false,
+      "backend_semantic_planning_used": false,
+      "candidate_card_latency_ms": 2012,
+      "candidate_card_success": 2,
+      "candidate_repair_attempts": 0,
+      "dependency_edges": [
+        [
+          "t1",
+          "t2"
+        ],
+        [
+          "t1",
+          "t4"
+        ],
+        [
+          "t2",
+          "t4"
+        ],
+        [
+          "t3",
+          "t4"
+        ]
+      ],
+      "evidence_planner_called": true,
+      "llm_route_gate_used": true,
+      "pass_candidate_cards": 2,
+      "planner_json_fallback_used": false,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "weak_model_line_protocol",
+      "planner_provider_latency_ms": 5023,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      },
+      "route_card_latency_ms": 1482,
+      "route_card_repair_attempted": false,
+      "route_card_route": "EVIDENCE",
+      "route_card_success": true,
+      "route_gate_repair_attempted": false,
+      "route_gate_route": "EVIDENCE_PIPELINE",
+      "route_gate_success": true,
+      "sql_candidate_cards": 1,
+      "task_count": 4,
+      "task_ledger_latency_ms": 1530,
+      "task_ledger_repair_attempted": false,
+      "task_ledger_success": true,
+      "task_paths": [
+        "DIRECT",
+        "SQL",
+        "API",
+        "AGGREGATE"
+      ],
+      "weak_model_stable_protocol_used": true,
+      "weak_protocol_route_card_used": true,
+      "weak_protocol_task_ledger_used": true
+    },
+    "direct_answer": null,
+    "evidence_order": "MULTI_PASS",
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Determine the journey \"Birthday Message\" publication date from the journey name.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t1",
+        "path": "DIRECT",
+        "sql": null,
+        "subtask": "Determine the journey \"Birthday Message\" publication date from the journey name."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "t1"
+        ],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "Retrieve the publication date of the \"Birthday Message\" journey from the `dim_campaign` table.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t2",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'"
+        },
+        "subtask": "Retrieve the publication date of the \"Birthday Message\" journey from the `dim_campaign` table."
+      },
+      {
+        "api_request": {
+          "method": "GET",
+          "params": {},
+          "path": "/ajo/journey"
+        },
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "API_FIRST",
+        "expected_result": "Check the current publication status of the \"Birthday Message\" journey using the Journey Optimizer API.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t3",
+        "path": "API",
+        "sql": null,
+        "subtask": "Check the current publication status of the \"Birthday Message\" journey using the Journey Optimizer API."
+      },
+      {
+        "api_request": null,
+        "can_run_parallel": false,
+        "depends_on": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "evidence_order": "NO_EVIDENCE",
+        "expected_result": "Combine the results from tasks t1, t2, and t3 to determine the publication date of the \"Birthday Message\" journey.",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "t4",
+        "path": "AGGREGATION_ONLY",
+        "sql": null,
+        "subtask": "Combine the results from tasks t1, t2, and t3 to determine the publication date of the \"Birthday Message\" journey."
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "candidate_t2_sql": "PATH=SQL\nSQL=SELECT UPDATEDTIME FROM dim_campaign WHERE NAME = 'Birthday Message'\nPARAMS=[]",
+      "candidate_t3_api": "PATH=API\nMETHOD=GET\nAPI_PATH=/ajo/journey\nPARAMS={journeyName=\"Birthday Message\"}",
+      "route_card": "ROUTE=EVIDENCE\nDIRECT_ANSWER=\nREASON=The prompt asks about a specific journey's publication date, which requires user-specific data.",
+      "task_ledger": "TASK t1 | DIRECT | [] | Determine the journey \"Birthday Message\" publication date from the journey name.\nTASK t2 | SQL | [t1] | Retrieve the publication date of the \"Birthday Message\" journey from the `dim_campaign` table.\nTASK t3 | API | [] | Check the current publication status of the \"Birthday Message\" journey using the Journey Optimizer API.\nTASK t4 | AGGREGATE | [t1, t2, t3] | Combine the results from tasks t1, t2, and t3 to determine the publication date of the \"Birthday Message\" journey."
+    },
+    "reason": "The prompt asks about a specific journey's publication date, which requires user-specific data.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": null
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "When was the journey \"Birthday Message\" published?",
+  "query_id": "pioneer_sweep_llama_3_1_8b_instruct_birthday_message_published",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T18:42:07.489095+00:00",
+    "deadline_at": "2026-06-01T18:42:37.489095+00:00",
+    "evidence_bus_id": "evidence_run_703dcbed5ac04007add6d50ea1ac400f",
+    "original_prompt": "When was the journey \"Birthday Message\" published?",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_llama_3_1_8b_instruct_birthday_message_published",
+    "result_bundle_id": "bundle_run_703dcbed5ac04007add6d50ea1ac400f",
+    "run_id": "run_703dcbed5ac04007add6d50ea1ac400f",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

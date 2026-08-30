@@ -1,0 +1,176 @@
+{
+  "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+  "behavior_changing_flags_enabled": false,
+  "behavior_changing_flags_note": "No behavior-changing flags were enabled in this pass.",
+  "compact_context_safe": null,
+  "current_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "status!=live"
+      },
+      "path": "/ajo/journey"
+    }
+  ],
+  "current_plan_sql": [
+    "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
+  ],
+  "current_runtime": 0.0113,
+  "current_strict_score": 0.7902,
+  "current_tokens": 996,
+  "current_tool_calls": 2,
+  "decision": "no_op_shadow_tie_keep_current",
+  "decision_hash": "d4048a0dc950bb7d",
+  "dry_run_only": true,
+  "evidence_available": true,
+  "execution_changed": false,
+  "fallback_reason": "schema voting is reserved for high-risk diagnostics",
+  "live_api_evidence_available": false,
+  "measured_accuracy_improvement_claimed": false,
+  "measured_efficiency_improvement_claimed": false,
+  "module_skipped_by_risk": [
+    "value_retrieval",
+    "shadow_repair",
+    "repair_safety_verifier",
+    "schema_context_voting"
+  ],
+  "offline_score_delta": 0.0,
+  "packaged_execution_changed": false,
+  "query": "Give me inactive journeys",
+  "query_id": "example_001",
+  "rejection_reason": "Current and repaired plans are identical; keep the current plan.; Compact-vs-broader schema context vote did not agree.",
+  "repair_candidate_selector": {
+    "behavior_changed": false,
+    "correctness_role": "prefers current plan unless repaired candidate strictly improves all safety signals",
+    "diagnostic_only": true,
+    "efficiency_role": "rejects repaired candidates with any tool-call increase",
+    "failed_checks": [
+      "no_op_repair",
+      "schema_vote_agreement"
+    ],
+    "no_op": true,
+    "packaged_execution_changed": false,
+    "reasons": [
+      "Current and repaired plans are identical; keep the current plan.",
+      "Compact-vs-broader schema context vote did not agree."
+    ],
+    "recommendation": "keep_current",
+    "safe_to_select_repaired": false,
+    "selected_plan": "current"
+  },
+  "repair_decision": {
+    "changed": false,
+    "reason": "top ranked endpoint already matches current API"
+  },
+  "repair_safe_to_enable": false,
+  "repaired_plan_api": [
+    {
+      "method": "GET",
+      "params": {
+        "filter": "status!=live"
+      },
+      "path": "/ajo/journey"
+    }
+  ],
+  "repaired_plan_sql": [
+    "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE LOWER(CAST(J.\"STATE\" AS VARCHAR)) NOT IN ('deployed', 'redeployed') LIMIT 50"
+  ],
+  "repaired_runtime": 0.0113,
+  "repaired_strict_score": 0.7902,
+  "repaired_tokens": 996,
+  "repaired_tool_calls": 2,
+  "risk_cluster": "not_targeted",
+  "risk_efficiency_controller": {
+    "accuracy_risk": "medium - candidate confidence or endpoint confidence is not strong enough for compact-only diagnostics",
+    "active": true,
+    "behavior_changed": false,
+    "diagnostic_only": true,
+    "estimate_basis": "static diagnostic-module cost estimates; packaged execution did not skip modules",
+    "inputs": {
+      "confidence": 0.74,
+      "endpoint_family_confidence": 1.0,
+      "missing_candidate_signals": {},
+      "risk_cluster": "not_targeted",
+      "schema_link_risk": "low",
+      "score_margin": 0.1
+    },
+    "measured_efficiency_improvement_claimed": false,
+    "module_policy": "medium risk: hybrid ranking + endpoint ranking diagnostics",
+    "module_skipped_by_risk": [
+      "value_retrieval",
+      "shadow_repair",
+      "repair_safety_verifier",
+      "schema_context_voting"
+    ],
+    "modules_run_by_policy": [
+      "hybrid_candidate_scoring",
+      "endpoint_family_ranking"
+    ],
+    "risk_level": "medium",
+    "risk_reasons": [
+      "medium_confidence",
+      "small_score_margin"
+    ],
+    "runtime_saved_estimate_ms": 25.0,
+    "savings_are_estimates": true,
+    "token_saved_estimate": 264
+  },
+  "risk_level": "medium",
+  "runtime_delta": 0.0,
+  "runtime_saved_estimate_ms": 25.0,
+  "safety_verdict": {
+    "api_validation": {
+      "errors": [],
+      "ok": true,
+      "repaired_aliases": []
+    },
+    "confidence": 1.0,
+    "correctness_role": "guards repaired plans against schema/API mismatch and unsupported evidence claims",
+    "efficiency_role": "rejects repairs that increase packaged tool-call cost",
+    "failed_checks": [],
+    "reasons": [
+      "Repair passed conservative SQL/API, fusion, evidence, and cost checks."
+    ],
+    "safe": true,
+    "sql_validation": {
+      "ast_summaries": [
+        {
+          "closest_column_suggestions": {},
+          "closest_table_suggestions": {},
+          "destructive_sql_detected": false,
+          "normalized_sql": "SELECT J.\"CAMPAIGNID\" AS campaign_id, J.\"NAME\" AS campaign_name, J.\"STATE\" AS campaign_state, J.\"UPDATEDTIME\" AS updated_time FROM \"dim_campaign\" AS J WHERE NOT LOWER(CAST(J.\"STATE\" AS TEXT)) IN ('deployed', 'redeployed') LIMIT 50",
+          "parsed_ok": true,
+          "selected_columns": [
+            "J.CAMPAIGNID",
+            "J.NAME",
+            "J.STATE",
+            "J.UPDATEDTIME"
+          ],
+          "selected_tables": [
+            "dim_campaign"
+          ],
+          "unknown_columns": [],
+          "unknown_tables": []
+        }
+      ],
+      "errors": [],
+      "ok": true
+    }
+  },
+  "savings_are_estimates": true,
+  "schema_context_vote": {
+    "active": false,
+    "behavior_changed": false,
+    "compact_context_safe": null,
+    "diagnostic_only": true,
+    "reason": "schema voting is reserved for high-risk diagnostics",
+    "schema_vote_agreement": null
+  },
+  "schema_vote_agreement": null,
+  "score_delta": 0.0,
+  "shadow_runtime": 0.0062,
+  "token_delta": 0,
+  "token_saved_estimate": 264,
+  "tool_delta": 0,
+  "why_execution_not_changed": "offline shadow evaluation only; packaged SQL_FIRST_API_VERIFY repair execution remains disabled"
+}

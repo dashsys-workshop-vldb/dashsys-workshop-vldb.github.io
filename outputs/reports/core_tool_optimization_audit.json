@@ -1,0 +1,116 @@
+{
+  "diagnostic_only": true,
+  "final_submission_ready": true,
+  "generated_at": "2026-05-19T12:02:42.971791+00:00",
+  "hidden_style": "48/48",
+  "live_success_count": 0,
+  "official_organizer_weighted_score_claim": false,
+  "overall_optimization_candidates": [
+    "cache exact SQL validation results within a validator instance",
+    "execute only the selected validated SQL step",
+    "compact SQL evidence by answer intent before answer-slot use",
+    "deduplicate identical API attempts within one query execution",
+    "keep dry-run/API-error outcomes compact and distinct from usable live evidence",
+    "block unresolved API path placeholders before execution"
+  ],
+  "packaged_strategy": "SQL_FIRST_API_VERIFY",
+  "protected_defaults": {
+    "adobe_data_api_get_only": true,
+    "direct_llm_http_hits": 0,
+    "endpoint_catalog_changed": false,
+    "final_submission_format_changed": false,
+    "read_only_sql_guard_required": true,
+    "sql_first_api_verify_remains_default": true
+  },
+  "report_type": "core_tool_optimization_audit",
+  "runtime_behavior_changed_by_script": false,
+  "strict_score": 0.6553,
+  "tools": {
+    "call_api": {
+      "avoidable_work": [
+        "duplicate method/url/params attempts within one query",
+        "optional dry-run calls when live_success_count=0 and SQL is complete"
+      ],
+      "caching_opportunity": "per-query duplicate API attempt cache",
+      "correctness_role": "captures Adobe API state/evidence when local SQL is insufficient or API evidence is required",
+      "current_bottlenecks": [
+        "optional API dry-run attempts can add caveat noise when SQL already answers",
+        "identical API attempts can be repeated within one query if planner emits duplicates",
+        "raw error bodies must be compressed before answer/report context"
+      ],
+      "efficiency_role": "controls network/dry-run calls, API caveat size, and endpoint validation overhead",
+      "failure_modes": [
+        "API_REQUIRED calls must remain available even when live_success_count=0",
+        "dry-run or api_error must not count as usable live payload evidence",
+        "unresolved path placeholders must be blocked before execution"
+      ],
+      "get_only_data_guard": true,
+      "inspected_surfaces": [
+        "API planning and API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+        "method/url/params validation",
+        "GET-only Adobe data endpoint guard",
+        "header construction and redaction",
+        "live_success guard",
+        "token acquisition boundary",
+        "endpoint outcome classifier",
+        "dry-run behavior",
+        "API result to EvidenceBus and answer slots"
+      ],
+      "live_success_guard": true,
+      "optimization_candidates": [
+        "API-1",
+        "API-2",
+        "API-3",
+        "API-4",
+        "API-5",
+        "API-6"
+      ],
+      "overlarge_result_previews": "API errors and dry-run previews should be state summaries, not raw bodies",
+      "repeated_calls": "dry-run cache exists; live duplicate GET reuse is a safe per-query optimization",
+      "result_compression_opportunity": "structured evidence_state/error_category/usable_evidence summaries",
+      "token_acquisition_boundary": "IMS token acquisition is the only allowed POST boundary; Adobe data endpoints remain GET-only",
+      "validation_overhead": "endpoint validation is required and can be cached only by exact call signature"
+    },
+    "execute_sql": {
+      "ast_validation_guard": true,
+      "avoidable_work": [
+        "revalidating identical normalized SQL during a single executor lifetime",
+        "carrying unused SQL columns into evidence summaries"
+      ],
+      "caching_opportunity": "per-validator normalized validation cache",
+      "correctness_role": "grounds SQL-answerable prompts in local DuckDB/parquet evidence",
+      "current_bottlenecks": [
+        "repeated validation of repaired or normalized equivalent SQL",
+        "raw result previews can carry unused fields for count/status/date prompts",
+        "validation and execution summaries are not explicitly optimized by intent"
+      ],
+      "efficiency_role": "dominates local evidence latency, validation cost, and SQL result preview size",
+      "failure_modes": [
+        "unsafe SQL must never be cached as safe",
+        "result compression must not drop names/IDs/status/timestamps needed by the answer"
+      ],
+      "inspected_surfaces": [
+        "SQL generation and selected-plan execution",
+        "SQLValidator read-only guard",
+        "SQLGlot AST validation",
+        "schema/table/column validation",
+        "DuckDB/parquet execution",
+        "row_count extraction",
+        "SQL result to EvidenceBus and answer slots"
+      ],
+      "optimization_candidates": [
+        "SQL-1",
+        "SQL-2",
+        "SQL-3",
+        "SQL-4",
+        "SQL-5"
+      ],
+      "overlarge_result_previews": "possible for list/status/timestamp rows when only key fields are needed",
+      "read_only_guard": true,
+      "repeated_calls": "selected SQL is executed once; result cache already covers identical SQL across runs",
+      "result_compression_opportunity": "compact count/name/id/status/timestamp fields by answer intent",
+      "schema_validation_guard": true,
+      "validation_overhead": "read-only, schema, and AST checks are required but exact-result caching is safe"
+    }
+  }
+}

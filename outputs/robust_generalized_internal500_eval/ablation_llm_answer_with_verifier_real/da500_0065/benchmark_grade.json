@@ -1,0 +1,575 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [
+      "audit_events"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
+    "applied_decision_records": [],
+    "behavior_changed": false,
+    "blocker_count": 0,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_runtime_leakage_guard",
+      "checkpoint_score_provenance_guard",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_evidence_quality_classifier",
+      "checkpoint_evidence_grounded_answer_builder",
+      "checkpoint_15_answer_slots",
+      "checkpoint_answer_slot_renderer",
+      "checkpoint_final_answer_claim_extractor",
+      "checkpoint_final_answer_claim_matcher",
+      "checkpoint_evidence_grounded_final_answer_verifier",
+      "checkpoint_llm_answer_rewrite_feedback",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 862,
+    "fallback_count": 0,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "combined_safe_deterministic_promotion_candidate": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "robust_generalized_harness_candidate": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": false,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_objective_prompt_features",
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.84,
+        "matched_rules": {
+          "items": [
+            "local_db:dataset",
+            "local_db:journey",
+            "local_db:local snapshot"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, journey, local snapshot.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "When were the most recent local journey records updated or created? Use only local snapshot evidence for the dataset review.",
+        "query_id": "da500_0065",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "when were the most recent local journey records updated or created? use only local snapshot evidence for the dataset review.",
+        "normalized_query": "When were the most recent local journey records updated or created? Use only local snapshot evidence for the dataset review."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "audit",
+            "journey_campaign",
+            "schema_dataset"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "inactive_journeys",
+            "journey_published",
+            "schema_dataset"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "audit_events",
+            "audit_events_short",
+            "export_batch_failed"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_collection.BLUEPRINTID",
+            "dim_collection.COLLECTIONID->hkg_br_blueprint_collection.COLLECTIONID",
+            "dim_blueprint.BLUEPRINTID->hkg_br_blueprint_property.BLUEPRINTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_blueprint",
+            "dim_collection",
+            "hkg_br_blueprint_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "schema_dataset",
+        "api_templates": {
+          "items": [
+            "journey_default",
+            "dataset_audit_changes"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "confidence": 0.8,
+        "domain_type": "JOURNEY_CAMPAIGN",
+        "fast_path": "recent_dataset_changes+journey_default+dataset_audit_changes",
+        "route_type": "SQL_ONLY",
+        "sql_template": "recent_dataset_changes",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "datasets_by_schema",
+            "schema_registry_by_id",
+            "schema_by_name"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "api_mode": "required",
+        "family": "schema_dataset",
+        "join_path": {
+          "items": [
+            "dim_blueprint.blueprintid = hkg_br_blueprint_collection.blueprintid",
+            "hkg_br_blueprint_collection.collectionid = dim_collection.collectionid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "schema_id",
+            "blueprint_id",
+            "collection_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_blueprint",
+            "hkg_br_blueprint_collection",
+            "dim_collection"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 654,
+        "prompt_tokens": 1270,
+        "selected_apis": {
+          "items": [
+            "journey_list",
+            "audit_events"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "selected_card_name": "schema_dataset",
+        "selected_columns": {
+          "dim_collection": {
+            "items": [
+              "COLLECTIONID",
+              "NAME",
+              "UPDATEDTIME"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_collection"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first",
+            "lookup_path"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2572,
+          "lookup_path": 12.363
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "allowed_api_families": {
+          "items": [
+            "dataset_audit_changes"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_REQUIRED",
+        "reason": "Query family requires Adobe API evidence."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [37], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"collection_id\": \"69c8d9c4e592a9df81deb244\", \"collection_name\": \"hkg_adls_segment_profile_history\", \"updated_time\": \"2026-04-14T21:08:54.000+00:00\"}, {\"collection_id\": \"69c8dad4aa7a59818543461a\", \"collection_name\": \"hkg_adls_profile_count_history\", \"updated_time\": \"2026-04-14T21:08:43.000+00:00\"}, {\"collection_id\": \"69c8d6c810c39fb1068f65b5\", \"collection_name\": \"Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d\", \"updated_time\": \"2026-04-14T20:40:04.000+00:00\"}], \"total_items\": 3, \"truncated_items\": false}, \"ok\": true, \"row_count\": 37}], \"total_items\": 1, \"truncated_items\": false}, \"api_results\": {\"items\": [{\"result_preview\": {\"ok\": false, \"dry_run\": true, \"live_success\": false, \"evidence_state\": \"dry_run_unavailable\", \"error_category\": \"dry_run_unavailable\", \"endpoint_fa...",
+        "truncated": true
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {
+          "ids": {
+            "collection_id": "69c8d9c4e592a9df81deb244"
+          },
+          "timestamps": {
+            "items": [
+              "2026-04-14T21:08:54.000+00:00",
+              "2026-04-14T21:08:43.000+00:00",
+              "2026-04-14T20:40:04.000+00:00"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        }
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "WHEN",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "counts": {
+            "items": [
+              "37"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "discrepancy": false,
+          "dry_run": true,
+          "entity_names": {
+            "items": [
+              "hkg_adls_segment_profile_history",
+              "hkg_adls_profile_count_history",
+              "Profile-Snapshot-Export-486e2a5e-dc46-4ab6-ad5f-9cdd16db869d"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "counts",
+              "timestamps"
+            ],
+            "total_items": 6,
+            "truncated_items": true
+          },
+          "sql_row_count": 37,
+          "truncated_fields": 5
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 0,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "evidence_grounded_llm_answer_generator",
+        "selection_reason": "ROBUST_GENERALIZED_HARNESS_CANDIDATE allowed free wording only after EvidenceBus/AnswerSlots factual-boundary verification."
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 0,
+        "final_token_estimate": 0
+      },
+      "checkpoint_answer_slot_renderer": {
+        "answer": "Date/time: 2026-04-14T21:08:54.000+00:00, 2026-04-14T21:08:43.000+00:00, 2026-04-14T20:40:04.000+00:00, 2026-04-14T20:38:53.000+00:00, 2026-04-14T13:29:41.000+00:00. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+        "caveats": {
+          "items": [
+            "API unavailable/error; cannot verify live state.",
+            "Live API verification was not executed because Adobe credentials are unavailable."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "rendered_fields": {
+          "items": [
+            "timestamp"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "shape": "date",
+        "unsupported_claims_count": 0
+      },
+      "checkpoint_evidence_grounded_answer_builder": {
+        "preview": "{\"answer\": \"Date/time: 2026-04-14T21:08:54.000+00:00, 2026-04-14T21:08:43.000+00:00, 2026-04-14T20:40:04.000+00:00, 2026-04-14T20:38:53.000+00:00, 2026-04-14T13:29:41.000+00:00. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.\", \"renderer\": {\"answer\": \"Date/time: 2026-04-14T21:08:54.000+00:00, 2026-04-14T21:08:43.000+00:00, 2026-04-14T20:40:04.000+00:00, 2026-04-14T20:38:53.000+00:00, 2026-04-14T13:29:41.000+00:00. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.\", \"shape\": \"date\", \"rendered_fields\": {\"items\": [\"timestamp\"], \"total_items\": 1, \"truncated_items\": false}, \"caveats\": {\"items\": [\"API unavailable/error; cannot verify live state.\", \"Live API verification was not executed because Adobe credentials are unavailable.\"], \"total_items\": 2, \"truncated_items\": false}, \"unsupported_claims_count\": 0}, \"evidence_quality\": {\"s...",
+        "truncated": true
+      },
+      "checkpoint_evidence_grounded_final_answer_verifier": {
+        "action": "ACCEPT",
+        "fallback_used": false,
+        "ok": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false
+      },
+      "checkpoint_evidence_quality_classifier": {
+        "api": {
+          "items": [
+            "API_ERROR"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": true,
+        "caveats": {
+          "items": [
+            "api_error_is_unavailable_not_no_data"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conflict": {
+          "items": [
+            "SQL_SUCCESS_API_ERROR"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_final_answer_claim_extractor": {
+        "claim_count": 0
+      },
+      "checkpoint_final_answer_claim_matcher": {},
+      "checkpoint_llm_answer_rewrite_feedback": {},
+      "checkpoint_runtime_leakage_guard": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_score_provenance_guard": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "synthetic_trace": false
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.84,
+        "is_simple": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: dataset, journey, local snapshot.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "preview": "{\"summaries\": {\"items\": [{\"enabled\": true, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_collection\"], \"total_items\": 1, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"D.COLLECTIONID\", \"D.NAME\", \"D.UPDATEDTIME\"], \"total_items\": 4, \"truncated_items\": true}, \"unknown_columns\": {\"items\": [\"DAY\"], \"total_items\": 1, \"truncated_items\": false}, \"destructive_sql_detected\": false, \"closest_column_suggestions\": {\"DAY\": {\"items\": [\"TTLINDAYS\", \"DATAFLOWID\", \"DATAFLOWNAME\"], \"total_items\": 4, \"truncated_items\": true}}, \"normalized_sql\": \"SELECT DISTINCT D.\\\"COLLECTIONID\\\" AS collection_id, D.\\\"NAME\\\" AS collection_name, D.\\\"UPDATEDTIME\\\" AS updated_time FROM \\\"dim_collection\\\" AS D WHERE D.\\\"UPDATEDTIME\\\" >= DATEADD(DAY, -90, CURRENT_DATE) ORDER BY D.\\\"UPDATEDTIME\\\" DESC LIMIT 50\"}], \"total_items\": 1, \"truncated_items\": false}, \"parsed_ok\": true, \"selected_tables\": {\"items\": [\"dim_collection\"], \"total_items\": 1, \"truncated_items\": false}, \"selected_columns\": {\"items\": [\"D.COLLE...",
+        "truncated": true
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": false,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "UNKNOWN",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "UNKNOWN",
+    "post_sql_verifier_verified": false,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 855.0665420480072,
+    "skipped_decision_count": 0,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_collection"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": false,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.8542,
+    "combined_diagnostic_score": 0.6896,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.5833,
+    "final_answer_correctness": 0.625,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.6896,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.75,
+    "sql_required_used_accuracy": 1.0,
+    "sql_table_accuracy": 0.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "trace_observability_score": 0.25,
+    "unsupported_claims": 0
+  },
+  "mode": "ablation_llm_answer_with_verifier_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0065",
+  "runtime_input": {
+    "prompt": "When were the most recent local journey records updated or created? Use only local snapshot evidence for the dataset review.",
+    "prompt_id": "da500_0065"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "outputs/robust_generalized_internal500_eval/ablation_llm_answer_with_verifier_real/da500_0065/trajectory.json"
+}

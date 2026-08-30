@@ -1,0 +1,796 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [
+      "segment_definitions"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
+    "applied_decision_records": [
+      {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "FALLBACK",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_staged_evidence_only_real",
+        "truncated_fields": 2
+      },
+      {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "POLICY_DID_NOT_SUGGEST_SKIP",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_staged_evidence_only_real",
+        "truncated_fields": 6
+      }
+    ],
+    "behavior_changed": false,
+    "blocker_count": 6,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_runtime_leakage_guard",
+      "checkpoint_score_provenance_guard",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_real_behavior_applied_trial",
+      "checkpoint_02_query_normalization",
+      "checkpoint_03_query_tokens",
+      "checkpoint_04_relevance_scoring",
+      "checkpoint_05_query_analysis",
+      "checkpoint_06_lookup_path",
+      "checkpoint_07_context_card",
+      "checkpoint_08_candidate_plans",
+      "checkpoint_09_plan_optimization",
+      "checkpoint_10_evidence_policy",
+      "checkpoint_11_call_budget",
+      "checkpoint_evidence_match_scores",
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_decision_card",
+      "checkpoint_post_sql_deterministic_policy",
+      "checkpoint_post_sql_llm_advisor",
+      "checkpoint_post_sql_api_call_verifier",
+      "checkpoint_real_behavior_applied_trial",
+      "checkpoint_12_validation",
+      "checkpoint_sql_ast_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification",
+      "checkpoint_17_answer_reranking",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 1088,
+    "fallback_count": 2,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "combined_safe_deterministic_promotion_candidate": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "robust_generalized_harness_candidate": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": false,
+      "evidence_bus_answer_verifier_token_reduction": true,
+      "no_tool_safety_verifier": false,
+      "objective_prompt_features": false,
+      "post_sql_api_call_verifier": true,
+      "post_sql_deterministic_policy": true,
+      "post_sql_llm_advisor": true,
+      "routing_anti_hallucination_gate": false,
+      "routing_feedback_revision": false,
+      "semantic_intent_classifier": false,
+      "semantic_route_decision_ladder": false,
+      "staged_evidence_policy": true
+    },
+    "missing_checkpoints": [
+      "checkpoint_objective_prompt_features",
+      "checkpoint_semantic_route_decision_ladder"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.84,
+        "matched_rules": {
+          "items": [
+            "local_db:local snapshot",
+            "local_db:segment"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: local snapshot, segment.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "When were the most recent local segment records updated or created? Use only local snapshot evidence for the review runbook.",
+        "query_id": "da500_0173",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_02_query_normalization": {
+        "matching_text": "when were the most recent local segment records updated or created? use only local snapshot evidence for the review runbook.",
+        "normalized_query": "When were the most recent local segment records updated or created? Use only local snapshot evidence for the review runbook."
+      },
+      "checkpoint_03_query_tokens": {
+        "domains": {
+          "items": [
+            "audit",
+            "segment_audience"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_04_relevance_scoring": {
+        "top_answer_families": {
+          "items": [
+            "segment_destination"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "ups_audiences",
+            "audit_events",
+            "audit_events_short"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "br_campaign_segment.SEGMENTID->dim_segment.SEGMENTID",
+            "br_campaign_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.SEGMENTID",
+            "br_campaign_segment.SEGMENTID->hkg_br_collection_segment.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_05_query_analysis": {
+        "answer_family": "generic",
+        "api_templates": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.5,
+        "domain_type": "SEGMENT_AUDIENCE",
+        "route_type": "SQL_ONLY",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_06_lookup_path": {
+        "api_families": {
+          "items": [
+            "audience_by_destination_id",
+            "destination_flows"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "segment_destination",
+        "join_path": {
+          "items": [
+            "dim_segment.segmentid = hkg_br_segment_target.segmentid",
+            "hkg_br_segment_target.targetid = dim_target.targetid"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "required_ids": {
+          "items": [
+            "segment_id",
+            "destination_id",
+            "target_id"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_07_context_card": {
+        "estimated_metadata_tokens": 954,
+        "prompt_tokens": 1614,
+        "selected_apis": {
+          "items": [
+            "segment_definitions"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "segment_destination",
+        "selected_columns": {
+          "dim_segment": {
+            "items": [
+              "CREATEDTIME",
+              "SEGMENTID",
+              "UPDATEDTIME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CREATEDTIME",
+              "UPDATEDTIME",
+              "CONNECTIONSPECID"
+            ],
+            "total_items": 7,
+            "truncated_items": true
+          },
+          "hkg_br_segment_target": {
+            "items": [
+              "SEGMENTID",
+              "TARGETID",
+              "LABELSSEGMENT"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment",
+            "hkg_br_segment_target",
+            "dim_target"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_08_candidate_plans": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first",
+            "lookup_path"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 13.7708,
+          "lookup_path": 11.8743
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "checkpoint_09_plan_optimization": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "checkpoint_10_evidence_policy": {
+        "allowed_api_families": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_OPTIONAL",
+        "reason": "Weak gold-pattern fallback is allowed as one verification call."
+      },
+      "checkpoint_11_call_budget": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": true, \"row_counts\": {\"items\": [13], \"total_items\": 1, \"truncated_items\": false}, \"sql_results\": {\"items\": [{\"result_preview\": {\"items\": [{\"SEGMENTID\": \"2fdfefe1-04d0-46ce-9fbd-7611e311dd26\", \"UPDATEDTIME\": \"2026-04-05T04:33:25.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Person: Birthday Today 001\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\", \"CREATEDTIME\": \"2026-04-05T04:33:25.000+00:00\"}, {\"SEGMENTID\": \"574372f1-7b74-489c-b77f-139024b083a5\", \"UPDATEDTIME\": \"2026-03-29T07:52:25.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Campaign: 25% Off Purchase Offer Reminder\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\", \"CREATEDTIME\": \"2026-03-29T07:52:25.000+00:00\"}, {\"SEGMENTID\": \"7e7b3d71-ae29-4c97-8b24-99905ea6bf68\", \"UPDATEDTIME\": \"2026-03-29T07:52:17.000+00:00\", \"ISACCOUNTSEGMENT\": false, \"NAME\": \"Campaign: New Application Credit Card Offer\", \"LABELSSEGMENT\": \"[]\", \"LIFECYCLESTATUS\": \"published\"...",
+        "truncated": true
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {
+          "counts": {
+            "items": [
+              false,
+              false,
+              false
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "ids": {
+            "segment_id": "2fdfefe1-04d0-46ce-9fbd-7611e311dd26"
+          },
+          "names": {
+            "items": [
+              "Person: Birthday Today 001",
+              "Campaign: 25% Off Purchase Offer Reminder",
+              "Campaign: New Application Credit Card Offer"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "published"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "2026-04-05T04:33:25.000+00:00",
+              "2026-03-29T07:52:25.000+00:00",
+              "2026-03-29T07:52:17.000+00:00"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        }
+      },
+      "checkpoint_15_answer_slots": {
+        "answer_intent": "WHEN",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": true
+        },
+        "missing_slots": {
+          "items": [
+            "dry_run_caveat"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "slots": {
+          "answer_family": "generic",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": true,
+          "entity_ids": {
+            "items": [
+              "2fdfefe1-04d0-46ce-9fbd-7611e311dd26",
+              "574372f1-7b74-489c-b77f-139024b083a5",
+              "7e7b3d71-ae29-4c97-8b24-99905ea6bf68"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "entity_names": {
+            "items": [
+              "Person: Birthday Today 001",
+              "Campaign: 25% Off Purchase Offer Reminder",
+              "Campaign: New Application Credit Card Offer"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names",
+              "entity_ids",
+              "counts"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "sql_row_count": 13,
+          "truncated_fields": 5
+        }
+      },
+      "checkpoint_16_answer_verification": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": true,
+        "supported_claims_count": 4,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "checkpoint_17_answer_reranking": {
+        "candidate_count": 0,
+        "selected_candidate_type": "safe_rewrite",
+        "selection_reason": "best verifier-passing answer"
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 91,
+        "final_answer": "Person: Birthday Today 001 has timestamp 2026-04-05T04:33:25.000+00:00 in the SQL evidence.",
+        "final_token_estimate": 32
+      },
+      "checkpoint_evidence_match_scores": {
+        "api_match": 0.7,
+        "api_match_codes": {
+          "items": [
+            "API_DOMAIN_MATCH",
+            "API_CAPABILITY_MATCH",
+            "API_CANDIDATE_AVAILABLE"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "concrete_data_signal": true,
+        "live_api_signal": false,
+        "sql_match": 1.0,
+        "sql_match_codes": {
+          "items": [
+            "SQL_DOMAIN_MATCH",
+            "SQL_CAPABILITY_MATCH",
+            "CONCRETE_DATA_SIGNAL"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        }
+      },
+      "checkpoint_initial_evidence_branch_policy": {
+        "first_branch": "SQL",
+        "policy_codes": {
+          "items": [
+            "SQL_HIGH_API_HIGH"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "second_branch_policy": "API_AFTER_SQL_IF_NEEDED",
+        "shadow_only": false
+      },
+      "checkpoint_post_sql_api_call_verifier": {
+        "codes": {
+          "items": [
+            "VERIFIED_CALL_API"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "final_action": "CALL_API",
+        "selected_api_families": {
+          "items": [
+            "gold_pattern_fallback"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "shadow_only": false,
+        "source": "DETERMINISTIC_HIGH_CONF"
+      },
+      "checkpoint_post_sql_decision_card": {
+        "allowed_outputs": {
+          "mode": {
+            "items": [
+              "CALL_API",
+              "SKIP_API",
+              "CAVEAT_ONLY"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          }
+        },
+        "answer_intent": "GENERIC",
+        "api_candidates": {
+          "items": [
+            {
+              "can_fill_roles": {
+                "items": [
+                  "id",
+                  "name",
+                  "detail"
+                ],
+                "total_items": 3,
+                "truncated_items": false
+              },
+              "endpoint_id": "segment_definitions",
+              "family": "gold_pattern_fallback",
+              "live_health": "UNKNOWN",
+              "method": "GET",
+              "requires_path_param": false,
+              "safe_get": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "prompt_features": {
+          "items": [
+            "WHEN",
+            "CREATED",
+            "UPDATED"
+          ],
+          "total_items": 15,
+          "truncated_items": true
+        },
+        "sql_state": {
+          "direct_answer": true,
+          "execution": "SUCCESS",
+          "partial_answer": false,
+          "returned_roles": {
+            "items": [
+              "id",
+              "name",
+              "status"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "row_count_bucket": "MANY",
+          "validation": "PASS",
+          "zero_rows": false
+        },
+        "task": "POST_SQL_API_DECISION"
+      },
+      "checkpoint_post_sql_deterministic_policy": {
+        "api_evidence_signal": 0.78,
+        "codes": {
+          "items": [
+            "STRICT_API_DOMAIN_RETRIEVAL",
+            "STRICT_API_CAPABILITY_MATCH"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "confidence": "HIGH",
+        "suggestion": "CALL_API"
+      },
+      "checkpoint_post_sql_llm_advisor": {
+        "codes": {
+          "items": [
+            "STRICT_API_DOMAIN_RETRIEVAL",
+            "STRICT_API_CAPABILITY_MATCH"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "conf": 1.0,
+        "llm_call_attempted": false,
+        "mode": "CALL_API",
+        "source": "DETERMINISTIC_BYPASS"
+      },
+      "checkpoint_real_behavior_applied_trial": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "POLICY_DID_NOT_SUGGEST_SKIP",
+            "VERIFIER_DID_NOT_APPROVE_SKIP"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "decision": "KEEP_BASELINE_API",
+        "decision_family": "POST_SQL_API",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_staged_evidence_only_real",
+        "truncated_fields": 6
+      },
+      "checkpoint_runtime_leakage_guard": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_score_provenance_guard": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "synthetic_trace": false
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.84,
+        "is_simple": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: local snapshot, segment.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "checkpoint_sql_ast_validation": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CREATEDTIME",
+            "EVALUATIONCOMPLETEDTIME",
+            "ISACCOUNTSEGMENT"
+          ],
+          "total_items": 8,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_segment"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"SEGMENTID\", \"UPDATEDTIME\", \"ISACCOUNTSEGMENT\", \"NAME\", \"EVALUATIONCOMPLETEDTIME\", \"LABELSSEGMENT\", \"LIFECYCLESTATUS\", \"CREATEDTIME\" FROM \"dim_segment\" LIMIT 50",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "SEGMENTID",
+                  "UPDATEDTIME",
+                  "ISACCOUNTSEGMENT"
+                ],
+                "total_items": 8,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_segment"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": true,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "DETERMINISTIC_BYPASS",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "DETERMINISTIC_HIGH_CONF",
+    "post_sql_verifier_verified": false,
+    "route_action": "SQL_THEN_API",
+    "runtime_ms": 51.036291755735874,
+    "skipped_decision_count": 2,
+    "sql_calls": 1,
+    "sql_tables": [
+      "dim_segment"
+    ],
+    "sql_used": true,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": false,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.8542,
+    "combined_diagnostic_score": 0.7,
+    "expected_evidence_need_accuracy": 0.75,
+    "expected_observable_trace_score": 0.625,
+    "final_answer_correctness": 0.625,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.7,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.75,
+    "sql_required_used_accuracy": 1.0,
+    "sql_table_accuracy": 1.0,
+    "tool_overuse": 1,
+    "tool_underuse": 0,
+    "trace_observability_score": 0.375,
+    "unsupported_claims": 0
+  },
+  "mode": "ablation_staged_evidence_only_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0173",
+  "runtime_input": {
+    "prompt": "When were the most recent local segment records updated or created? Use only local snapshot evidence for the review runbook.",
+    "prompt_id": "da500_0173"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "outputs/robust_generalized_internal500_eval/ablation_staged_evidence_only_real/da500_0173/trajectory.json"
+}

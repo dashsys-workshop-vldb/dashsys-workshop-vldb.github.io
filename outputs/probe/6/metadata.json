@@ -1,0 +1,650 @@
+{
+  "answer_policy": [
+    "Answer from tool evidence only.",
+    "Say not found when evidence is empty.",
+    "Explicitly mention SQL/API disagreement when both are used.",
+    "Do not invent IDs, counts, timestamps, states, or names."
+  ],
+  "constraints": [
+    "Use only known table names and columns.",
+    "Use only endpoint catalog entries unless fallback mode is explicitly enabled.",
+    "Validate SQL and API calls before execution.",
+    "Prefer fewer tool calls when evidence is sufficient."
+  ],
+  "domain_type": "DATASET_SCHEMA",
+  "known_example_patterns": [
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "20"
+          },
+          "question": "How many tags exist in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "25"
+          },
+          "question": "List all tags in this sandbox."
+        },
+        {
+          "params": {
+            "limit": "100",
+            "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          },
+          "question": "Which tags belong to the category 'Uncategorized'?"
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 1,
+            "value": "20"
+          },
+          {
+            "count": 1,
+            "value": "25"
+          },
+          {
+            "count": 1,
+            "value": "100"
+          }
+        ],
+        "tagCategoryId": [
+          {
+            "count": 1,
+            "value": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+          }
+        ]
+      },
+      "params": {
+        "limit": "20",
+        "tagCategoryId": "Uncategorized-87891E4066602D250A495F91@AdobeOrg"
+      },
+      "path": "/unifiedtags/tags",
+      "query_keywords": [
+        "tags",
+        "sandbox",
+        "how",
+        "many",
+        "exist",
+        "which",
+        "belong",
+        "category",
+        "uncategorized"
+      ]
+    },
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "List all merge policies in this sandbox."
+        },
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "How many merge policies are configured in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "5"
+          },
+          "question": "Show the default merge policy for schema class '_xdm.context.profile'."
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 2,
+            "value": "10"
+          },
+          {
+            "count": 1,
+            "value": "5"
+          }
+        ]
+      },
+      "params": {
+        "limit": "10"
+      },
+      "path": "/data/core/ups/config/mergePolicies",
+      "query_keywords": [
+        "merge",
+        "policies",
+        "sandbox",
+        "how",
+        "many",
+        "are",
+        "configured",
+        "default",
+        "policy",
+        "schema",
+        "class",
+        "_xdm",
+        "context",
+        "profile"
+      ]
+    },
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "100"
+          },
+          "question": "How many segment definitions exist in this sandbox?"
+        },
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "List all segment definitions."
+        },
+        {
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "question": "Which segment definitions were updated most recently?"
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 1,
+            "value": "100"
+          },
+          {
+            "count": 1,
+            "value": "10"
+          },
+          {
+            "count": 1,
+            "value": "3"
+          }
+        ],
+        "orderBy": [
+          {
+            "count": 1,
+            "value": "updateTime:desc"
+          }
+        ]
+      },
+      "params": {
+        "limit": "100",
+        "orderBy": "updateTime:desc"
+      },
+      "path": "/data/core/ups/segment/definitions",
+      "query_keywords": [
+        "segment",
+        "definitions",
+        "how",
+        "many",
+        "exist",
+        "sandbox",
+        "which",
+        "were",
+        "updated",
+        "most",
+        "recently"
+      ]
+    },
+    {
+      "count": 3,
+      "examples": [
+        {
+          "params": {
+            "limit": "3"
+          },
+          "question": "List all segment evaluation jobs."
+        },
+        {
+          "params": {
+            "limit": "20"
+          },
+          "question": "How many segment jobs are currently processing?"
+        },
+        {
+          "params": {
+            "limit": "10"
+          },
+          "question": "Show all segment jobs with status 'QUEUED'."
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 1,
+            "value": "3"
+          },
+          {
+            "count": 1,
+            "value": "20"
+          },
+          {
+            "count": 1,
+            "value": "10"
+          }
+        ]
+      },
+      "params": {
+        "limit": "3"
+      },
+      "path": "/data/core/ups/segment/jobs",
+      "query_keywords": [
+        "segment",
+        "jobs",
+        "evaluation",
+        "how",
+        "many",
+        "are",
+        "currently",
+        "processing",
+        "status",
+        "queued"
+      ]
+    },
+    {
+      "count": 2,
+      "examples": [
+        {
+          "params": {
+            "limit": "5",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true"
+          },
+          "question": "List all segment audiences connected to the destination named 'SMS Opt-In', showing audienceId, name, totalProfiles, createdTime, updatedTime, and used in other audience count for each audience. Remove any row limit from the results."
+        },
+        {
+          "params": {
+            "limit": "50",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "question": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation."
+        }
+      ],
+      "method": "GET",
+      "param_values": {
+        "limit": [
+          {
+            "count": 1,
+            "value": "5"
+          },
+          {
+            "count": 1,
+            "value": "50"
+          }
+        ],
+        "property": [
+          {
+            "count": 2,
+            "value": "inheritedAttributes.properties.isDestinationFlow==true"
+          }
+        ],
+        "sort": [
+          {
+            "count": 1,
+            "value": "updatedTime:desc"
+          }
+        ]
+      },
+      "params": {
+        "limit": "5",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
+      },
+      "path": "/data/foundation/flowservice/flows",
+      "query_keywords": [
+        "destination",
+        "audience",
+        "each",
+        "modified",
+        "segment",
+        "audiences",
+        "connected",
+        "named",
+        "sms",
+        "opt",
+        "showing",
+        "audienceid",
+        "name",
+        "totalprofiles",
+        "createdtime"
+      ]
+    }
+  ],
+  "query": "How many datasets have been ingested using the same schema in the prod sandbox?",
+  "query_id": "probe_6",
+  "route_type": "SQL_THEN_API",
+  "selected_apis": [
+    {
+      "common_params": {
+        "limit": 50
+      },
+      "domains": [
+        "DATASET_SCHEMA"
+      ],
+      "examples": [
+        {
+          "params": {
+            "limit": 50
+          },
+          "query": "dataset metadata"
+        }
+      ],
+      "id": "catalog_datasets",
+      "method": "GET",
+      "path": "/data/foundation/catalog/dataSets",
+      "path_params": [],
+      "risk_notes": [
+        "Catalog responses can be large; request only needed fields when supported."
+      ],
+      "use_when": "List datasets and dataset metadata."
+    },
+    {
+      "common_params": {},
+      "domains": [
+        "DATASET_SCHEMA",
+        "PROPERTY_FIELD"
+      ],
+      "examples": [
+        {
+          "path_params": {
+            "schema_id": "..."
+          },
+          "query": "schema by id"
+        }
+      ],
+      "id": "schema_registry_schema",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas/{schema_id}",
+      "path_params": [
+        "schema_id"
+      ],
+      "risk_notes": [
+        "Requires a schema ID; do not call with an unresolved placeholder."
+      ],
+      "use_when": "Fetch schema details when a concrete schema ID is known."
+    },
+    {
+      "common_params": {
+        "limit": 25
+      },
+      "domains": [
+        "DATASET_SCHEMA"
+      ],
+      "examples": [
+        {
+          "query": "profile-enabled ExperienceEvent schemas"
+        }
+      ],
+      "id": "schema_registry_schemas",
+      "method": "GET",
+      "path": "/data/foundation/schemaregistry/tenant/schemas",
+      "path_params": [],
+      "risk_notes": [
+        "Schema-registry filters vary by endpoint version."
+      ],
+      "use_when": "List tenant schemas or filter schema registry metadata."
+    },
+    {
+      "common_params": {
+        "limit": 25
+      },
+      "domains": [
+        "DATASET_SCHEMA"
+      ],
+      "examples": [
+        {
+          "query": "schema named weRetail: Customer Actions"
+        }
+      ],
+      "id": "schemas_short",
+      "method": "GET",
+      "path": "/schemas",
+      "path_params": [],
+      "risk_notes": [
+        "Shorthand path is retained for benchmark compatibility."
+      ],
+      "use_when": "Gold-example shorthand for schema list/name lookup."
+    },
+    {
+      "common_params": {
+        "limit": 20
+      },
+      "domains": [
+        "DESTINATION_DATAFLOW",
+        "DATASET_SCHEMA",
+        "STATUS_MONITORING"
+      ],
+      "examples": [
+        {
+          "query": "new destinations in last 3 months"
+        }
+      ],
+      "id": "audit_events",
+      "method": "GET",
+      "path": "/data/foundation/audit/events",
+      "path_params": [],
+      "risk_notes": [],
+      "use_when": "Audit events for destination/dataset/entity changes."
+    }
+  ],
+  "selected_columns": {
+    "dim_blueprint": [
+      "BLUEPRINTTYPE",
+      "UPDATEDCLIENTID",
+      "UPDATEDTIME",
+      "BLUEPRINTID",
+      "NAME",
+      "ISBEHAVIORTIMESERIESTYPE",
+      "ISBEHAVIORRECORDTYPE",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "dim_collection": [
+      "ISIDENTITYENABLED",
+      "ROWCOUNT",
+      "UPDATEDTIME",
+      "NAME",
+      "COLLECTIONID",
+      "CREATEDTIME",
+      "UPDATEDBY",
+      "CREATEDCLIENTID"
+    ],
+    "hkg_br_blueprint_collection": [
+      "COLLECTIONID",
+      "BLUEPRINTID"
+    ],
+    "hkg_br_blueprint_property": [
+      "BLUEPRINTID"
+    ],
+    "hkg_br_collection_property": [
+      "COLLECTIONID"
+    ],
+    "hkg_br_collection_segment": [
+      "SEGMENTID",
+      "COLLECTIONID"
+    ],
+    "hkg_br_source_collection": [
+      "DATAFLOWNAME",
+      "COLLECTIONID",
+      "DATAFLOWID",
+      "SOURCEID"
+    ]
+  },
+  "selected_join_hints": [
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "br_campaign_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "dim_blueprint",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "dim_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SOURCEID",
+      "left_table": "dim_connector",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SOURCEID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "dim_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "hkg_br_base_segment_used_by_dependent_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_blueprint_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "BLUEPRINTID",
+      "left_table": "hkg_br_blueprint_property",
+      "reason": "Matching ID-like column name.",
+      "right_column": "BLUEPRINTID",
+      "right_table": "hkg_br_blueprint_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_collection_property",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_collection_property",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_source_collection"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "hkg_br_collection_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_property"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "SEGMENTID",
+      "left_table": "hkg_br_collection_segment",
+      "reason": "Matching ID-like column name.",
+      "right_column": "SEGMENTID",
+      "right_table": "hkg_br_segment_target"
+    },
+    {
+      "confidence": 0.9,
+      "left_column": "COLLECTIONID",
+      "left_table": "hkg_br_source_collection",
+      "reason": "Matching ID-like column name.",
+      "right_column": "COLLECTIONID",
+      "right_table": "hkg_br_collection_segment"
+    }
+  ],
+  "selected_tables": [
+    "dim_blueprint",
+    "dim_collection",
+    "hkg_br_blueprint_collection",
+    "hkg_br_blueprint_property",
+    "hkg_br_collection_property",
+    "hkg_br_collection_segment",
+    "hkg_br_source_collection"
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY"
+}

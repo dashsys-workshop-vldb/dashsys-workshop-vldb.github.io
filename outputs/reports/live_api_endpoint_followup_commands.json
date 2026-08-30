@@ -1,0 +1,41 @@
+{
+  "commands": [],
+  "diagnostic_only": true,
+  "family_commands": [
+    {
+      "action": "verify_sandbox",
+      "command": "python3 scripts/run_live_api_readiness_smoke.py --endpoint-family flowservice",
+      "family": "flowservice"
+    },
+    {
+      "action": "no_code_fix",
+      "command": "python3 scripts/run_live_api_readiness_smoke.py --endpoint-family catalog",
+      "family": "catalog"
+    },
+    {
+      "action": "rerun_with_endpoint_filter",
+      "command": "python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get",
+      "family": "all_safe_get"
+    },
+    {
+      "action": "no_code_fix",
+      "command": "python3 scripts/run_live_api_endpoint_path_diagnosis.py",
+      "family": "endpoint_path_diagnosis"
+    }
+  ],
+  "full_live_run_guard": {
+    "all_attempted_safe_gets_blocked_by_auth_scope_sandbox_or_service": false,
+    "full_generated_prompt_suite_allowed": true,
+    "guard_decision": "allowed_live_success",
+    "guard_reason": "live_success_available",
+    "live_strict_eval_allowed": true,
+    "live_success_seen": true,
+    "override_available_flag": "--allow-live-diagnostic-without-success"
+  },
+  "official_score_claim": false,
+  "report_type": "live_api_endpoint_followup_commands",
+  "safe_rerun_commands": [
+    "python3 scripts/run_live_api_readiness_smoke.py --limit all-safe-get",
+    "python3 scripts/run_live_api_endpoint_path_diagnosis.py"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "backend_semantic_planning_used": false,
+  "llm_owned_generation": true,
+  "llm_unified_plan": {
+    "aggregation_instruction": "Combine campaign and segment data from pass_1 to provide a comprehensive view of campaign-segment relationships and their labels.",
+    "api_request": null,
+    "backend_unavailable": false,
+    "diagnostics": {
+      "planner_json_fallback_used": true,
+      "planner_json_parse_error": null,
+      "planner_parse_source": "content_json",
+      "planner_provider_latency_ms": 6405,
+      "planner_repair_attempted": false,
+      "planner_success": true,
+      "planner_timeout": false,
+      "planner_toolcall_attempted": false,
+      "planner_toolcall_supported": false,
+      "provider_capabilities": {
+        "requires_json_prompting": true,
+        "supports_json_content_fallback": true,
+        "supports_tool_calls": false
+      }
+    },
+    "direct_answer": null,
+    "evidence_order": "SQL_FIRST",
+    "model": "claude-haiku-4-5",
+    "parse_error": false,
+    "passes": [
+      {
+        "api_request": null,
+        "can_run_parallel": true,
+        "depends_on": [],
+        "evidence_order": "SQL_FIRST",
+        "expected_result": "List of campaigns with associated segments and labels",
+        "fallback": false,
+        "optional": false,
+        "pass_id": "pass_1",
+        "path": "SQL",
+        "sql": {
+          "params": [],
+          "query": "SELECT c.CAMPAIGNID, c.CAMPAIGNNAME, s.SEGMENTID, s.SEGMENTNAME, bcs.LABELSSEGMENT FROM dim_campaign c LEFT JOIN br_campaign_segment bcs ON c.CAMPAIGNID = bcs.CAMPAIGNID LEFT JOIN dim_segment s ON bcs.SEGMENTID = s.SEGMENTID LIMIT 50"
+        },
+        "subtask": "Retrieve campaign-segment relationships and metadata from the local snapshot"
+      }
+    ],
+    "provider": "pioneer_chat",
+    "raw_preview": {
+      "preview": "\"```json\\n{\\n  \\\"route\\\": \\\"EVIDENCE_PIPELINE\\\",\\n  \\\"evidence_order\\\": \\\"SQL_FIRST\\\",\\n  \\\"reason\\\": \\\"User is asking about campaigns and segments, which requires querying the local database snapshot to retrieve campaign and segment relationship data.\\\",\\n  \\\"passes\\\": [\\n    {\\n      \\\"pass_id\\\": \\\"pass_1\\\",\\n      \\\"path\\\": \\\"SQL\\\",\\n      \\\"subtask\\\": \\\"Retrieve campaign-segment relationships and metadata from the local snapshot\\\",\\n      \\\"sql\\\": {\\n        \\\"query\\\": \\\"SELECT c.CAMPAIGNID, c.CAMPAIGNNAME, s.SEGMENTID, s.SEGMENTNAME, bcs.LABELSSEGMENT FROM dim_campaign c LEFT JOIN br_campaign_segment bcs ON c.CAMPAIGNID = bcs.CAMPAIGNID LEFT JOIN dim_segment s ON bcs.SEGMENTID = s.SEGMENTID LIMIT 50\\\",\\n        \\\"params\\\": []\\n      },\\n      \\\"can_run_parallel\\\": true,\\n      \\\"depends_on\\\": [],\\n      \\\"expected_result\\\": \\\"List of campaigns with associated segments and labels\\\",\\n      \\\"optional\\\": false,\\n      \\\"fallback\\\": false,\\n      \\\"evidence_order\\\": \\\"SQL_FIRST\\\"\\n  ...",
+      "truncated": true
+    },
+    "reason": "User is asking about campaigns and segments, which requires querying the local database snapshot to retrieve campaign and segment relationship data.",
+    "route": "EVIDENCE_PIPELINE",
+    "sql": {
+      "params": [],
+      "query": "SELECT c.CAMPAIGNID, c.CAMPAIGNNAME, s.SEGMENTID, s.SEGMENTNAME, bcs.LABELSSEGMENT FROM dim_campaign c LEFT JOIN br_campaign_segment bcs ON c.CAMPAIGNID = bcs.CAMPAIGNID LEFT JOIN dim_segment s ON bcs.SEGMENTID = s.SEGMENTID LIMIT 50"
+    }
+  },
+  "note": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2 uses LLM-owned route/evidence/SQL/API generation; packaged default remains unchanged.",
+  "query": "How many schema records are in the local snapshot?",
+  "query_id": "pioneer_sweep_claude_haiku_4_5_local_schema_count",
+  "run_context": {
+    "budget": {
+      "max_answer_repair_attempts": 1,
+      "max_api_workers": 2,
+      "max_parallelism": 4,
+      "max_passes": 6,
+      "max_repair_attempts": 1,
+      "max_sql_workers": 2,
+      "run_timeout_ms": 30000
+    },
+    "created_at": "2026-06-01T14:49:22.091782+00:00",
+    "deadline_at": "2026-06-01T14:49:52.091782+00:00",
+    "evidence_bus_id": "evidence_run_038bb99056d84d8dbf703e8c77bc0414",
+    "original_prompt": "How many schema records are in the local snapshot?",
+    "plan_version": 1,
+    "prompt_id": "pioneer_sweep_claude_haiku_4_5_local_schema_count",
+    "result_bundle_id": "bundle_run_038bb99056d84d8dbf703e8c77bc0414",
+    "run_id": "run_038bb99056d84d8dbf703e8c77bc0414",
+    "status": "RUNNING"
+  },
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+}

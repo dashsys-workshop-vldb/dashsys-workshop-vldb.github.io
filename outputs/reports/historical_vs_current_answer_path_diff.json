@@ -1,0 +1,42 @@
+{
+  "check_submission_ready": {
+    "default_strategy_is_sql_first_api_verify": true,
+    "ok": true,
+    "query_output_count": 73
+  },
+  "credentials_printed": false,
+  "current_functions": {
+    "answer_selection": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER uses answer_candidate_selector and verifier-safe fallback",
+    "client_call": "_call_answer_client returns AnswerClientCallResult and parses choices[0].message.content/output_text/content blocks",
+    "llm_generator": "dashagent.evidence_grounded_llm_answer_generator.generate_evidence_grounded_llm_answer with response normalization/debug categories",
+    "strict_answer_score": "score_answer_strict now returns 0 for empty generated answers"
+  },
+  "focused_tests": {
+    "command": "python3 -m pytest -q tests/test_sql_first_llm_answer_verifier_strategy.py tests/test_evidence_grounded_llm_answer_generator.py",
+    "ok": true,
+    "result": "14 passed in 1.82s"
+  },
+  "generated_at": "2026-05-28T02:05:58.757925+00:00",
+  "git_diff_check": {
+    "ok": true
+  },
+  "most_likely_cause_of_current_empty_llm_answer": "The active LLM client returned ok=false/error-present empty content for every organizer row; before instrumentation this collapsed to empty_llm_answer.",
+  "old_commit": "fabcb0bcd1f2e1660e1e401f3ca9c86c50a95bbd",
+  "old_functions": {
+    "answer_selection": "dashagent.executor answer diagnostics selected evidence_grounded_llm_answer_generator directly when verifier ok",
+    "client_call": "dashagent.evidence_grounded_llm_answer_generator._call_answer_client",
+    "llm_generator": "dashagent.evidence_grounded_llm_answer_generator.generate_evidence_grounded_llm_answer",
+    "strict_answer_score": "dashagent.eval_harness.score_answer_strict"
+  },
+  "packaged_default_unchanged": true,
+  "port_safety_reason": "There is no clean old answer-generation lift to port: the 0.8884 path selected empty final answers and relied on the historical evaluator bug.",
+  "report_type": "historical_vs_current_answer_path_diff",
+  "top_behavioral_differences": [
+    "Historical scorer gave empty generated answers 0.85 via substring match; current scorer blocks empty answer credit.",
+    "Historical local high-score trajectories selected empty LLM output directly; current isolated strategy falls back to legacy/deterministic safe renderer.",
+    "Historical generator only extracted top-level content or complete_json answer; current generator also handles OpenAI choices/message and output_text shapes.",
+    "Current generator records backend availability, response shape, raw_response_ok, error-present boolean, extracted content length, and failure category.",
+    "Current SQL_FIRST_LLM strategy preserves SQL/API tool path and changes only answer generation/selection."
+  ],
+  "whether_old_path_is_safe_to_port": false
+}

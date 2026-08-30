@@ -1,0 +1,1450 @@
+{
+  "answer_time": 3.2263725423254073,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "What schemas do I have?",
+        "query_id": "hermes_toolcall_ambiguous_user_schemas",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-06-05T14:10:43.126978+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-06-05T14:10:43.127625+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-06-05T14:10:43.128342+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner_start",
+      "correctness_role": "diagnostic only; does not alter route, Semantic IR, SQL/API, or answer behavior",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow local LLM planner call",
+      "efficiency_role": "enables smoke timeout localization without extra tool calls",
+      "input_summary": {
+        "query": "What schemas do I have?",
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2"
+      },
+      "output": {
+        "current_stage": "llm_unified_planner_call_start",
+        "prompt_id": "hermes_toolcall_ambiguous_user_schemas",
+        "semantic_ir_prompt_diagnostics": {
+          "planner_schema_profile": "default",
+          "schema_card_original_row_count": 18,
+          "semantic_ir_context_truncated": true,
+          "semantic_ir_planner_char_budget": 24000,
+          "semantic_ir_prompt_system_chars": 1000,
+          "semantic_ir_prompt_total_chars": 23654,
+          "semantic_ir_prompt_user_chars": 19051,
+          "semantic_ir_tool_schema_chars": 3601,
+          "truncated_fields": 10
+        }
+      },
+      "stage": "llm-owned planning",
+      "technique": "pre-call heartbeat before Unified LLM Planner",
+      "timestamp": "2026-06-05T14:10:43.490175+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_unified_planner",
+      "correctness_role": "keeps backend deterministic logic limited to compile/request gates and execution",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own route, evidence order, and SQL/API candidate generation for V2",
+      "efficiency_role": "uses one compact planner call before any SQL/API execution",
+      "input_summary": {
+        "query": "What schemas do I have?"
+      },
+      "metrics": {
+        "answer_contract_error_type": null,
+        "answer_contract_missing_initially": false,
+        "answer_contract_repair_attempted": false,
+        "answer_contract_secondary_call_latency_ms": 0,
+        "answer_contract_secondary_call_success": false,
+        "answer_contract_secondary_call_used": false,
+        "answer_contract_secondary_error": null,
+        "answer_contract_secondary_error_type": null,
+        "answer_contract_validation_passed": null,
+        "answer_contract_validation_used": false,
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 4804,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
+        "api_request_gate_failures": 0,
+        "atomic_protocol_fallback_used": false,
+        "backend_answer_contract_inference_used": false,
+        "backend_formal_compilation_used": false,
+        "backend_generated_sql": false,
+        "backend_schema_binding_inference_used": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "backend_sql_api_generation_used": false,
+        "compiled_alias_count": 0,
+        "compiled_api_count": 0,
+        "compiled_sql_count": 0,
+        "compiler_latency_ms": 0,
+        "planner_extra_body_keys": [],
+        "planner_finish_reason": "tool_calls",
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_model_timeout_sec": 60,
+        "planner_parse_source": "semantic_ir_validation_error",
+        "planner_profile": "current",
+        "planner_provider_latency_ms": 39543,
+        "planner_raw_text_content_present": false,
+        "planner_repair_attempted": false,
+        "planner_retry_reason": null,
+        "planner_retry_used": false,
+        "planner_schema_profile": "default",
+        "planner_success": false,
+        "planner_timeout": false,
+        "planner_tool_calls_count": 1,
+        "planner_tool_choice": "submit_semantic_ir_plan",
+        "planner_tool_name": "submit_semantic_ir_plan",
+        "planner_tool_names": [
+          "submit_semantic_ir_plan"
+        ],
+        "planner_toolcall_attempted": true,
+        "planner_toolcall_supported": true,
+        "provider_capabilities": {
+          "requires_json_prompting": false,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": true
+        },
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_rejected_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "required_slot_count": 0,
+        "schema_binding_call_latency_ms": 0,
+        "schema_binding_count": 0,
+        "schema_binding_enabled": true,
+        "schema_binding_error_message": null,
+        "schema_binding_error_type": null,
+        "schema_binding_ids": [],
+        "schema_binding_mode": "repair_hint_only",
+        "schema_binding_repair_attempted": false,
+        "schema_binding_repair_success": false,
+        "schema_binding_toolcall_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_validation_passed": null,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 6861,
+        "schema_card_original_char_count": 10669,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
+        "sdk_toolcall_semantic_ir_used": true,
+        "semantic_alias_count": 0,
+        "semantic_alias_error_type": null,
+        "semantic_alias_repair_attempted": false,
+        "semantic_alias_validation_passed": null,
+        "semantic_alias_validation_used": false,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 1000,
+        "semantic_ir_prompt_total_chars": 23654,
+        "semantic_ir_prompt_user_chars": 19051,
+        "semantic_ir_provider_latency_ms": 39540,
+        "semantic_ir_repair_attempted": true,
+        "semantic_ir_repair_latency_ms": 21978,
+        "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_checked": false,
+        "semantic_ir_support_repair_attempted": false,
+        "semantic_ir_support_repair_error_message": null,
+        "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "semantic_ir_support_repair_success": false,
+        "semantic_ir_supported": null,
+        "semantic_ir_task_count": 0,
+        "semantic_ir_tool_schema_chars": 3603,
+        "semantic_ir_toolcall_supported": true,
+        "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_reason": null,
+        "semantic_ir_validation_error_message": "zero_rows_semantics must be one of ['EMPTY_RESULT_IS_ANSWER', 'NOT_APPLICABLE', 'NO_MATCH', 'UNKNOWN'].",
+        "semantic_ir_validation_error_type": "parse_error",
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_passed": false,
+        "sql_compile_gate_failures": 0,
+        "v2_semantic_ir_used": true
+      },
+      "output": {
+        "backend_unavailable": false,
+        "evidence_order": "SQL_FIRST",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "parse_error": true,
+        "provider": "openai",
+        "raw_preview": {
+          "semantic_ir_initial": {
+            "base_url": "[REDACTED]",
+            "error": null,
+            "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+            "ok": true,
+            "provider": "openai",
+            "sdk_path_used": true,
+            "skipped": false,
+            "transport": "openai_sdk",
+            "truncated_fields": 1
+          },
+          "semantic_ir_repair": {
+            "base_url": "[REDACTED]",
+            "error": null,
+            "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+            "ok": true,
+            "provider": "openai",
+            "sdk_path_used": true,
+            "skipped": false,
+            "transport": "openai_sdk",
+            "truncated_fields": 1
+          }
+        },
+        "reason": "semantic_ir_validation_error: zero_rows_semantics must be one of ['EMPTY_RESULT_IS_ANSWER', 'NOT_APPLICABLE', 'NO_MATCH', 'UNKNOWN'].",
+        "route": "EVIDENCE_PIPELINE",
+        "truncated_fields": 7
+      },
+      "stage": "llm-owned planning",
+      "technique": "single unified LLM route/evidence/sql/api planner",
+      "timestamp": "2026-06-05T14:11:23.037233+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate",
+      "correctness_role": "blocks malformed dependency graphs before execution",
+      "duration_ms": 0.0,
+      "effect": "validates only graph shape; does not choose subtasks, dependencies, SQL, or API paths",
+      "efficiency_role": "bounds pass scheduling to LLM-declared valid graphs",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_count": 0,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passed": false
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate",
+      "timestamp": "2026-06-05T14:11:23.040857+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair_start",
+      "correctness_role": "diagnostic only; backend still supplies only graph-shape feedback",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow pass-graph repair LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan"
+      },
+      "output": {
+        "current_stage": "llm_pass_graph_repair_call_start"
+      },
+      "stage": "llm-owned pass graph repair",
+      "technique": "pre-call heartbeat before pass graph repair",
+      "timestamp": "2026-06-05T14:11:23.041799+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_repair",
+      "correctness_role": "backend supplies only graph-shape errors and no replacement subtasks or SQL/API",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM repair its own pass graph after shape-only feedback",
+      "efficiency_role": "caps pass graph repair to one attempt",
+      "input_summary": {
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan"
+      },
+      "output": {
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_repair_attempted": true,
+        "pass_graph_repair_success": false,
+        "repair_plan": {
+          "backend_unavailable": false,
+          "evidence_order": "SQL_FIRST",
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "parse_error": true,
+          "provider": "openai",
+          "raw_preview": {
+            "semantic_ir_initial": {
+              "base_url": "[REDACTED]",
+              "error": null,
+              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+              "ok": true,
+              "provider": "openai",
+              "sdk_path_used": true,
+              "skipped": false,
+              "transport": "openai_sdk",
+              "truncated_fields": 1
+            },
+            "semantic_ir_missing_toolcall_retry": {
+              "base_url": "[REDACTED]",
+              "error": null,
+              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+              "ok": true,
+              "provider": "openai",
+              "sdk_path_used": true,
+              "skipped": false,
+              "transport": "openai_sdk",
+              "truncated_fields": 1
+            },
+            "semantic_ir_repair": {
+              "base_url": "[REDACTED]",
+              "error": null,
+              "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+              "ok": true,
+              "provider": "openai",
+              "sdk_path_used": true,
+              "skipped": false,
+              "transport": "openai_sdk",
+              "truncated_fields": 1
+            }
+          },
+          "reason": "semantic_ir_validation_error: source_scope must be one of ['BOTH', 'LIVE_API', 'LOCAL_SNAPSHOT', 'NONE'].",
+          "route": "EVIDENCE_PIPELINE",
+          "truncated_fields": 7
+        },
+        "repaired_pass_count": 0
+      },
+      "stage": "llm-owned pass graph repair",
+      "technique": "single LLM-owned pass graph repair",
+      "timestamp": "2026-06-05T14:12:08.618078+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_pass_graph_gate_repair",
+      "correctness_role": "does not add missing passes or choose SQL/API paths",
+      "duration_ms": 0.0,
+      "effect": "executes repaired plan only if the LLM supplied a valid graph",
+      "efficiency_role": "stops after one graph repair attempt",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "error_message": "EVIDENCE_PIPELINE plans must declare at least one pass.",
+        "error_type": "empty_evidence_plan",
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_count": 0,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passed": false
+      },
+      "stage": "llm-owned pass graph validation",
+      "technique": "shape-only PassGraphGate on repaired plan",
+      "timestamp": "2026-06-05T14:12:08.621141+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_v2_execution_optimizer",
+      "correctness_role": "does not split prompts, choose SQL/API paths, rewrite SQL/API, or generate answers",
+      "duration_ms": 0.0,
+      "effect": "optimizes resource order, exact duplicate work, cache reuse, and budgets without changing LLM semantics",
+      "efficiency_role": "prioritizes critical path and enables exact pass-result reuse",
+      "input_summary": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "model_cascade_used": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 1,
+        "v2_execution_optimizer_used": true
+      },
+      "stage": "llm-owned execution optimization",
+      "technique": "backend-only scheduling/cache/budget optimizer",
+      "timestamp": "2026-06-05T14:12:08.622465+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_v2_pipeline_scheduler",
+      "correctness_role": "keeps backend responsibility limited to scheduling, gates, execution, and result storage",
+      "duration_ms": 0.0,
+      "effect": "moves LLM-declared passes through fixed execution stages without changing pass semantics",
+      "efficiency_role": "allows later passes to enter free stages before earlier passes finish all stages",
+      "input_summary": {
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 4,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm-owned pipeline scheduling",
+      "technique": "resource-bounded stage scheduler for LLM-declared pass DAG",
+      "timestamp": "2026-06-05T14:12:08.623247+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_generation_boundary",
+      "correctness_role": "separates LLM ownership from compile/request/runtime safety checks",
+      "duration_ms": 0.0,
+      "effect": "records that backend did not replace LLM semantic or SQL/API generation",
+      "efficiency_role": "bounds repair attempts before execution",
+      "input_summary": {
+        "evidence_order": "SQL_FIRST",
+        "route": "EVIDENCE_PIPELINE"
+      },
+      "metrics": {
+        "alias_materialized_count": 0,
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0
+      },
+      "output": {
+        "alias_materialized_count": 0,
+        "api_execution_latency_sec": 0.0,
+        "api_gate_latency_sec": 0.0,
+        "api_gate_passed": null,
+        "api_repair_attempts": 0,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "budget_error": null,
+        "budget_exceeded": false,
+        "budget_limits": {
+          "max_api_workers": 2,
+          "max_llm_calls": 8,
+          "max_parallelism": 4,
+          "max_passes": 6,
+          "max_repair_attempts": 1,
+          "max_sql_workers": 2,
+          "timeout_seconds": 30.0
+        },
+        "cache_hits": 0,
+        "checkpoint_resume_used": false,
+        "critical_path": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deduped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "dependency_edges": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "deterministic_answer_template_used": false,
+        "early_stopped_passes": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "evidence_bus_id": "evidence_run_c7887b13ddbd425cafc79b545541a8f4",
+        "exact_pass_cache_hits": 0,
+        "exact_pass_cache_scope": "single_run",
+        "hidden_eval_gold_used": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_owned_generation": true,
+        "llm_pass_count": 0,
+        "llm_pass_graph_used": false,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "max_api_workers": 2,
+        "max_parallelism": 4,
+        "max_sql_workers": 2,
+        "model_cascade_used": false,
+        "multi_pass_enabled": false,
+        "parallel_groups": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "parallel_pass_count": 0,
+        "pass_graph_gate_error_type": "empty_evidence_plan",
+        "pass_graph_gate_passed": false,
+        "pass_graph_repair_attempted": true,
+        "pass_graph_repair_skipped_reason": null,
+        "pass_graph_repair_success": false,
+        "pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "passes_completed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_dependency_blocked": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_executed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "passes_failed": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "pipeline_stage_count": 8,
+        "plan_version": 1,
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "raw_sql_safety_gate_failures": 0,
+        "repaired_pass_count": 0,
+        "result_bundle_id": "bundle_run_c7887b13ddbd425cafc79b545541a8f4",
+        "run_id": "run_c7887b13ddbd425cafc79b545541a8f4",
+        "semantic_alias_count": 0,
+        "semantic_alias_materialized": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "semantic_alias_materialized_count": 0,
+        "semantic_alias_validation_failures": 0,
+        "sequential_pass_count": 0,
+        "sql_execution_latency_sec": 0.0,
+        "sql_gate_latency_sec": 0.0,
+        "sql_gate_passed": null,
+        "sql_repair_attempts": 0,
+        "stage_events": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "stage_pipeline_used": true,
+        "truncated_fields": 5,
+        "v2_execution_optimizer_used": true,
+        "v2_pipeline_scheduler_used": false
+      },
+      "stage": "llm/backend boundary",
+      "technique": "LLM-owned candidate generation with backend-only gates",
+      "timestamp": "2026-06-05T14:12:08.624107+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records runtime evidence or compile/request failures without fabricating data",
+      "duration_ms": 0.0,
+      "effect": "executes only LLM-proposed candidates that pass backend gates",
+      "efficiency_role": "does not execute alternative backend-generated candidates",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "api_calls_executed": 0,
+        "dry_run_status": false,
+        "sql_calls_executed": 0
+      },
+      "stage": "execution",
+      "technique": "LLM-owned SQL/API tool execution",
+      "timestamp": "2026-06-05T14:12:08.736447+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_pipeline_boundary",
+      "correctness_role": "prevents pure direct answer routing from masking evidence-required prompts",
+      "duration_ms": 0.0,
+      "effect": "records that data/mixed/ambiguous prompts continued into evidence-backed answer grounding",
+      "efficiency_role": "makes EvidenceBus construction explicit",
+      "input_summary": {
+        "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+        "tool_result_count": 0
+      },
+      "output": {
+        "evidence_bus_built": true,
+        "evidence_pipeline_bypassed": false,
+        "llm_evidence_order": "SQL_FIRST",
+        "llm_final_answer_composer_ran": true,
+        "llm_route": "EVIDENCE_PIPELINE",
+        "pass_results_count": 1,
+        "post_evidence_answer_router_ran": false
+      },
+      "stage": "evidence forwarding",
+      "technique": "V2 evidence boundary",
+      "timestamp": "2026-06-05T14:12:08.737007+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "keeps exact values and scoped caveats in existing EvidenceBus semantics",
+      "duration_ms": 0.0,
+      "effect": "forwards executed SQL/API evidence into the existing grounded answer pipeline",
+      "efficiency_role": "uses collected evidence without extra tool calls",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "evidence": {
+          "pass_ids": {
+            "items": [
+              "pass_graph_gate"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "pass_result_count": 1,
+          "run_id": "run_c7887b13ddbd425cafc79b545541a8f4"
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "EvidenceBus",
+      "timestamp": "2026-06-05T14:12:08.737644+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_result_bundle",
+      "correctness_role": "keeps pass-level runtime evidence separate from backend answer generation",
+      "duration_ms": 0.0,
+      "effect": "stores all LLM-declared pass results before final LLM aggregation",
+      "efficiency_role": "reuses executed pass results without extra tools",
+      "input_summary": {
+        "pass_results_count": 1,
+        "tool_result_count": 0
+      },
+      "output": {
+        "append_events": {
+          "items": [
+            {
+              "appended": true,
+              "attempt_id": 0,
+              "pass_id": "pass_graph_gate"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "pass_results_count": 1,
+        "run_id": "run_c7887b13ddbd425cafc79b545541a8f4",
+        "runtime_passes": {
+          "items": [
+            {
+              "attempt_id": 0,
+              "cached_sources": null,
+              "dependency_resolution": {
+                "errors": {
+                  "items": [],
+                  "total_items": 0,
+                  "truncated_items": false
+                },
+                "required": false,
+                "resolved": true
+              },
+              "global_pass_id": "run_c7887b13ddbd425cafc79b545541a8f4:pass_graph_gate",
+              "pass_id": "pass_graph_gate",
+              "path": "AGGREGATION_ONLY",
+              "plan_version": 1,
+              "run_id": "run_c7887b13ddbd425cafc79b545541a8f4",
+              "status": "ERROR",
+              "truncated_fields": 6
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "ResultBundle",
+      "timestamp": "2026-06-05T14:12:08.738217+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_evidence_contract",
+      "correctness_role": "checks slot coverage and source scope without backend semantic routing",
+      "duration_ms": 0.0,
+      "effect": "maps LLM-declared answer slots to runtime evidence states before final answer composition",
+      "efficiency_role": "uses already collected pass results only",
+      "input_summary": {
+        "answer_contract_present": false,
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "answer_contract_used": false,
+        "evidence_contract_api_unavailable_count": 0,
+        "evidence_contract_no_evidence_count": 0,
+        "evidence_contract_partial_count": 0,
+        "evidence_contract_satisfied_count": 0,
+        "evidence_contract_used": false,
+        "evidence_contract_zero_row_count": 0,
+        "required_slot_count": 0,
+        "truncated_fields": 2
+      },
+      "stage": "answer synthesis",
+      "technique": "Answer Contract / Evidence Contract",
+      "timestamp": "2026-06-05T14:12:08.738749+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "prevents API_ERROR as no-data and LIVE_EMPTY as global absence",
+      "duration_ms": 0.0,
+      "effect": "keeps SQL errors, API errors, live empty, and direct evidence distinct",
+      "efficiency_role": "uses existing payloads only",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-06-05T14:12:08.739247+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "provides runtime facts to the LLM-owned final answer composer",
+      "duration_ms": 0.0,
+      "effect": "turns runtime evidence into typed answer fields",
+      "efficiency_role": "uses existing slot extraction",
+      "input_summary": {
+        "tool_result_count": 0
+      },
+      "output": {
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-06-05T14:12:08.743341+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer_start",
+      "correctness_role": "diagnostic only; does not alter final answer composition or grounding",
+      "duration_ms": 0.0,
+      "effect": "records the exact boundary before the potentially slow final-answer LLM call",
+      "efficiency_role": "enables smoke timeout localization without extra SQL/API calls",
+      "input_summary": {
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "current_stage": "llm_final_answer_composer_call_start"
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "pre-call heartbeat before LLMFinalAnswerComposer",
+      "timestamp": "2026-06-05T14:12:08.743967+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_composer",
+      "correctness_role": "backend does not render deterministic templates or select competing answers",
+      "duration_ms": 0.0,
+      "effect": "lets the LLM own final answer composition from runtime evidence",
+      "efficiency_role": "uses one final-answer LLM call after evidence execution",
+      "input_summary": {
+        "runtime_pass_count": 1,
+        "slot_counts": {
+          "answer_family": "schema_dataset",
+          "api_error": false,
+          "discrepancy": false,
+          "dry_run": false
+        }
+      },
+      "output": {
+        "backend_unavailable": false,
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+        "parse_error": false,
+        "provider": "openai",
+        "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "llm-owned answer synthesis",
+      "technique": "LLMFinalAnswerComposer",
+      "timestamp": "2026-06-05T14:12:11.956058+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_syntax_gate",
+      "correctness_role": "does not rewrite, shorten, or score the answer",
+      "duration_ms": 0.0,
+      "effect": "checks only answer existence and wrapper serialization",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "composer": "LLMFinalAnswerComposer"
+      },
+      "output": {
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
+      },
+      "stage": "answer gate",
+      "technique": "minimal final-answer syntax gate",
+      "timestamp": "2026-06-05T14:12:11.957033+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_final_answer_semantic_gate",
+      "correctness_role": "blocks unsupported facts, missing requested facts, and scope/caveat errors without generating an answer",
+      "duration_ms": 0.0,
+      "effect": "checks whether LLM final answer claims are supported by runtime evidence",
+      "efficiency_role": "no SQL/API calls",
+      "input_summary": {
+        "syntax_gate_passed": true
+      },
+      "output": {
+        "passed": true,
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": {
+              "items": [
+                "API_ERROR",
+                "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            }
+          },
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": {
+              "items": [
+                {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "claim_matcher": {
+            "matches": {
+              "items": [
+                {
+                  "claim": {
+                    "hardness": "SOFT",
+                    "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                    "type": "SOFT_TEXT"
+                  },
+                  "reason": "soft_text",
+                  "status": "SUPPORTED"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            }
+          },
+          "contract_gate": {
+            "passed": true
+          },
+          "ok": true,
+          "supported_claims": {
+            "items": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT"
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "stage": "answer gate",
+      "technique": "runtime-evidence semantic grounding gate",
+      "timestamp": "2026-06-05T14:12:11.961659+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_owned_final_answer_boundary",
+      "correctness_role": "keeps backend responsible only for syntax/semantic gates after LLM answer generation",
+      "duration_ms": 0.0,
+      "effect": "records that V2 did not use deterministic answer templates, renderers, or selectors as competing generators",
+      "efficiency_role": "no extra tool calls",
+      "input_summary": {
+        "runtime_pass_count": 1
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
+        "answer_syntax_gate_passed": true,
+        "deterministic_answer_template_used": false,
+        "final_answer_repair_latency_sec": 0.0,
+        "final_answer_supported_by_evidence": true,
+        "final_composer_latency_sec": 3.211,
+        "final_gate_latency_sec": 0.005,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 6,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer ownership boundary",
+      "technique": "LLM-owned final answer with backend gates",
+      "timestamp": "2026-06-05T14:12:11.962447+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "keeps final answer generation LLM-owned while preserving runtime evidence grounding",
+      "duration_ms": 0.0,
+      "effect": "returns the LLM-composed answer when gates pass, otherwise a safe evidence-state fallback",
+      "efficiency_role": "no additional SQL/API calls",
+      "input_summary": {
+        "answer_semantic_gate_passed": true
+      },
+      "output": {
+        "answer_composer_used": "LLMFinalAnswerComposer",
+        "answer_repair_attempts": 0,
+        "answer_semantic_gate_passed": true,
+        "answer_syntax_gate_passed": true,
+        "deterministic_answer_template_used": false,
+        "final_answer_supported_by_evidence": true,
+        "hidden_eval_gold_used": false,
+        "llm_owned_final_answer": true,
+        "truncated_fields": 3,
+        "used_pass_ids": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        }
+      },
+      "stage": "final response",
+      "technique": "LLM-owned final response",
+      "timestamp": "2026-06-05T14:12:11.963332+00:00"
+    }
+  ],
+  "domain_type": "LLM_OWNED_V2",
+  "errors": [],
+  "estimated_tokens": 1781,
+  "execution_time": 0.0,
+  "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+  "original_query": "What schemas do I have?",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "hermes_toolcall_ambiguous_user_schemas",
+  "route_type": "EVIDENCE_PIPELINE",
+  "runtime": 3.3592848340049386,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "estimated_tokens": 1808,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/hermes_toolcall_ambiguous_user_schemas/robust_generalized_harness_candidate_v2/metadata.json",
+      "prompt_tokens": 2471
+    },
+    {
+      "aggregation_instruction": "",
+      "answer_contract": null,
+      "api_request": null,
+      "backend_unavailable": false,
+      "diagnostics": {
+        "answer_contract_error_type": null,
+        "answer_contract_missing_initially": false,
+        "answer_contract_repair_attempted": false,
+        "answer_contract_secondary_call_latency_ms": 0,
+        "answer_contract_secondary_call_success": false,
+        "answer_contract_secondary_call_used": false,
+        "answer_contract_secondary_error": null,
+        "answer_contract_secondary_error_type": null,
+        "answer_contract_validation_passed": null,
+        "answer_contract_validation_used": false,
+        "api_card_detail_truncated": true,
+        "api_card_final_char_count": 4804,
+        "api_card_original_char_count": 6967,
+        "api_card_original_row_count": 20,
+        "api_card_row_count": 20,
+        "api_request_gate_failures": 0,
+        "atomic_protocol_fallback_used": false,
+        "backend_answer_contract_inference_used": false,
+        "backend_formal_compilation_used": false,
+        "backend_generated_sql": false,
+        "backend_schema_binding_inference_used": false,
+        "backend_semantic_decomposition_used": false,
+        "backend_semantic_planning_used": false,
+        "backend_sql_api_generation_used": false,
+        "compiled_alias_count": 0,
+        "compiled_api_count": 0,
+        "compiled_sql_count": 0,
+        "compiler_latency_ms": 0,
+        "planner_extra_body_keys": [],
+        "planner_finish_reason": "tool_calls",
+        "planner_json_fallback_used": false,
+        "planner_json_parse_error": null,
+        "planner_model_timeout_sec": 60,
+        "planner_parse_source": "semantic_ir_validation_error",
+        "planner_profile": "current",
+        "planner_provider_latency_ms": 39543,
+        "planner_raw_text_content_present": false,
+        "planner_repair_attempted": false,
+        "planner_retry_reason": null,
+        "planner_retry_used": false,
+        "planner_schema_profile": "default",
+        "planner_success": false,
+        "planner_timeout": false,
+        "planner_tool_calls_count": 1,
+        "planner_tool_choice": "submit_semantic_ir_plan",
+        "planner_tool_name": "submit_semantic_ir_plan",
+        "planner_tool_names": [
+          "submit_semantic_ir_plan"
+        ],
+        "planner_toolcall_attempted": true,
+        "planner_toolcall_supported": true,
+        "provider_capabilities": {
+          "requires_json_prompting": false,
+          "supports_json_content_fallback": true,
+          "supports_tool_calls": true
+        },
+        "raw_sql_fallback_considered": false,
+        "raw_sql_fallback_gate_error_type": null,
+        "raw_sql_fallback_latency_ms": 0,
+        "raw_sql_fallback_reason": null,
+        "raw_sql_fallback_rejected_reason": null,
+        "raw_sql_fallback_repair_attempted": false,
+        "raw_sql_fallback_repair_success": false,
+        "raw_sql_fallback_success": false,
+        "raw_sql_fallback_task_id": null,
+        "raw_sql_fallback_used": false,
+        "required_slot_count": 0,
+        "schema_binding_call_latency_ms": 0,
+        "schema_binding_count": 0,
+        "schema_binding_enabled": true,
+        "schema_binding_error_message": null,
+        "schema_binding_error_type": null,
+        "schema_binding_ids": [],
+        "schema_binding_mode": "repair_hint_only",
+        "schema_binding_repair_attempted": false,
+        "schema_binding_repair_success": false,
+        "schema_binding_toolcall_enabled": false,
+        "schema_binding_used": false,
+        "schema_binding_validation_passed": null,
+        "schema_card_columns_truncated": true,
+        "schema_card_final_char_count": 6861,
+        "schema_card_original_char_count": 10669,
+        "schema_card_original_row_count": 18,
+        "schema_card_row_count": 18,
+        "sdk_toolcall_semantic_ir_used": true,
+        "semantic_alias_count": 0,
+        "semantic_alias_error_type": null,
+        "semantic_alias_repair_attempted": false,
+        "semantic_alias_validation_passed": null,
+        "semantic_alias_validation_used": false,
+        "semantic_ir_context_truncated": true,
+        "semantic_ir_context_truncated_sections": [
+          "schema_card",
+          "api_card"
+        ],
+        "semantic_ir_planner_char_budget": 24000,
+        "semantic_ir_prompt_system_chars": 1000,
+        "semantic_ir_prompt_total_chars": 23654,
+        "semantic_ir_prompt_user_chars": 19051,
+        "semantic_ir_provider_latency_ms": 39540,
+        "semantic_ir_repair_attempted": true,
+        "semantic_ir_repair_latency_ms": 21978,
+        "semantic_ir_repair_success": false,
+        "semantic_ir_support_check_latency_ms": 0,
+        "semantic_ir_support_checked": false,
+        "semantic_ir_support_repair_attempted": false,
+        "semantic_ir_support_repair_error_message": null,
+        "semantic_ir_support_repair_error_type": null,
+        "semantic_ir_support_repair_latency_ms": 0,
+        "semantic_ir_support_repair_success": false,
+        "semantic_ir_supported": null,
+        "semantic_ir_task_count": 0,
+        "semantic_ir_tool_schema_chars": 3603,
+        "semantic_ir_toolcall_supported": true,
+        "semantic_ir_unsupported_features": [],
+        "semantic_ir_unsupported_reason": null,
+        "semantic_ir_validation_error_message": "zero_rows_semantics must be one of ['EMPTY_RESULT_IS_ANSWER', 'NOT_APPLICABLE', 'NO_MATCH', 'UNKNOWN'].",
+        "semantic_ir_validation_error_type": "parse_error",
+        "semantic_ir_validation_latency_ms": 0,
+        "semantic_ir_validation_passed": false,
+        "sql_compile_gate_failures": 0,
+        "v2_semantic_ir_used": true
+      },
+      "direct_answer": null,
+      "evidence_order": "SQL_FIRST",
+      "kind": "llm_unified_planner",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+      "parse_error": true,
+      "passes": [],
+      "provider": "openai",
+      "raw_preview": {
+        "semantic_ir_initial": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 11
+        },
+        "semantic_ir_repair": {
+          "base_url": "[REDACTED]",
+          "error": null,
+          "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+          "ok": true,
+          "provider": "openai",
+          "sdk_path_used": true,
+          "skipped": false,
+          "transport": "openai_sdk",
+          "truncated_fields": 11
+        }
+      },
+      "reason": "semantic_ir_validation_error: zero_rows_semantics must be one of ['EMPTY_RESULT_IS_ANSWER', 'NOT_APPLICABLE', 'NO_MATCH', 'UNKNOWN'].",
+      "route": "EVIDENCE_PIPELINE",
+      "sql": null
+    },
+    {
+      "evidence_bus_built": true,
+      "evidence_pipeline_bypassed": false,
+      "kind": "evidence_boundary",
+      "llm_evidence_order": "SQL_FIRST",
+      "llm_final_answer_composer_ran": true,
+      "llm_route": "EVIDENCE_PIPELINE",
+      "pass_results_count": 1,
+      "post_evidence_answer_router_ran": false
+    },
+    {
+      "answered_subtasks": [],
+      "backend_unavailable": false,
+      "caveats_included": [],
+      "claimed_facts": [],
+      "error_message": null,
+      "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "kind": "llm_final_answer_composer",
+      "model": "[REDACTED]/hf-models/Qwen3.6-35B-A3B-OptiQ-4bit",
+      "parse_error": false,
+      "provider": "openai",
+      "raw_preview": "Runtime evidence was unavailable; cannot provide a verified answer.",
+      "unanswered_subtasks": [],
+      "used_pass_ids": []
+    },
+    {
+      "answer_composer_used": "LLMFinalAnswerComposer",
+      "answer_contract_used": false,
+      "answer_repair_attempts": 0,
+      "answer_semantic_gate_passed": true,
+      "answer_syntax_gate_passed": true,
+      "deterministic_answer_template_used": false,
+      "evidence_contract_summary": {
+        "evidence_contract_api_unavailable_count": 0,
+        "evidence_contract_error_count": 0,
+        "evidence_contract_no_evidence_count": 0,
+        "evidence_contract_partial_count": 0,
+        "evidence_contract_satisfied_count": 0,
+        "evidence_contract_used": false,
+        "evidence_contract_zero_row_count": 0,
+        "evidence_slot_states": []
+      },
+      "evidence_slot_states": [],
+      "final_answer_repair_latency_sec": 0.0,
+      "final_answer_supported_by_evidence": true,
+      "final_composer_latency_sec": 3.211,
+      "final_gate_latency_sec": 0.005,
+      "hidden_eval_gold_used": false,
+      "kind": "answer_diagnostics",
+      "llm_owned_final_answer": true,
+      "required_slot_count": 0,
+      "semantic_gate": {
+        "error_message": null,
+        "error_type": null,
+        "missing_required_fields": [],
+        "passed": true,
+        "scope_errors": [],
+        "unsupported_claims": [],
+        "verifier": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [
+              "API_ERROR",
+              "EVIDENCE_PIPELINE PLANS MUST DECLARE AT LEAST ONE PASS."
+            ],
+            "api_error_scopes": [],
+            "counts": [],
+            "dates": [],
+            "evidence_strings": [],
+            "ids": [],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [],
+            "relationships": [],
+            "statuses": []
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 1,
+            "claims": [
+              {
+                "hardness": "SOFT",
+                "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                "type": "SOFT_TEXT",
+                "value": ""
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "SOFT",
+                  "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+                  "type": "SOFT_TEXT",
+                  "value": ""
+                },
+                "reason": "soft_text",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "contract_gate": {
+            "error_type": null,
+            "failed_slot_ids": [],
+            "message": null,
+            "passed": true,
+            "slot_results": []
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "SOFT",
+              "span": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "text": "Runtime evidence was unavailable; cannot provide a verified answer.",
+              "type": "SOFT_TEXT",
+              "value": ""
+            }
+          ],
+          "unsupported_claims": []
+        }
+      },
+      "syntax_gate": {
+        "error_message": null,
+        "error_type": null,
+        "final_answer": "Runtime evidence was unavailable; cannot provide a verified answer.",
+        "passed": true
+      },
+      "used_pass_ids": []
+    }
+  ],
+  "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE_V2",
+  "timings": {
+    "answer_time": 3.2263725423254073
+  },
+  "tool_call_count": 0
+}

@@ -1,0 +1,104 @@
+{
+  "report_type": "gemini_smoke_failure_fix",
+  "classification": "keep_trial_only",
+  "packaged_default_changed": false,
+  "v2_promoted": false,
+  "pioneer_used": false,
+  "dev_eval_run": false,
+  "benchmark_run": false,
+  "files_changed": [
+    "dashagent/executor.py",
+    "dashagent/llm_final_answer_composer.py",
+    "dashagent/v2_semantic_ir_planner.py",
+    "scripts/run_hermes_v2_toolcall_smoke.py",
+    "tests/test_hermes_v2_toolcall_smoke.py",
+    "tests/test_llm_final_answer_composer.py",
+    "tests/test_v2_semantic_ir.py"
+  ],
+  "root_causes": {
+    "ambiguous_user_schemas": {
+      "before": {
+        "compiled_sql_count": 1,
+        "sql_calls": 1,
+        "runtime_fact_count": 0,
+        "local_snapshot_fact_count": 0,
+        "unsupported_claims": 0,
+        "final_semantic_gate_final_failures": 0,
+        "pass": false
+      },
+      "cause": "Smoke metric counted only full SQL result payloads or list-shaped checkpoint facts. The Gemini trajectory stored the SQL result as a compact/truncated preview while the final-answer composer checkpoint still recorded successful local slot evidence.",
+      "fix": "Count compacted successful local SQL evidence from checkpoint_result_bundle plus checkpoint_llm_final_answer_composer slot_counts for smoke metrics only."
+    },
+    "mixed_inactive_journeys": {
+      "before": {
+        "plan_paths": ["DIRECT", "API"],
+        "compiled_sql_count": 0,
+        "compiled_api_count": 1,
+        "runtime_fact_count": 0,
+        "pass": false
+      },
+      "cause": "The LLM-owned Semantic IR planner selected CONCEPT plus LIVE_QUERY for a mixed concept-and-record prompt that had no live/current/platform/API cue.",
+      "fix": "Strengthen the Semantic IR prompt with a general show/list actual-records local-source rule, an inactive-journey local snapshot rule, and an explicit CONCEPT plus LOCAL_QUERY example."
+    },
+    "compare_local_live_birthday_status": {
+      "before": {
+        "compiled_sql_count": 1,
+        "compiled_api_count": 1,
+        "runtime_fact_count": 1,
+        "local_snapshot_fact_count": 1,
+        "final_answer": "I found runtime evidence but could not compose a verified final answer...",
+        "final_semantic_gate_final_failures": 1,
+        "pass": false
+      },
+      "cause": "When the LLM final answer and one repair failed the semantic gate, the safe fallback preserved evidence safety but used generic could-not-compose wording and the executor still recorded the failed pre-fallback gate as the final gate.",
+      "fix": "Make fallback text a scoped evidence-state answer when local facts exist, add live/API unavailable caveat when API evidence failed, and semantically recheck the fallback before recording final answer diagnostics."
+    }
+  },
+  "smoke_before": {
+    "source": "user-provided current objective state and pre-fix gemini_openai_compat_smoke report",
+    "passed_count": 4,
+    "failed_count": 3,
+    "timeout_count": 0,
+    "unsupported_claims": 0,
+    "no_tool_fp": 0,
+    "compiled_sql_count": 4,
+    "compiled_api_count": 2,
+    "final_semantic_gate_final_failures": 1
+  },
+  "smoke_after_attempt": {
+    "command": "DASHAGENT_LLM_PROVIDER=openai OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/ OPENAI_MODEL=gemini-3.5-flash OPENAI_API_KEY=$GEMINI_API_KEY python3 scripts/run_hermes_v2_toolcall_smoke.py",
+    "ok": false,
+    "skipped": true,
+    "skip_reason": "Gemini OpenAI-Compatible V2 Toolcall Smoke probe did not return native SDK tool/function calls.",
+    "probe_error": "<html><title>Error 400 (Bad Request)!!1</title></html>",
+    "row_count": 0,
+    "passed_count": 0,
+    "failed_count": 0,
+    "timeout_count": 0,
+    "unsupported_claims": 0,
+    "no_tool_fp": 0,
+    "final_semantic_gate_final_failures": 0
+  },
+  "gemini_toolcall_blocker": {
+    "observed_in_this_process": true,
+    "raw_rest_ok": false,
+    "sdk_ok": false,
+    "payload_key_difference": {
+      "same_order": true,
+      "sdk_extra_keys": [],
+      "sdk_missing_keys": []
+    },
+    "note": "The locally visible GEMINI_API_KEY still returns HTML 400 for the OpenAI-compatible probe, so the post-fix Gemini smoke rows could not be rerun in this Codex process."
+  },
+  "validation": {
+    "focused_regressions": "4 passed",
+    "related_tests": "60 passed",
+    "full_pytest": "1161 passed, 1 skipped",
+    "check_submission_ready": true,
+    "default_strategy_is_sql_first_api_verify": true,
+    "runtime_llm_direct_http_hits": 0,
+    "git_diff_check": true
+  },
+  "ready_for_gemini_dev_eval": false,
+  "ready_for_gemini_dev_eval_reason": "Do not run dev eval until Gemini smoke is 7/7. The live Gemini smoke could not execute rows because the probe returned HTML 400 in this environment."
+}

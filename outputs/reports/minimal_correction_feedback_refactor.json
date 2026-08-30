@@ -1,0 +1,136 @@
+{
+  "report_type": "minimal_correction_feedback_refactor",
+  "scope": "ROBUST_GENERALIZED_HARNESS_CANDIDATE implementation only",
+  "promotion_decision": "not_run",
+  "benchmark_conclusion": "not_run",
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "default_changed": false,
+  "final_submission_format_changed": false,
+  "components": {
+    "minimal_correction_feedback": {
+      "implemented": true,
+      "path": "dashagent/minimal_correction_feedback.py",
+      "tasks": [
+        "REVISE_SEMANTIC_DECISION",
+        "REVISE_POST_SQL_API_DECISION",
+        "REWRITE_FINAL_ANSWER"
+      ],
+      "large_payloads_excluded": true,
+      "gold_category_tags_oracle_expected_trace_excluded": true
+    },
+    "llm_first_semantic_routing_feedback": {
+      "implemented": true,
+      "gate_replaces_decision": false,
+      "revision_limit": 1,
+      "fallback_after_failed_revision": "risk_minimizing"
+    },
+    "llm_first_post_sql_decision": {
+      "implemented": true,
+      "card_path": "dashagent/post_sql_semantic_decision_card.py",
+      "decision_path": "dashagent/post_sql_llm_decision.py",
+      "gate_path": "dashagent/post_sql_semantic_decision_gate.py",
+      "allowed_modes": [
+        "CALL_API",
+        "SKIP_API",
+        "CAVEAT_ONLY"
+      ],
+      "llm_can_choose_endpoint_outside_allowed_candidates": false,
+      "llm_can_write_sql_or_api_params": false
+    },
+    "post_sql_semantic_decision_gate": {
+      "implemented": true,
+      "gate_replaces_llm_decision": false,
+      "conflict_codes": [
+        "API_REQUIRED_CANNOT_SKIP",
+        "SQL_SCOPE_MISMATCH",
+        "EXPLICIT_API_FAMILY_CANNOT_SKIP",
+        "LIVE_OR_STATUS_API_CUE_CANNOT_SKIP",
+        "MISSING_ROLES_CAN_BE_FILLED_BY_API",
+        "SQL_ERROR_API_CAN_ANSWER",
+        "SQL_ZERO_ROWS_LIVE_API_NEEDED",
+        "CALL_API_ENDPOINT_NOT_EXECUTABLE",
+        "API_NO_EVIDENCE_GAIN"
+      ]
+    },
+    "risk_minimizing_fallback": {
+      "implemented": true,
+      "sources": [
+        "RISK_MINIMIZING_FALLBACK",
+        "LOW_RISK_LOCAL_SQL_FALLBACK",
+        "CAVEAT_UNSAFE_API_FALLBACK"
+      ],
+      "semantic_certainty_claimed": false
+    },
+    "thin_execution_verifier": {
+      "implemented": true,
+      "semantic_rescoring": false,
+      "checks": [
+        "endpoint_allowed_candidate",
+        "safe_get",
+        "no_unresolved_path_params",
+        "evidence_gain_or_live_api_need"
+      ]
+    },
+    "final_answer_minimal_rewrite_feedback": {
+      "implemented": true,
+      "full_allowed_fact_index_resent": false,
+      "rewrite_attempt_limit": 1,
+      "fallback": "deterministic_answer_slot_renderer"
+    }
+  },
+  "checkpoints_added": [
+    "checkpoint_minimal_correction_feedback_semantic",
+    "checkpoint_semantic_revision_result",
+    "checkpoint_semantic_fallback_if_any",
+    "checkpoint_post_sql_semantic_decision_card",
+    "checkpoint_post_sql_llm_decision_v1",
+    "checkpoint_post_sql_minimal_correction_feedback",
+    "checkpoint_post_sql_llm_decision_v2",
+    "checkpoint_post_sql_risk_minimizing_fallback",
+    "checkpoint_post_sql_execution_verifier",
+    "checkpoint_final_answer_minimal_correction_feedback",
+    "checkpoint_final_answer_rewrite_result",
+    "checkpoint_final_answer_fallback_if_any"
+  ],
+  "candidate_config": {
+    "strategy": "ROBUST_GENERALIZED_HARNESS_CANDIDATE",
+    "explicit_only": true,
+    "enable_post_sql_llm_semantic_decision": true,
+    "legacy_post_sql_llm_advisor_enabled": false,
+    "packaged_default_unchanged": true
+  },
+  "validation": {
+    "pytest_targeted": {
+      "command": "python3 -m pytest -q tests/test_post_sql_llm_first_decision.py tests/test_evidence_grounded_final_answer_verifier.py tests/test_robust_generalized_candidate.py tests/test_semantic_routing_harness.py",
+      "status": "passed",
+      "summary": "69 passed in 6.95s"
+    },
+    "check_submission_ready": {
+      "command": "python3 scripts/check_submission_ready.py",
+      "status": "passed",
+      "ok": true,
+      "default_strategy": "SQL_FIRST_API_VERIFY",
+      "query_output_count": 73
+    },
+    "hardcode_fake_score_audit": {
+      "command": "python3 scripts/audit_hardcoded_runtime_and_score_paths.py",
+      "status": "passed",
+      "unsafe_runtime_hardcode_count": 0,
+      "unsafe_fake_score_count": 0
+    },
+    "targeted_secret_scan": {
+      "status": "passed",
+      "hit_count": 0
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  },
+  "known_todos": [
+    "Run controlled benchmark and ablation with real configured LLM backend.",
+    "Measure revision success and fallback rates on organizer 35 and internal 500.",
+    "Tune compact post-SQL card and feedback token cost after real eval.",
+    "Keep post-SQL LLM semantic decision and LLM answer generation candidate-scoped until future explicit promotion review."
+  ]
+}

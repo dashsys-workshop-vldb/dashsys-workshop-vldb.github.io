@@ -1,0 +1,496 @@
+{
+  "agent_executor_used": true,
+  "category_tags_domain_visible_to_runtime": false,
+  "engine": "real_agent",
+  "expected_trace_visible_to_runtime": false,
+  "extracted_runtime": {
+    "anti_hallucination_initial_fail": false,
+    "anti_hallucination_revision_attempted": false,
+    "anti_hallucination_revision_success": false,
+    "api_calls": 1,
+    "api_calls_added": 0,
+    "api_calls_saved": 0,
+    "api_families": [
+      "flowservice_flows"
+    ],
+    "api_used": true,
+    "applied_decision_count": 0,
+    "applied_decision_records": [
+      {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "SAFE_API_PROBE",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_full_candidate_no_semantic_parse_real",
+        "truncated_fields": 2
+      }
+    ],
+    "behavior_changed": false,
+    "blocker_count": 3,
+    "checkpoint_names": [
+      "checkpoint_01_raw_query",
+      "checkpoint_runtime_leakage_guard",
+      "checkpoint_score_provenance_guard",
+      "checkpoint_00_prompt_router",
+      "checkpoint_simple_prompt_gate",
+      "checkpoint_objective_prompt_features",
+      "checkpoint_semantic_parse",
+      "checkpoint_semantic_intent_decision",
+      "checkpoint_routing_anti_hallucination_gate",
+      "checkpoint_semantic_consistency_verifier",
+      "checkpoint_no_tool_safety_verifier",
+      "checkpoint_semantic_route_decision_ladder",
+      "checkpoint_real_behavior_applied_trial",
+      "checkpoint_safe_api_probe",
+      "checkpoint_12_validation",
+      "checkpoint_13_tool_execution",
+      "checkpoint_14_evidence_bus",
+      "checkpoint_evidence_quality_classifier",
+      "checkpoint_answer_slot_renderer",
+      "checkpoint_evidence_grounded_answer_builder",
+      "checkpoint_18_final_answer"
+    ],
+    "estimated_total_tokens": 385,
+    "fallback_count": 1,
+    "feature_flags_used": {
+      "combined_safe_applied": false,
+      "combined_safe_deterministic_promotion_candidate": false,
+      "post_sql_deterministic_applied": false,
+      "post_sql_llm_advisor_applied": false,
+      "robust_generalized_harness_candidate": false,
+      "semantic_no_tool_applied": false,
+      "staged_evidence_applied": false
+    },
+    "latest_code_paths_enabled": {
+      "compact_json_llm_context": true,
+      "evidence_bus_answer_verifier_token_reduction": false,
+      "no_tool_safety_verifier": true,
+      "objective_prompt_features": true,
+      "post_sql_api_call_verifier": false,
+      "post_sql_deterministic_policy": false,
+      "post_sql_llm_advisor": false,
+      "routing_anti_hallucination_gate": true,
+      "routing_feedback_revision": true,
+      "semantic_intent_classifier": true,
+      "semantic_route_decision_ladder": true,
+      "staged_evidence_policy": false
+    },
+    "missing_checkpoints": [
+      "checkpoint_initial_evidence_branch_policy",
+      "checkpoint_post_sql_api_call_verifier",
+      "checkpoint_15_answer_slots",
+      "checkpoint_16_answer_verification"
+    ],
+    "observable_trace": {
+      "checkpoint_00_prompt_router": {
+        "confidence": 0.84,
+        "matched_rules": {
+          "items": [
+            "local_db:find",
+            "local_db:local snapshot"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "mode": "LOCAL_DB_ONLY",
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: find, local snapshot.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": false,
+        "requires_database": true,
+        "risk": "low",
+        "truncated_fields": 1
+      },
+      "checkpoint_01_raw_query": {
+        "query": "Find local snapshot details for connector named \"the sampled object\". Use only local snapshot evidence for the workflow inventory.",
+        "query_id": "da500_0159",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "checkpoint_12_validation": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true,
+              "repaired": false
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_13_tool_execution": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": true,
+              "method": "GET",
+              "ok": false,
+              "result_preview": {
+                "caveat": "Adobe credentials unavailable; API call not executed.",
+                "dry_run": true,
+                "endpoint_family": "/data/foundation/flowservice/flows",
+                "error_category": "dry_run_unavailable",
+                "evidence_state": "dry_run_unavailable",
+                "live_success": false,
+                "ok": false,
+                "usable_evidence": false
+              },
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": true,
+        "sql_calls_executed": 0
+      },
+      "checkpoint_14_evidence_bus": {
+        "evidence": {}
+      },
+      "checkpoint_18_final_answer": {
+        "answer_length": 167,
+        "final_answer": "Evidence: names: the sampled object. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+        "final_token_estimate": 29
+      },
+      "checkpoint_answer_slot_renderer": {
+        "answer": "Evidence: names: the sampled object. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.",
+        "caveats": {
+          "items": [
+            "API unavailable/error; cannot verify live state.",
+            "Live API verification was not executed because Adobe credentials are unavailable."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "rendered_fields": {
+          "items": [
+            "entity",
+            "status",
+            "timestamp"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "shape": "evidence",
+        "unsupported_claims_count": 0
+      },
+      "checkpoint_evidence_grounded_answer_builder": {
+        "preview": "{\"answer\": \"Evidence: names: the sampled object. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.\", \"renderer\": {\"answer\": \"Evidence: names: the sampled object. API unavailable/error; cannot verify live state. Live API verification was not executed because Adobe credentials are unavailable.\", \"shape\": \"evidence\", \"rendered_fields\": {\"items\": [\"entity\", \"status\", \"timestamp\"], \"total_items\": 3, \"truncated_items\": false}, \"caveats\": {\"items\": [\"API unavailable/error; cannot verify live state.\", \"Live API verification was not executed because Adobe credentials are unavailable.\"], \"total_items\": 2, \"truncated_items\": false}, \"unsupported_claims_count\": 0}, \"evidence_quality\": {\"sql\": {\"items\": [\"SQL_NOT_RUN\"], \"total_items\": 1, \"truncated_items\": false}, \"api\": {\"items\": [\"API_ERROR\"], \"total_items\": 1, \"truncated_items\": false}, \"caveats\": {\"items\": [\"api_error_is_unavailable_not_no_data\"], \"total_items\": 1,...",
+        "truncated": true
+      },
+      "checkpoint_evidence_quality_classifier": {
+        "api": {
+          "items": [
+            "API_ERROR"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": true,
+        "caveats": {
+          "items": [
+            "api_error_is_unavailable_not_no_data"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_NOT_RUN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_no_tool_safety_verifier": {
+        "action": "BLOCK_NO_TOOL",
+        "allow_no_tool": false,
+        "capability_match_score": 1.0,
+        "clear_safe_api_family": false,
+        "evidence_need_score": 0.81,
+        "has_concrete_data_signal": true,
+        "no_tool_safety_score": 0.19
+      },
+      "checkpoint_objective_prompt_features": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "domain": {
+          "items": [
+            "DATAFLOW",
+            "FLOW",
+            "CONNECTOR"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "fields": {
+          "items": [
+            "NAME"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "find local snapshot details for connector named \"the sampled object\". use only local snapshot evidence for the workflow inventory.",
+        "p": "Find local snapshot details for connector named \"the sampled object\". Use only local snapshot evidence for the workflow inventory.",
+        "rel": {
+          "items": [
+            "USES"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "retr": {
+          "items": [
+            "FIND"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "checkpoint_real_behavior_applied_trial": {
+        "applied": false,
+        "blockers": {
+          "items": [
+            "SEMANTIC_NO_TOOL_SAFETY_NOT_SATISFIED"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "decision": "SAFE_API_PROBE",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": true,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_full_candidate_no_semantic_parse_real",
+        "truncated_fields": 2
+      },
+      "checkpoint_routing_anti_hallucination_gate": {
+        "final_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "final_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "initial_decision": {
+          "api": true,
+          "codes": {
+            "items": [
+              "FALLBACK"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "MIXED",
+          "need": "SQL_API",
+          "no_tool": false,
+          "sql": true
+        },
+        "initial_gate": {
+          "ok": true,
+          "support": {
+            "caps": true,
+            "intent": true,
+            "need": true
+          }
+        },
+        "revision_attempted": false,
+        "revision_success": false,
+        "revision_token_estimate": 0
+      },
+      "checkpoint_runtime_leakage_guard": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "checkpoint_safe_api_probe": {
+        "applied": true,
+        "decision": "SAFE_API_PROBE",
+        "decision_family": "SEMANTIC_SAFE_API_PROBE",
+        "endpoint_id": "flowservice_flows",
+        "fallback": false,
+        "record": true,
+        "shadow_only": false,
+        "trial_mode": "ablation_full_candidate_no_semantic_parse_real",
+        "truncated_fields": 4
+      },
+      "checkpoint_score_provenance_guard": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "synthetic_trace": false
+      },
+      "checkpoint_semantic_consistency_verifier": {
+        "allow_no_tool": false,
+        "fallback_action": "SAFE_API_PROBE",
+        "ok": true
+      },
+      "checkpoint_semantic_intent_decision": {
+        "api": true,
+        "codes": {
+          "items": [
+            "FALLBACK"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "conf": 0.82,
+        "intent": "MIXED",
+        "need": "SQL_API",
+        "no_tool": false,
+        "sql": true
+      },
+      "checkpoint_semantic_parse": {
+        "capability": {
+          "api_match": false,
+          "sql_match": false
+        },
+        "confidence": 0.0,
+        "evidence_need": "UNKNOWN",
+        "filters": {
+          "status": null
+        },
+        "no_tool_safe": false,
+        "operation": "UNKNOWN",
+        "source": "SEMANTIC_PARSE_DISABLED",
+        "target": {
+          "grounding": "UNKNOWN",
+          "instance_level": false
+        }
+      },
+      "checkpoint_semantic_route_decision_ladder": {
+        "action": "SAFE_API_PROBE",
+        "context_token_cost": 307,
+        "low_low_case": false,
+        "promotion_allowed": false,
+        "safe_api_probe": {
+          "endpoint_id": "flowservice_flows",
+          "max_endpoints": 1,
+          "method": "GET",
+          "mutating": false,
+          "path": "/data/foundation/flowservice/flows",
+          "unresolved_path_params": false
+        },
+        "shadow_only": false,
+        "tier_used": 0
+      },
+      "checkpoint_simple_prompt_gate": {
+        "confidence": 0.84,
+        "is_simple": false,
+        "reason": "Local snapshot keyword(s) can be answered from DuckDB/parquet: find, local snapshot.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      }
+    },
+    "post_sql_advisor_blocked": false,
+    "post_sql_advisor_checkpoint_present": false,
+    "post_sql_advisor_disabled_or_fallback": false,
+    "post_sql_advisor_invoked": false,
+    "post_sql_advisor_source": "UNKNOWN",
+    "post_sql_advisor_verified": false,
+    "post_sql_deterministic_fallback": false,
+    "post_sql_llm_advice_blocked": false,
+    "post_sql_llm_advisor_actual_call": false,
+    "post_sql_verifier_blocked": false,
+    "post_sql_verifier_source": "UNKNOWN",
+    "post_sql_verifier_verified": false,
+    "route_action": "API_ONLY",
+    "runtime_ms": 25.947874877601862,
+    "skipped_decision_count": 1,
+    "sql_calls": 0,
+    "sql_tables": [],
+    "sql_used": false,
+    "trajectory_timing": {},
+    "unsupported_claims": 0
+  },
+  "gold_visible_to_runtime": false,
+  "grade": {
+    "answer_grounding_score": 1.0,
+    "api_endpoint_family_accuracy": 1.0,
+    "api_error_interpretation_correct": true,
+    "api_required_used_accuracy": 0.5,
+    "behavior_score": 0.6458,
+    "combined_diagnostic_score": 0.2729,
+    "expected_evidence_need_accuracy": 0.0,
+    "expected_observable_trace_score": 0.1667,
+    "final_answer_correctness": 0.375,
+    "forbidden_claims_violation": false,
+    "live_empty_interpretation_correct": true,
+    "no_tool_false_negative": false,
+    "no_tool_false_positive": false,
+    "overall_score": 0.2729,
+    "required_facts_coverage": 0.0,
+    "route_accuracy": 0.0,
+    "sql_required_used_accuracy": 0.0,
+    "sql_table_accuracy": 0.0,
+    "tool_overuse": 1,
+    "tool_underuse": 1,
+    "trace_observability_score": 0.25,
+    "unsupported_claims": 0
+  },
+  "mode": "ablation_full_candidate_no_semantic_parse_real",
+  "oracle_visible_to_runtime": false,
+  "prompt_id": "da500_0159",
+  "runtime_input": {
+    "prompt": "Find local snapshot details for connector named \"the sampled object\". Use only local snapshot evidence for the workflow inventory.",
+    "prompt_id": "da500_0159"
+  },
+  "synthetic_sql_results_used": false,
+  "trajectory_path": "outputs/robust_generalized_internal500_eval/ablation_full_candidate_no_semantic_parse_real/da500_0159/trajectory.json"
+}

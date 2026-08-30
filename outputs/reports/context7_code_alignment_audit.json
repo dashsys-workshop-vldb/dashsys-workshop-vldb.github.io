@@ -1,0 +1,124 @@
+{
+  "audit_status_enum": [
+    "aligned",
+    "blocked_by_adobe_permission",
+    "minor_docs_mismatch",
+    "needs_manual_review",
+    "no_action",
+    "potential_bug"
+  ],
+  "created_at": "2026-05-17T03:00:00+00:00",
+  "docs_summary_path": "outputs/reports/context7_dependency_docs_summary.json",
+  "documentation_grounded": true,
+  "report_type": "context7_code_alignment_audit",
+  "sections": [
+    {
+      "area": "OpenAI SDK",
+      "documentation_grounded": true,
+      "files": [
+        "dashagent/llm_client.py",
+        "scripts/check_llm_sdk_backend.py"
+      ],
+      "findings": [
+        "Uses OpenAI SDK client object for chat completions.",
+        "Normalizes tool_calls and JSON argument strings defensively.",
+        "Reads usage metadata from model-dumped SDK response without assuming token fields are present.",
+        "Runtime direct LLM HTTP hits: `0`."
+      ],
+      "runtime_change_recommended": false,
+      "status": "aligned"
+    },
+    {
+      "area": "Anthropic SDK",
+      "documentation_grounded": true,
+      "files": [
+        "dashagent/llm_client.py"
+      ],
+      "findings": [
+        "Uses Anthropic SDK messages.create path instead of direct HTTP.",
+        "Converts OpenAI-style tools into Anthropic name/description/input_schema shape.",
+        "Converts tool_use blocks back to the common internal tool-call shape.",
+        "Normalizes input/output token usage into total_tokens defensively."
+      ],
+      "runtime_change_recommended": false,
+      "status": "aligned"
+    },
+    {
+      "area": "Adobe API Auth And Headers",
+      "documentation_grounded": true,
+      "files": [
+        "dashagent/api_client.py",
+        "dashagent/adobe_env.py",
+        "dashagent/api_outcome_classifier.py",
+        "scripts/run_live_api_readiness_smoke.py",
+        "scripts/run_post_permission_live_api_verification.py"
+      ],
+      "findings": [
+        "Env readiness uses supported primary names and aliases without value-bearing report output.",
+        "default_headers builds Authorization, x-api-key, x-gw-ims-org-id, and x-sandbox-name when constructible.",
+        "Token acquisition failures return structured non-dry-run API evidence.",
+        "Safe smoke/trial paths remain GET-only for Adobe data endpoints; IMS token request is the only OAuth POST.",
+        "Current live data success remains blocked by Adobe endpoint-level permission/sandbox/path/service outcomes, not by credential construction."
+      ],
+      "runtime_change_recommended": false,
+      "status": "blocked_by_adobe_permission"
+    },
+    {
+      "area": "DuckDB And SQLGlot SQL Safety",
+      "documentation_grounded": true,
+      "files": [
+        "dashagent/db.py",
+        "dashagent/sql_ast_tools.py",
+        "dashagent/validators.py"
+      ],
+      "findings": [
+        "DuckDB execute path is wrapped by read-only SQL checks before execution.",
+        "Multiple statements and destructive/environment-changing commands are blocked before DuckDB execution.",
+        "SQLGlot parse_one uses the DuckDB dialect for AST summaries and destructive-expression detection.",
+        "SQL validation reports parse warnings safely instead of crashing the executor."
+      ],
+      "runtime_change_recommended": false,
+      "status": "aligned"
+    },
+    {
+      "area": "Pydantic / SDK Model Serialization",
+      "documentation_grounded": true,
+      "files": [
+        "dashagent/llm_client.py",
+        "scripts/generate_consolidated_reports.py"
+      ],
+      "findings": [
+        "Repo does not define first-party Pydantic models in runtime paths.",
+        "SDK responses are serialized through model_dump when present, then dict/json fallbacks.",
+        "Generated reports call json.dumps with default=str for non-JSON-native metadata."
+      ],
+      "runtime_change_recommended": false,
+      "status": "aligned"
+    },
+    {
+      "area": "CLI And Test Harness",
+      "documentation_grounded": true,
+      "files": [
+        "scripts/run_dev_eval.py",
+        "tests"
+      ],
+      "findings": [
+        "Large live-run override is an explicit CLI flag, not an implicit env toggle.",
+        "Tests use isolated tmp_path and monkeypatch patterns for report and environment coverage.",
+        "Diagnostics are marked diagnostic-only and do not overwrite official strict artifacts under guarded override."
+      ],
+      "runtime_change_recommended": false,
+      "status": "aligned"
+    }
+  ],
+  "status": "complete",
+  "summary": {
+    "blocked_by_adobe_permission_count": 1,
+    "final_submission_format_unchanged": true,
+    "needs_manual_review_count": 0,
+    "packaged_strategy_unchanged": true,
+    "potential_bug_count": 0,
+    "runtime_change_recommended": false,
+    "section_count": 6
+  }
+}

@@ -1,0 +1,1288 @@
+{
+  "baseline": {
+    "answer_time_seconds": 0.0007,
+    "api_score": 0.9791,
+    "correctness_score": 0.6805,
+    "direct_http_hits": 0,
+    "end_to_end_time_seconds": 0.0168,
+    "execution_time_seconds": 0.0004,
+    "final_submission_format_changed": false,
+    "final_submission_ready": true,
+    "hidden_style_status": "48/48",
+    "metadata_tokens": 819.1429,
+    "planning_time_seconds": 0.0007,
+    "preprocessing_time_seconds": 0.0028,
+    "prompt_tokens": 1463.0,
+    "response_score": 0.3199,
+    "sql_score": 0.9333,
+    "strategy": "SQL_FIRST_API_VERIFY",
+    "strict_final_score": 0.6553,
+    "tool_calls": 1.4571,
+    "total_tokens": 834.6,
+    "turns": null,
+    "turns_source": "unavailable_in_strict_artifacts",
+    "unsupported_claim_delta": 0,
+    "wall_time_seconds": 0.0122
+  },
+  "baseline_strategy": "SQL_FIRST_API_VERIFY",
+  "composite_scenarios": {
+    "balanced": {
+      "formula": "0.60 correctness + 0.40 efficiency"
+    },
+    "correctness_dominant": {
+      "formula": "0.80 correctness + 0.20 efficiency"
+    },
+    "efficiency_sensitive": {
+      "formula": "0.50 correctness + 0.50 efficiency"
+    },
+    "hidden_safe_efficiency_rank": {
+      "rank_by": "efficiency_score_equal_weight",
+      "requirement": "correctness_score >= baseline, hidden-style 48/48, check_submission_ready pass, no final-submission format change, direct HTTP hits 0"
+    },
+    "strict_no_regression_efficiency_rank": {
+      "rank_by": "efficiency_score_equal_weight",
+      "requirement": "correctness_score >= baseline correctness_score"
+    }
+  },
+  "diagnostic_only": true,
+  "fix_decision": {
+    "baseline_correctness_score": 0.6805,
+    "baseline_strict_final_score": 0.6553,
+    "best_candidate": "compact_tool_schema",
+    "best_candidate_source": "sdk_tool_calling_optimization_trials",
+    "decision": "speed_only_patch_needs_validation",
+    "direct_http_hits": 0,
+    "final_submission_format_changed": false,
+    "final_submission_ready": true,
+    "follow_up_validation_steps": [
+      "Implement at most one selected speed-only patch in the shadow/controller path.",
+      "Run python3 scripts/run_dev_eval.py --strict and verify correctness does not regress.",
+      "Run python3 scripts/run_hidden_style_eval.py and verify 48/48.",
+      "Run python3 scripts/run_generated_prompt_suite_local_diagnostic.py and inspect broad breakage.",
+      "Run python3 scripts/check_submission_ready.py.",
+      "Run python3 scripts/generate_sdk_usage_audit.py and verify runtime_llm_direct_http_hits=0.",
+      "Run python3 -m pytest -q."
+    ],
+    "generated_at": "2026-05-19T12:02:14+00:00",
+    "hidden_style_status": "48/48",
+    "official_overall_score_claim": false,
+    "organizer_weights_known": false,
+    "promotion_requirements": {
+      "check_submission_ready_required": true,
+      "correctness_no_regression_required": true,
+      "direct_http_hits_must_remain_zero": true,
+      "final_submission_format_unchanged_required": true,
+      "generated_prompt_broad_breakage_allowed": false,
+      "hardcoding_allowed": false,
+      "hidden_style_48_48_required": true,
+      "high_scoring_official_row_regression_allowed": false,
+      "patch_must_be_small_and_general": true,
+      "unsupported_claim_increase_allowed": false
+    },
+    "ranked_speed_candidates": [
+      {
+        "correctness_delta": 0.0,
+        "efficiency_score_equal_weight": 1.0417,
+        "pareto_dominates_baseline": true,
+        "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+        "source": "sdk_tool_calling_optimization_trials",
+        "variant_id": "compact_tool_schema"
+      },
+      {
+        "correctness_delta": 0.0,
+        "efficiency_score_equal_weight": 1.0488,
+        "pareto_dominates_baseline": true,
+        "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+        "source": "sdk_tool_calling_optimization_trials",
+        "variant_id": "compact_tool_result_evidence_summary"
+      },
+      {
+        "correctness_delta": 0.0,
+        "efficiency_score_equal_weight": 1.0126,
+        "pareto_dominates_baseline": true,
+        "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+        "source": "sdk_tool_calling_optimization_trials",
+        "variant_id": "no_rewrite_when_backend_complete"
+      },
+      {
+        "correctness_delta": 0.0,
+        "efficiency_score_equal_weight": 1.125,
+        "pareto_dominates_baseline": true,
+        "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+        "source": "sdk_tool_calling_optimization_trials",
+        "variant_id": "allowed_tools_by_prompt_type"
+      },
+      {
+        "correctness_delta": 0.0,
+        "efficiency_score_equal_weight": 1.167,
+        "pareto_dominates_baseline": true,
+        "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+        "source": "sdk_tool_calling_optimization_trials",
+        "variant_id": "combined_safe_tool_policy"
+      },
+      {
+        "correctness_delta": 0.0,
+        "efficiency_score_equal_weight": 1.125,
+        "pareto_dominates_baseline": true,
+        "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+        "source": "sdk_tool_calling_optimization_trials",
+        "variant_id": "tool_choice_policy"
+      }
+    ],
+    "reason": "At least one speed-only candidate Pareto-dominates the baseline, but evidence is shadow-simulated and still needs strict/hidden/submission validation before implementation.",
+    "recommended_speed_patch_priority": [
+      "compact_tool_schema",
+      "compact_tool_result_evidence_summary",
+      "no_rewrite_when_backend_complete",
+      "disable_parallel_tool_calls",
+      "allowed_tools_by_prompt_type",
+      "combined_safe_tool_policy"
+    ],
+    "report_type": "correctness_efficiency_fix_decision",
+    "runtime_change_applied": false,
+    "sdk_fix_decision_prior": "speed_only_shadow_candidates_no_promotion"
+  },
+  "formulas": [
+    "tool_call_efficiency = baseline_tool_calls / max(variant_tool_calls, 1)",
+    "token_efficiency = baseline_tokens / max(variant_tokens, 1)",
+    "runtime_efficiency = baseline_runtime / max(variant_runtime, 0.001)",
+    "turns_efficiency = baseline_turns / max(variant_turns, 1), or neutral 1.0 when turns are unavailable",
+    "each efficiency ratio is capped to [0.0, 1.25]",
+    "efficiency_score_equal_weight = average(turns_efficiency, tool_call_efficiency, token_efficiency, runtime_efficiency)",
+    "correctness_dominant = 0.80 * correctness_score + 0.20 * efficiency_score_equal_weight",
+    "balanced = 0.60 * correctness_score + 0.40 * efficiency_score_equal_weight",
+    "efficiency_sensitive = 0.50 * correctness_score + 0.50 * efficiency_score_equal_weight"
+  ],
+  "generated_at": "2026-05-19T12:02:14+00:00",
+  "notes": [
+    "Correctness-only strict score is not treated as the full evaluation picture.",
+    "Efficiency dimensions are reported separately because organizer weights are not known.",
+    "Composite scenarios are sensitivity analysis, not official rankings.",
+    "Speed-only candidates require strict/hidden/submission validation before any runtime patch."
+  ],
+  "official_overall_score_claim": false,
+  "organizer_weights_known": false,
+  "purpose": "Sensitivity scorecard for workshop-style correctness plus efficiency evaluation.",
+  "rankings": {
+    "balanced": [
+      "combined_safe_tool_policy",
+      "allowed_tools_by_prompt_type",
+      "tool_choice_policy",
+      "compact_tool_result_evidence_summary",
+      "compact_tool_schema",
+      "no_rewrite_when_backend_complete",
+      "disable_parallel_tool_calls",
+      "rewrite_gate_strict",
+      "sql_required_value_answer_slots",
+      "zero_row_local_evidence_clarity",
+      "answer_intent_count_list_status_guard",
+      "dry_run_caveat_after_sql_answer",
+      "combined_minimal"
+    ],
+    "correctness_dominant": [
+      "combined_safe_tool_policy",
+      "allowed_tools_by_prompt_type",
+      "tool_choice_policy",
+      "compact_tool_result_evidence_summary",
+      "compact_tool_schema",
+      "no_rewrite_when_backend_complete",
+      "disable_parallel_tool_calls",
+      "rewrite_gate_strict",
+      "sql_required_value_answer_slots",
+      "zero_row_local_evidence_clarity",
+      "answer_intent_count_list_status_guard",
+      "dry_run_caveat_after_sql_answer",
+      "combined_minimal"
+    ],
+    "efficiency_sensitive": [
+      "combined_safe_tool_policy",
+      "allowed_tools_by_prompt_type",
+      "tool_choice_policy",
+      "compact_tool_result_evidence_summary",
+      "compact_tool_schema",
+      "no_rewrite_when_backend_complete",
+      "disable_parallel_tool_calls",
+      "rewrite_gate_strict",
+      "sql_required_value_answer_slots",
+      "zero_row_local_evidence_clarity",
+      "answer_intent_count_list_status_guard",
+      "dry_run_caveat_after_sql_answer",
+      "combined_minimal"
+    ],
+    "hidden_safe_efficiency_rank": [
+      "combined_safe_tool_policy",
+      "allowed_tools_by_prompt_type",
+      "tool_choice_policy",
+      "compact_tool_result_evidence_summary",
+      "compact_tool_schema",
+      "no_rewrite_when_backend_complete",
+      "disable_parallel_tool_calls",
+      "rewrite_gate_strict",
+      "dry_run_caveat_after_sql_answer",
+      "combined_minimal",
+      "answer_intent_count_list_status_guard",
+      "zero_row_local_evidence_clarity",
+      "sql_required_value_answer_slots"
+    ],
+    "strict_no_regression_efficiency_rank": [
+      "combined_safe_tool_policy",
+      "allowed_tools_by_prompt_type",
+      "tool_choice_policy",
+      "compact_tool_result_evidence_summary",
+      "compact_tool_schema",
+      "no_rewrite_when_backend_complete",
+      "disable_parallel_tool_calls",
+      "rewrite_gate_strict",
+      "sql_required_value_answer_slots",
+      "dry_run_caveat_after_sql_answer",
+      "combined_minimal",
+      "answer_intent_count_list_status_guard",
+      "zero_row_local_evidence_clarity"
+    ]
+  },
+  "report_type": "correctness_efficiency_scorecard",
+  "runtime_change_applied": false,
+  "sdk_speed_candidate_review": [
+    {
+      "composite_scenario_ranks": {
+        "balanced": 5,
+        "correctness_dominant": 5,
+        "efficiency_sensitive": 5,
+        "hidden_safe_efficiency_rank": 5,
+        "strict_no_regression_efficiency_rank": 5
+      },
+      "correctness_delta": 0.0,
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "runtime_delta": -0.001,
+      "token_delta": -60.0,
+      "tool_call_delta": 0.0,
+      "variant_id": "compact_tool_schema"
+    },
+    {
+      "composite_scenario_ranks": {
+        "balanced": 4,
+        "correctness_dominant": 4,
+        "efficiency_sensitive": 4,
+        "hidden_safe_efficiency_rank": 4,
+        "strict_no_regression_efficiency_rank": 4
+      },
+      "correctness_delta": 0.0,
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "runtime_delta": -0.001,
+      "token_delta": -80.0,
+      "tool_call_delta": 0.0,
+      "variant_id": "compact_tool_result_evidence_summary"
+    },
+    {
+      "composite_scenario_ranks": {
+        "balanced": 6,
+        "correctness_dominant": 6,
+        "efficiency_sensitive": 6,
+        "hidden_safe_efficiency_rank": 6,
+        "strict_no_regression_efficiency_rank": 6
+      },
+      "correctness_delta": 0.0,
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "runtime_delta": 0.0,
+      "token_delta": -40.0,
+      "tool_call_delta": 0.0,
+      "variant_id": "no_rewrite_when_backend_complete"
+    },
+    {
+      "composite_scenario_ranks": {
+        "balanced": 2,
+        "correctness_dominant": 2,
+        "efficiency_sensitive": 2,
+        "hidden_safe_efficiency_rank": 2,
+        "strict_no_regression_efficiency_rank": 2
+      },
+      "correctness_delta": 0.0,
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "runtime_delta": -0.04,
+      "token_delta": 0.0,
+      "tool_call_delta": -4.0,
+      "variant_id": "allowed_tools_by_prompt_type"
+    },
+    {
+      "composite_scenario_ranks": {
+        "balanced": 1,
+        "correctness_dominant": 1,
+        "efficiency_sensitive": 1,
+        "hidden_safe_efficiency_rank": 1,
+        "strict_no_regression_efficiency_rank": 1
+      },
+      "correctness_delta": 0.0,
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "runtime_delta": -0.02,
+      "token_delta": -120.0,
+      "tool_call_delta": -2.0,
+      "variant_id": "combined_safe_tool_policy"
+    },
+    {
+      "composite_scenario_ranks": {
+        "balanced": 3,
+        "correctness_dominant": 3,
+        "efficiency_sensitive": 3,
+        "hidden_safe_efficiency_rank": 3,
+        "strict_no_regression_efficiency_rank": 3
+      },
+      "correctness_delta": 0.0,
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "runtime_delta": -0.02,
+      "token_delta": 0.0,
+      "tool_call_delta": -2.0,
+      "variant_id": "tool_choice_policy"
+    }
+  ],
+  "source_reports": [
+    "outputs/eval_results_strict.json",
+    "outputs/reports/sdk_tool_calling_optimization_trials.json",
+    "outputs/reports/sdk_tool_calling_fix_decision.json",
+    "outputs/reports/score_focused_core_improvement_trials.json",
+    "outputs/reports/system_summary.json",
+    "outputs/reports/accuracy_and_bottleneck_summary.json"
+  ],
+  "strategies": [
+    {
+      "api_score": 0.7433,
+      "correctness_score": 0.6136,
+      "end_to_end_time_seconds": 0.0162,
+      "preprocessing_time_seconds": 0.0029,
+      "relative_efficiency": {
+        "efficiency_runtime_heavy": 1.0804,
+        "efficiency_score_equal_weight": 1.0877,
+        "efficiency_token_heavy": 1.0921,
+        "efficiency_tool_heavy": 1.1434,
+        "efficiency_turn_heavy": 1.0648,
+        "runtime_efficiency": 1.0339,
+        "token_efficiency": 1.0731,
+        "tool_call_efficiency": 1.2439,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "response_score": 0.3189,
+      "sql_score": 0.9333,
+      "strategy": "DETERMINISTIC_ROUTER_SELECTED_METADATA",
+      "strict_final_score": 0.5924,
+      "tool_calls": 1.1714,
+      "total_tokens": 777.7143,
+      "turns": null,
+      "wall_time_seconds": 0.0118
+    },
+    {
+      "api_score": 0.9742,
+      "correctness_score": 0.4941,
+      "end_to_end_time_seconds": 0.034,
+      "preprocessing_time_seconds": 0.008,
+      "relative_efficiency": {
+        "efficiency_runtime_heavy": 0.6967,
+        "efficiency_score_equal_weight": 0.7728,
+        "efficiency_token_heavy": 0.7602,
+        "efficiency_tool_heavy": 0.725,
+        "efficiency_turn_heavy": 0.8481,
+        "runtime_efficiency": 0.5951,
+        "token_efficiency": 0.8067,
+        "tool_call_efficiency": 0.6892,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "response_score": 0.2573,
+      "sql_score": 0.06,
+      "strategy": "LLM_FREE_AGENT_BASELINE",
+      "strict_final_score": 0.4589,
+      "tool_calls": 2.1143,
+      "total_tokens": 1034.5429,
+      "turns": null,
+      "wall_time_seconds": 0.0205
+    },
+    {
+      "api_score": 0.9791,
+      "correctness_score": 0.6805,
+      "end_to_end_time_seconds": 0.0168,
+      "preprocessing_time_seconds": 0.0028,
+      "relative_efficiency": {
+        "efficiency_runtime_heavy": 1.0,
+        "efficiency_score_equal_weight": 1.0,
+        "efficiency_token_heavy": 1.0,
+        "efficiency_tool_heavy": 1.0,
+        "efficiency_turn_heavy": 1.0,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "response_score": 0.3199,
+      "sql_score": 0.9333,
+      "strategy": "SQL_FIRST_API_VERIFY",
+      "strict_final_score": 0.6553,
+      "tool_calls": 1.4571,
+      "total_tokens": 834.6,
+      "turns": null,
+      "wall_time_seconds": 0.0122
+    },
+    {
+      "api_score": 0.0,
+      "correctness_score": 0.2983,
+      "end_to_end_time_seconds": 0.0236,
+      "preprocessing_time_seconds": 0.0053,
+      "relative_efficiency": {
+        "efficiency_runtime_heavy": 1.0237,
+        "efficiency_score_equal_weight": 1.0632,
+        "efficiency_token_heavy": 1.0784,
+        "efficiency_tool_heavy": 1.1256,
+        "efficiency_turn_heavy": 1.0504,
+        "runtime_efficiency": 0.9104,
+        "token_efficiency": 1.0925,
+        "tool_call_efficiency": 1.25,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "response_score": 0.3044,
+      "sql_score": 0.9333,
+      "strategy": "SQL_ONLY_BASELINE",
+      "strict_final_score": 0.2794,
+      "tool_calls": 1.0,
+      "total_tokens": 763.9143,
+      "turns": null,
+      "wall_time_seconds": 0.0134
+    },
+    {
+      "api_score": 0.9791,
+      "correctness_score": 0.6805,
+      "end_to_end_time_seconds": 0.0171,
+      "preprocessing_time_seconds": 0.0028,
+      "relative_efficiency": {
+        "efficiency_runtime_heavy": 0.9524,
+        "efficiency_score_equal_weight": 0.9466,
+        "efficiency_token_heavy": 0.943,
+        "efficiency_tool_heavy": 0.9123,
+        "efficiency_turn_heavy": 0.9604,
+        "runtime_efficiency": 0.9839,
+        "token_efficiency": 0.9525,
+        "tool_call_efficiency": 0.85,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "response_score": 0.3199,
+      "sql_score": 0.9333,
+      "strategy": "TEMPLATE_FIRST",
+      "strict_final_score": 0.6517,
+      "tool_calls": 1.7143,
+      "total_tokens": 876.2286,
+      "turns": null,
+      "wall_time_seconds": 0.0124
+    }
+  ],
+  "variants": [
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.825,
+        "correctness_dominant": 0.7527,
+        "efficiency_sensitive": 0.8611,
+        "hidden_safe_efficiency_rank_score": 1.0417,
+        "strict_no_regression_efficiency_rank_score": 1.0417
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": -0.001,
+        "end_to_end_time_seconds": 0.0158,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 774.6,
+        "total_tokens_delta": -60.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": -0.001,
+        "wall_time_seconds": 0.0112
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0601,
+        "efficiency_score_equal_weight": 1.0417,
+        "efficiency_token_heavy": 1.0566,
+        "efficiency_tool_heavy": 1.0333,
+        "efficiency_turn_heavy": 1.025,
+        "runtime_efficiency": 1.0893,
+        "token_efficiency": 1.0775,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 5,
+        "correctness_dominant": 5,
+        "efficiency_sensitive": 5,
+        "hidden_safe_efficiency_rank": 5,
+        "strict_no_regression_efficiency_rank": 5
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": -20.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "compact_tool_schema"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8583,
+        "correctness_dominant": 0.7694,
+        "efficiency_sensitive": 0.9027,
+        "hidden_safe_efficiency_rank_score": 1.125,
+        "strict_no_regression_efficiency_rank_score": 1.125
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": -0.04,
+        "end_to_end_time_seconds": 0.001,
+        "tool_calls": 1.0,
+        "tool_calls_delta": -4.0,
+        "total_tokens": 834.6,
+        "total_tokens_delta": 0.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": -0.04,
+        "wall_time_seconds": 0.001
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.175,
+        "efficiency_score_equal_weight": 1.125,
+        "efficiency_token_heavy": 1.1,
+        "efficiency_tool_heavy": 1.175,
+        "efficiency_turn_heavy": 1.0875,
+        "runtime_efficiency": 1.25,
+        "token_efficiency": 1.0,
+        "tool_call_efficiency": 1.25,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 2,
+        "correctness_dominant": 2,
+        "efficiency_sensitive": 2,
+        "hidden_safe_efficiency_rank": 2,
+        "strict_no_regression_efficiency_rank": 2
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": 0.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "allowed_tools_by_prompt_type"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8583,
+        "correctness_dominant": 0.7694,
+        "efficiency_sensitive": 0.9027,
+        "hidden_safe_efficiency_rank_score": 1.125,
+        "strict_no_regression_efficiency_rank_score": 1.125
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": -0.02,
+        "end_to_end_time_seconds": 0.001,
+        "tool_calls": 1.0,
+        "tool_calls_delta": -2.0,
+        "total_tokens": 834.6,
+        "total_tokens_delta": 0.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": -0.02,
+        "wall_time_seconds": 0.001
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.175,
+        "efficiency_score_equal_weight": 1.125,
+        "efficiency_token_heavy": 1.1,
+        "efficiency_tool_heavy": 1.175,
+        "efficiency_turn_heavy": 1.0875,
+        "runtime_efficiency": 1.25,
+        "token_efficiency": 1.0,
+        "tool_call_efficiency": 1.25,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 3,
+        "correctness_dominant": 3,
+        "efficiency_sensitive": 3,
+        "hidden_safe_efficiency_rank": 3,
+        "strict_no_regression_efficiency_rank": 3
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": 0.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "tool_choice_policy"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8083,
+        "correctness_dominant": 0.7444,
+        "efficiency_sensitive": 0.8402,
+        "hidden_safe_efficiency_rank_score": 1.0,
+        "strict_no_regression_efficiency_rank_score": 1.0
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 834.6,
+        "total_tokens_delta": 0.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0,
+        "efficiency_score_equal_weight": 1.0,
+        "efficiency_token_heavy": 1.0,
+        "efficiency_tool_heavy": 1.0,
+        "efficiency_turn_heavy": 1.0,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "keep_shadow_only",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 7,
+        "correctness_dominant": 7,
+        "efficiency_sensitive": 7,
+        "hidden_safe_efficiency_rank": 7,
+        "strict_no_regression_efficiency_rank": 7
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": 0.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "disable_parallel_tool_calls"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8278,
+        "correctness_dominant": 0.7542,
+        "efficiency_sensitive": 0.8646,
+        "hidden_safe_efficiency_rank_score": 1.0488,
+        "strict_no_regression_efficiency_rank_score": 1.0488
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": -0.001,
+        "end_to_end_time_seconds": 0.0158,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 754.6,
+        "total_tokens_delta": -80.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": -0.001,
+        "wall_time_seconds": 0.0112
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0658,
+        "efficiency_score_equal_weight": 1.0488,
+        "efficiency_token_heavy": 1.0709,
+        "efficiency_tool_heavy": 1.0391,
+        "efficiency_turn_heavy": 1.0293,
+        "runtime_efficiency": 1.0893,
+        "token_efficiency": 1.106,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 4,
+        "correctness_dominant": 4,
+        "efficiency_sensitive": 4,
+        "hidden_safe_efficiency_rank": 4,
+        "strict_no_regression_efficiency_rank": 4
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": -27.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "compact_tool_result_evidence_summary"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8083,
+        "correctness_dominant": 0.7444,
+        "efficiency_sensitive": 0.8402,
+        "hidden_safe_efficiency_rank_score": 1.0,
+        "strict_no_regression_efficiency_rank_score": 1.0
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 834.6,
+        "total_tokens_delta": 0.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0,
+        "efficiency_score_equal_weight": 1.0,
+        "efficiency_token_heavy": 1.0,
+        "efficiency_tool_heavy": 1.0,
+        "efficiency_turn_heavy": 1.0,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "keep_shadow_only",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 8,
+        "correctness_dominant": 8,
+        "efficiency_sensitive": 8,
+        "hidden_safe_efficiency_rank": 8,
+        "strict_no_regression_efficiency_rank": 8
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": 0.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "rewrite_gate_strict"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8133,
+        "correctness_dominant": 0.7469,
+        "efficiency_sensitive": 0.8465,
+        "hidden_safe_efficiency_rank_score": 1.0126,
+        "strict_no_regression_efficiency_rank_score": 1.0126
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 794.6,
+        "total_tokens_delta": -40.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0101,
+        "efficiency_score_equal_weight": 1.0126,
+        "efficiency_token_heavy": 1.0252,
+        "efficiency_tool_heavy": 1.0101,
+        "efficiency_turn_heavy": 1.0076,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0503,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 6,
+        "correctness_dominant": 6,
+        "efficiency_sensitive": 6,
+        "hidden_safe_efficiency_rank": 6,
+        "strict_no_regression_efficiency_rank": 6
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": -14.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "no_rewrite_when_backend_complete"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8751,
+        "correctness_dominant": 0.7778,
+        "efficiency_sensitive": 0.9238,
+        "hidden_safe_efficiency_rank_score": 1.167,
+        "strict_no_regression_efficiency_rank_score": 1.167
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": -0.02,
+        "end_to_end_time_seconds": 0.001,
+        "tool_calls": 1.0,
+        "tool_calls_delta": -2.0,
+        "total_tokens": 714.6,
+        "total_tokens_delta": -120.0,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": -0.02,
+        "wall_time_seconds": 0.001
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.2086,
+        "efficiency_score_equal_weight": 1.167,
+        "efficiency_token_heavy": 1.184,
+        "efficiency_tool_heavy": 1.2086,
+        "efficiency_turn_heavy": 1.1127,
+        "runtime_efficiency": 1.25,
+        "token_efficiency": 1.1679,
+        "tool_call_efficiency": 1.25,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": true,
+      "promotion_candidate_status": "efficiency_candidate_needs_strict_validation",
+      "response_score": 0.3199,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": false,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 0,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 1,
+        "correctness_dominant": 1,
+        "efficiency_sensitive": 1,
+        "hidden_safe_efficiency_rank": 1,
+        "strict_no_regression_efficiency_rank": 1
+      },
+      "source": "sdk_tool_calling_optimization_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "token_output_delta": -40.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "combined_safe_tool_policy"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.808,
+        "correctness_dominant": 0.7443,
+        "efficiency_sensitive": 0.8399,
+        "hidden_safe_efficiency_rank_score": -1.0,
+        "strict_no_regression_efficiency_rank_score": 0.9993
+      },
+      "correctness_delta": 0.0,
+      "correctness_score": 0.6805,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 836.8857,
+        "total_tokens_delta": 2.2857,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 0.9995,
+        "efficiency_score_equal_weight": 0.9993,
+        "efficiency_token_heavy": 0.9986,
+        "efficiency_tool_heavy": 0.9995,
+        "efficiency_turn_heavy": 0.9996,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 0.9973,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "reject",
+      "response_score": 0.3202,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": true,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 2,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 9,
+        "correctness_dominant": 9,
+        "efficiency_sensitive": 9,
+        "hidden_safe_efficiency_rank": 13,
+        "strict_no_regression_efficiency_rank": 9
+      },
+      "source": "score_focused_core_improvement_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6553,
+      "strict_score_delta": 0.0,
+      "trial_mode": "artifact_replay",
+      "variant_id": "sql_required_value_answer_slots"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8053,
+        "correctness_dominant": 0.7402,
+        "efficiency_sensitive": 0.8378,
+        "hidden_safe_efficiency_rank_score": -1.0,
+        "strict_no_regression_efficiency_rank_score": -1.0
+      },
+      "correctness_delta": -0.0054,
+      "correctness_score": 0.6751,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 832.8857,
+        "total_tokens_delta": -1.7143,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0004,
+        "efficiency_score_equal_weight": 1.0005,
+        "efficiency_token_heavy": 1.001,
+        "efficiency_tool_heavy": 1.0004,
+        "efficiency_turn_heavy": 1.0003,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0021,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "reject",
+      "response_score": 0.3045,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": true,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 1,
+        "unsupported_claim_delta": 2
+      },
+      "scenario_ranks": {
+        "balanced": 10,
+        "correctness_dominant": 10,
+        "efficiency_sensitive": 10,
+        "hidden_safe_efficiency_rank": 12,
+        "strict_no_regression_efficiency_rank": 13
+      },
+      "source": "score_focused_core_improvement_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6499,
+      "strict_score_delta": -0.0054,
+      "trial_mode": "artifact_replay",
+      "variant_id": "zero_row_local_evidence_clarity"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8004,
+        "correctness_dominant": 0.733,
+        "efficiency_sensitive": 0.8341,
+        "hidden_safe_efficiency_rank_score": -1.0,
+        "strict_no_regression_efficiency_rank_score": -1.0
+      },
+      "correctness_delta": -0.015,
+      "correctness_score": 0.6655,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 825.3714,
+        "total_tokens_delta": -9.2286,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0022,
+        "efficiency_score_equal_weight": 1.0028,
+        "efficiency_token_heavy": 1.0056,
+        "efficiency_tool_heavy": 1.0022,
+        "efficiency_turn_heavy": 1.0017,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0112,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "reject",
+      "response_score": 0.2758,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": true,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 5,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 12,
+        "correctness_dominant": 12,
+        "efficiency_sensitive": 12,
+        "hidden_safe_efficiency_rank": 9,
+        "strict_no_regression_efficiency_rank": 10
+      },
+      "source": "score_focused_core_improvement_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6403,
+      "strict_score_delta": -0.015,
+      "trial_mode": "artifact_replay",
+      "variant_id": "dry_run_caveat_after_sql_answer"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.8012,
+        "correctness_dominant": 0.7344,
+        "efficiency_sensitive": 0.8346,
+        "hidden_safe_efficiency_rank_score": -1.0,
+        "strict_no_regression_efficiency_rank_score": -1.0
+      },
+      "correctness_delta": -0.0129,
+      "correctness_score": 0.6676,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 829.6857,
+        "total_tokens_delta": -4.9143,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0012,
+        "efficiency_score_equal_weight": 1.0015,
+        "efficiency_token_heavy": 1.003,
+        "efficiency_tool_heavy": 1.0012,
+        "efficiency_turn_heavy": 1.0009,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0059,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "reject",
+      "response_score": 0.2795,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": true,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 5,
+        "unsupported_claim_delta": 2
+      },
+      "scenario_ranks": {
+        "balanced": 11,
+        "correctness_dominant": 11,
+        "efficiency_sensitive": 11,
+        "hidden_safe_efficiency_rank": 11,
+        "strict_no_regression_efficiency_rank": 12
+      },
+      "source": "score_focused_core_improvement_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.6424,
+      "strict_score_delta": -0.0129,
+      "trial_mode": "artifact_replay",
+      "variant_id": "answer_intent_count_list_status_guard"
+    },
+    {
+      "api_score": 0.9791,
+      "composite_scores": {
+        "balanced": 0.7996,
+        "correctness_dominant": 0.7319,
+        "efficiency_sensitive": 0.8335,
+        "hidden_safe_efficiency_rank_score": -1.0,
+        "strict_no_regression_efficiency_rank_score": -1.0
+      },
+      "correctness_delta": -0.0163,
+      "correctness_score": 0.6642,
+      "efficiency": {
+        "end_to_end_time_delta": 0.0,
+        "end_to_end_time_seconds": 0.0168,
+        "tool_calls": 1.4571,
+        "tool_calls_delta": 0.0,
+        "total_tokens": 825.4,
+        "total_tokens_delta": -9.2,
+        "turns": null,
+        "turns_delta": null,
+        "wall_time_delta": 0.0,
+        "wall_time_seconds": 0.0122
+      },
+      "efficiency_scores": {
+        "efficiency_runtime_heavy": 1.0022,
+        "efficiency_score_equal_weight": 1.0028,
+        "efficiency_token_heavy": 1.0056,
+        "efficiency_tool_heavy": 1.0022,
+        "efficiency_turn_heavy": 1.0017,
+        "runtime_efficiency": 1.0,
+        "token_efficiency": 1.0111,
+        "tool_call_efficiency": 1.0,
+        "turns_efficiency": 1.0,
+        "turns_efficiency_source": "neutral_1_0_when_turns_unavailable"
+      },
+      "pareto_dominates_baseline": false,
+      "promotion_candidate_status": "reject",
+      "response_score": 0.2712,
+      "safety": {
+        "check_submission_ready_required": true,
+        "direct_http_hits": 0,
+        "final_submission_format_changed": true,
+        "hardcoding_detected": false,
+        "hidden_style_required": true,
+        "high_scoring_rows_hurt": 6,
+        "unsupported_claim_delta": 0
+      },
+      "scenario_ranks": {
+        "balanced": 13,
+        "correctness_dominant": 13,
+        "efficiency_sensitive": 13,
+        "hidden_safe_efficiency_rank": 10,
+        "strict_no_regression_efficiency_rank": 11
+      },
+      "source": "score_focused_core_improvement_trials",
+      "sql_score": 0.9333,
+      "strict_final_score_projected": 0.639,
+      "strict_score_delta": -0.0163,
+      "trial_mode": "artifact_replay",
+      "variant_id": "combined_minimal"
+    }
+  ],
+  "writes_final_submission": false,
+  "writes_official_eval_artifacts": false
+}

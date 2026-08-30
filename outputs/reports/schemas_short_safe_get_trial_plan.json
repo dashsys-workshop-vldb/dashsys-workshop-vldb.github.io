@@ -1,0 +1,101 @@
+{
+  "context7_docs_used": true,
+  "diagnostic_only": true,
+  "generated_at": "2026-05-25T00:34:15.222341+00:00",
+  "inspection": [
+    {
+      "accept_header_present": true,
+      "endpoint_id": "schema_registry_schemas",
+      "family": "schema_list",
+      "header_names": [
+        "Accept"
+      ],
+      "intended_operation": "tenant schema list",
+      "latest_baseline_outcome": "live_empty",
+      "latest_baseline_status_code": 200,
+      "method": "GET",
+      "params": {
+        "limit": 25
+      },
+      "path": "/data/foundation/schemaregistry/tenant/schemas",
+      "path_scope": "tenant",
+      "semantic_purpose": "Canonical tenant Schema Registry list endpoint already proven with endpoint-specific Accept header.",
+      "template_and_routing_evidence": [
+        "endpoint_catalog canonical tenant path",
+        "common_headers includes Accept",
+        "parser treats schemaregistry tenant schemas as schema_registry_schemas"
+      ]
+    },
+    {
+      "accept_header_present": false,
+      "endpoint_id": "schemas_short",
+      "family": "schema_list",
+      "header_names": [],
+      "intended_operation": "shorthand alias for schema list/name lookup",
+      "latest_baseline_outcome": "endpoint_path_issue",
+      "latest_baseline_status_code": 404,
+      "method": "GET",
+      "params": {
+        "limit": 25
+      },
+      "path": "/schemas",
+      "path_scope": "short",
+      "semantic_purpose": "Gold-example shorthand for schema list/name lookup; no path parameters and no schema ID requirement in catalog.",
+      "template_and_routing_evidence": [
+        "endpoint_catalog use_when says shorthand schema list/name lookup",
+        "endpoint_family_ranker maps schemas_short to schema_list",
+        "api_templates emits /schemas for schema list and schema_by_name",
+        "api_response_parser maps /schemas to schemas_short"
+      ]
+    }
+  ],
+  "normal_runtime_env_source": ".env.local",
+  "official_schema_registry_docs_summary": {
+    "global_schema_list_path": "/data/foundation/schemaregistry/global/schemas",
+    "recommended_list_accept": "application/vnd.adobe.xed-id+json",
+    "schema_list_accept_required": true,
+    "single_lookup_requires_schema_id_and_versioned_accept": true,
+    "tenant_schema_list_path": "/data/foundation/schemaregistry/tenant/schemas"
+  },
+  "official_score_claim": false,
+  "planned_variants": [
+    {
+      "headers": [],
+      "params_source": "current_endpoint_common_params",
+      "path": "/schemas",
+      "variant_id": "current_baseline"
+    },
+    {
+      "accept_media_type": "application/vnd.adobe.xed-id+json",
+      "headers": [
+        "Accept"
+      ],
+      "path": "/schemas",
+      "variant_id": "A_current_path_xed_id_accept"
+    },
+    {
+      "accept_media_type": "application/vnd.adobe.xed-id+json",
+      "headers": [
+        "Accept"
+      ],
+      "path": "/data/foundation/schemaregistry/tenant/schemas",
+      "variant_id": "B_canonical_tenant_xed_id_accept"
+    },
+    {
+      "accept_media_type": "application/vnd.adobe.xed-id+json",
+      "diagnostic_only_global_schema_listing": true,
+      "headers": [
+        "Accept"
+      ],
+      "path": "/data/foundation/schemaregistry/global/schemas",
+      "variant_id": "C_canonical_global_xed_id_accept"
+    }
+  ],
+  "report_type": "schemas_short_safe_get_trial_plan",
+  "semantics_decision": {
+    "reason": "No schema_id path parameter is defined; routing/template metadata classify the endpoint as schema_list, with /schemas used as a shorthand alias.",
+    "safe_to_run_list_variants": true,
+    "schemas_short_is_schema_list_alias": true,
+    "schemas_short_is_single_schema_lookup": false
+  }
+}

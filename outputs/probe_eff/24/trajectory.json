@@ -1,0 +1,184 @@
+{
+  "answer_time": 6.375019438564777e-06,
+  "api_call_count": 1,
+  "domain_type": "SEGMENT_AUDIENCE",
+  "errors": [],
+  "estimated_tokens": 893,
+  "execution_time": 0.0002565419999882579,
+  "final_answer": "Segment definition details require live Adobe API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Which segment definitions were updated most recently?",
+  "planning_time": 2.679199678823352e-05,
+  "preprocessing_time": 0.0012597499880939722,
+  "query_id": "probe_eff_24",
+  "route_type": "API_ONLY",
+  "runtime": 0.002014665980823338,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "UNKNOWN"
+          ],
+          "examples": [],
+          "id": "merge_policies",
+          "method": "GET",
+          "path": "/data/core/ups/config/mergePolicies",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List/count Real-Time Customer Profile merge policies."
+        },
+        {
+          "common_params": {
+            "limit": 10
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE",
+            "STATUS_MONITORING"
+          ],
+          "examples": [],
+          "id": "segment_jobs",
+          "method": "GET",
+          "path": "/data/core/ups/segment/jobs",
+          "path_params": [],
+          "risk_notes": [],
+          "use_when": "List segment evaluation jobs and statuses."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_segment",
+        "hkg_br_base_segment_used_by_dependent_segment",
+        "hkg_br_collection_segment",
+        "hkg_br_segment_property",
+        "hkg_br_segment_target"
+      ],
+      "confidence": 0.5,
+      "domain_type": "SEGMENT_AUDIENCE",
+      "kind": "route",
+      "reason": "Keyword routing using SEGMENT_AUDIENCE:1.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "estimated_tokens": 1405,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe_eff/24/metadata.json",
+      "prompt_tokens": 1920
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then apply evidence policy before API verification. API decision: API_REQUIRED (Route is API-only.). Fast path: recent_segment_definitions.",
+      "steps": [
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "family": "recent_segment_definitions",
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "3",
+            "orderBy": "updateTime:desc"
+          },
+          "purpose": "API parameter template: recent_segment_definitions.",
+          "sql": null,
+          "url": "/data/core/ups/segment/definitions",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "3",
+        "orderBy": "updateTime:desc"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/core/ups/segment/definitions",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "3",
+          "orderBy": "updateTime:desc"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/core/ups/segment/definitions"
+      },
+      "url": "/data/core/ups/segment/definitions",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 6.375019438564777e-06,
+    "execution_time": 0.0002565419999882579,
+    "planning_time": 2.679199678823352e-05,
+    "preprocessing_time": 0.0012597499880939722
+  },
+  "tool_call_count": 1
+}

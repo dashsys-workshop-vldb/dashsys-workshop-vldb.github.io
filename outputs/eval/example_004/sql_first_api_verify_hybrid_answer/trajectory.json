@@ -1,0 +1,1754 @@
+{
+  "answer_time": 0.03229983290657401,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Show me the IDs of failed dataflow runs",
+        "query_id": "example_004",
+        "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-28T15:05:34.043677+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents evaluator-only metadata leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-28T15:05:34.043695+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-28T15:05:34.043699+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "confidence": 0.88,
+        "matched_rules": {
+          "items": [
+            "sql_plus_api:failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: failed.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": true,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-28T15:05:34.043732+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "confidence": 0.88,
+        "is_simple": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: failed.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-28T15:05:34.043749+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "matching_text": "show me the ids of failed dataflow runs",
+        "normalized_query": "Show me the IDs of failed dataflow runs"
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-28T15:05:34.043793+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "Show me the IDs of failed dataflow runs"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "destination_dataflow"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "statuses": {
+          "items": [
+            "failed"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-28T15:05:34.043839+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "failed"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "failed_dataflow_runs"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "flowservice_runs"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "dim_connector.SOURCEID->hkg_br_source_collection.SOURCEID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-28T15:05:34.043959+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "status",
+              "text": "failed"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "retrieval_ms": 9.493
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "213f3d553413a550",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_213f3d553413a550.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-28T15:05:34.044323+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "DESTINATION_DATAFLOW",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "answer_family": "failed_dataflow_runs",
+        "api_templates": {
+          "items": [
+            "failed_dataflow_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.75,
+        "domain_type": "DESTINATION_DATAFLOW",
+        "fast_path": "failed_dataflow_flows",
+        "route_type": "SQL_THEN_API",
+        "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-28T15:05:34.044331+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "failed_dataflow_runs",
+        "domain_type": "DESTINATION_DATAFLOW"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "destination_flows"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "destination_dataflow",
+        "required_ids": {
+          "items": [
+            "target_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-28T15:05:34.044339+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "destination_dataflow"
+      },
+      "output": {
+        "estimated_metadata_tokens": 571,
+        "prompt_tokens": 1170,
+        "selected_apis": {
+          "items": [
+            "flowservice_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "destination_dataflow",
+        "selected_columns": {
+          "dim_connector": {
+            "items": [
+              "CONNECTIONSPECNAME"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          },
+          "dim_target": {
+            "items": [
+              "CREATEDTIME"
+            ],
+            "total_items": 7,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-28T15:05:34.046035+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 2,
+        "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2735
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-28T15:05:34.048018+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 2
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-28T15:05:34.048029+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "failed_dataflow_runs",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "failed_dataflow_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_OPTIONAL",
+        "reason": "Live/platform verification may improve the answer."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-28T15:05:34.048032+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-28T15:05:34.048050+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-28T15:05:35.436769+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "CONNECTIONSPECID"
+          ],
+          "total_items": 5,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim [truncated]",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "DATAFLOWNAME",
+                  "STATE",
+                  "TARGETID"
+                ],
+                "total_items": 5,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_target"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-28T15:05:35.436791+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 2
+      },
+      "output": {
+        "api_calls_executed": 1,
+        "api_results": {
+          "items": [
+            {
+              "dry_run": false,
+              "method": "GET",
+              "ok": true,
+              "result_preview": {
+                "dry_run": false,
+                "endpoint_family": "flowservice_flows",
+                "error_category": "live_evidence",
+                "evidence_state": "live_evidence",
+                "live_success": false,
+                "ok": true,
+                "status_code": 200,
+                "truncated_fields": 1,
+                "usable_evidence": false
+              },
+              "status_code": 200,
+              "url": "/data/foundation/flowservice/flows"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_status_codes": {
+          "items": [
+            200
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "dry_run_status": false,
+        "row_counts": {
+          "items": [
+            0
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_calls_executed": 1,
+        "sql_results": {
+          "items": [
+            {
+              "ok": true,
+              "result_preview": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "row_count": 0
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-28T15:05:35.436898+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "evidence": {
+          "api_ids": {
+            "items": [
+              "a18b8831-2b89-4a0f-bdfe-5d5f66555d43"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_names": {
+            "items": [
+              "weRetail Events - May 2026"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "counts": {
+            "items": [
+              {
+                "items": 35
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "ids": {
+            "id": "a18b8831-2b89-4a0f-bdfe-5d5f66555d43"
+          },
+          "names": {
+            "items": [
+              "weRetail Events - May 2026"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "1779980511706"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "truncated_fields": 6
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-28T15:05:35.436903+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+      "duration_ms": 0.0,
+      "effect": "classifies SQL/API evidence quality before answer rendering",
+      "efficiency_role": "uses executed tool payloads without extra calls",
+      "input_summary": {
+        "api_required": false,
+        "tool_result_count": 2
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "conflict": {
+          "items": [
+            "SQL_ZERO_API_SUCCESS"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_ZERO_ROWS"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-05-28T15:05:35.436916+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
+      "correctness_role": "uses exact available values and scoped caveats without inventing missing roles",
+      "duration_ms": 0.0,
+      "effect": "renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
+      "efficiency_role": "uses no extra SQL/API/LLM calls",
+      "input_summary": {
+        "api_required": false,
+        "tool_result_count": 2
+      },
+      "output": {
+        "preview": "{\"answer\": \"Status: {id=a18b8831-2b89-4a0f-bdfe-5d5f66555d43, name=weRetail Events - May 2026, status=enabled}; {id=5a776f0c-3e68-45de-a14e-1713 [truncated]",
+        "truncated": true
+      },
+      "stage": "answer synthesis",
+      "technique": "EvidenceBus-centered grounded answer builder",
+      "timestamp": "2026-05-28T15:05:35.459173+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_intent_router",
+      "correctness_role": "uses runtime prompt and evidence fields only",
+      "duration_ms": 0.0,
+      "effect": "selects canonical data, LLM concept, mixed, caveat, or legacy answer mode from runtime evidence",
+      "efficiency_role": "avoids unnecessary free-form LLM generation for structured data answers",
+      "input_summary": {
+        "slot_counts": {
+          "answer_family": "failed_dataflow_runs",
+          "api_error": false,
+          "api_item_count": 35,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "weRetail Events - May 2026"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 12,
+            "truncated_items": true
+          },
+          "sql_row_count": 0,
+          "truncated_fields": 10
+        }
+      },
+      "output": {
+        "answer_intent": "STATUS",
+        "answer_mode": "CANONICAL_DATA",
+        "confidence": "HIGH",
+        "reason_codes": {
+          "items": [
+            "STRUCTURED_DATA_ROLE"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer selection",
+      "technique": "intent-aware answer router",
+      "timestamp": "2026-05-28T15:05:35.461742+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_hybrid_answer_composer",
+      "correctness_role": "preserves exact evidence facts and falls back to legacy rendering when verification fails",
+      "duration_ms": 0.0,
+      "effect": "uses canonical data rendering for structured answers and bounded LLM wording for concept sections",
+      "efficiency_role": "avoids all-row free-form LLM answer generation for structured data prompts",
+      "input_summary": {
+        "answer_intent": "STATUS",
+        "answer_mode": "CANONICAL_DATA"
+      },
+      "output": {
+        "preview": "{\"final_answer\": \"Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and the API ret [truncated]",
+        "truncated": true
+      },
+      "stage": "answer selection",
+      "technique": "intent-aware hybrid answer composition",
+      "timestamp": "2026-05-28T15:05:35.461785+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_verifier",
+      "correctness_role": "blocks invented counts, IDs, statuses, timestamps, relationships, and unsafe no-data claims",
+      "duration_ms": 0.0,
+      "effect": "accepts free wording only when hard factual claims are bounded by EvidenceBus and AnswerSlots",
+      "efficiency_role": "runs on compact allowed facts and extracted claims without extra SQL/API calls",
+      "input_summary": {
+        "selected_source": "LEGACY_SAFE_RENDERER"
+      },
+      "output": {
+        "preview": "{\"ok\": true, \"supported_claims\": {\"items\": [{\"text\": \"failed\", \"type\": \"STATUS\", \"value\": \"failed\", \"span\": \"failed\", \"hardness\": \"HARD\"}, {\"tex [truncated]",
+        "truncated": true
+      },
+      "stage": "answer verification",
+      "technique": "evidence-grounded final answer verifier",
+      "timestamp": "2026-05-28T15:05:35.461822+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer_intent": "STATUS",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "failed_dataflow_runs",
+          "api_error": false,
+          "api_item_count": 35,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "weRetail Events - May 2026"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 12,
+            "truncated_items": true
+          },
+          "sql_row_count": 0,
+          "truncated_fields": 10
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-28T15:05:35.461927+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_slot_renderer",
+      "correctness_role": "makes omitted or unavailable roles explicit",
+      "duration_ms": 0.0,
+      "effect": "records how requested fields were rendered from answer slots",
+      "efficiency_role": "avoids LLM answer rewriting in the candidate path",
+      "input_summary": {
+        "slots": {
+          "answer_family": "failed_dataflow_runs",
+          "api_error": false,
+          "api_item_count": 35,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "weRetail Events - May 2026"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 12,
+            "truncated_items": true
+          },
+          "sql_row_count": 0,
+          "truncated_fields": 10
+        }
+      },
+      "output": {
+        "answer": "Status: {id=a18b8831-2b89-4a0f-bdfe-5d5f66555d43, name=weRetail Events - May 2026, status=enabled}; {id=5a776f0c-3e68-45de-a14e-1713df4ab980, na [truncated]",
+        "rendered_fields": {
+          "items": [
+            "status"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "shape": "status",
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "deterministic answer-slot rendering",
+      "timestamp": "2026-05-28T15:05:35.461934+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 3,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 12,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 3,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-28T15:05:35.461940+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "failed_dataflow_runs"
+      },
+      "output": {
+        "candidate_count": 2,
+        "selected_candidate_type": "LEGACY_SAFE_RENDERER",
+        "selection_reason": "Selected intent-aware hybrid answer using runtime AnswerSlots/EvidenceBus only; SQL/API execution path is unchanged by the answer composer."
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-28T15:05:35.461942+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 159,
+        "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+        "final_token_estimate": 31
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-28T15:05:35.461992+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 776,
+      "estimated_tokens_before": 1261,
+      "expected_savings": 485,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_tables",
+        "steps[2].metadata_path",
+        "steps[3].rationale",
+        "steps[3].steps",
+        "steps[6].result.preview"
+      ]
+    }
+  ],
+  "domain_type": "DESTINATION_DATAFLOW",
+  "errors": [],
+  "estimated_tokens": 776,
+  "execution_time": 1.387268208898604,
+  "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+  "original_query": "Show me the IDs of failed dataflow runs",
+  "planning_time": 0.002027750015258789,
+  "preprocessing_time": 0.0022850832901895046,
+  "query_id": "example_004",
+  "route_type": "SQL_THEN_API",
+  "runtime": 1.4544506249949336,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "dim_connector",
+        "dim_target",
+        "hkg_br_segment_target"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DESTINATION_DATAFLOW",
+      "kind": "route",
+      "reason": "Keyword routing using DESTINATION_DATAFLOW:2, STATUS_MONITORING:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "flowservice_runs",
+          "audit_events"
+        ],
+        "lookup_paths": [
+          "destination_dataflow"
+        ],
+        "tables": [
+          "dim_connector",
+          "dim_target"
+        ]
+      },
+      "tokens": {
+        "domains": [
+          "destination_dataflow"
+        ],
+        "statuses": [
+          "failed"
+        ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": false,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 9.493
+      }
+    },
+    {
+      "estimated_tokens": 571,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1170
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+      "steps": [
+        {
+          "action": "sql",
+          "sql_recorded_in_sql_call": true
+        },
+        {
+          "action": "api",
+          "family": "failed_dataflow_flows",
+          "method": "GET",
+          "params": {
+            "filter": "state eq 'failed'",
+            "limit": "50"
+          },
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2735
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 0
+      },
+      "sql": "SELECT \"DATAFLOWNAME\", \"STATE\", \"TARGETID\", \"CONNECTIONSPECID\", \"NAME\" FROM \"dim_target\" WHERE LOWER(CAST(\"STATE\" AS VARCHAR)) LIKE LOWER('%failed%') LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "filter": "state eq 'failed'",
+        "limit": "50"
+      },
+      "result": {
+        "preview": "{\"error\": null, \"result_preview\": {\"preview\": \"{\\\"items\\\": {\\\"items\\\": [{\\\"id\\\": \\\"a18b8831-2b89-4a0f-bdfe-5d5f66555d43\\\", \\\"name\\\": \\\"weRetail [truncated]",
+        "truncated": true
+      },
+      "url": "/data/foundation/flowservice/flows",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_family": "failed_dataflow_runs",
+      "answer_intent": "STATUS",
+      "candidate_count": 2,
+      "completeness_missing_fields": [],
+      "evidence_grounded_answer_builder": {
+        "answer": "Status: {id=a18b8831-2b89-4a0f-bdfe-5d5f66555d43, name=weRetail Events - May 2026, status=enabled}; {id=5a776f0c-3e68-45de-a14e-1713df4ab980, name=weRetail CRM - May 2026, status=enabled}; {id=ad0f30ac-1d5b-45bb-88db-7ce357b59dc0, name=weRetail CRM - Apr 2026, status=enabled}.",
+        "evidence_quality": {
+          "api": [
+            "API_DIRECT_ANSWER"
+          ],
+          "api_error_is_unavailable": false,
+          "caveats": [],
+          "conflict": [
+            "SQL_ZERO_API_SUCCESS"
+          ],
+          "live_empty_scoped": false,
+          "sql": [
+            "SQL_ZERO_ROWS"
+          ]
+        },
+        "renderer": {
+          "answer": "Status: {id=a18b8831-2b89-4a0f-bdfe-5d5f66555d43, name=weRetail Events - May 2026, status=enabled}; {id=5a776f0c-3e68-45de-a14e-1713df4ab980, name=weRetail CRM - May 2026, status=enabled}; {id=ad0f30ac-1d5b-45bb-88db-7ce357b59dc0, name=weRetail CRM - Apr 2026, status=enabled}.",
+          "caveats": [],
+          "missing_fields": [],
+          "rendered_fields": [
+            "status",
+            "name",
+            "id"
+          ],
+          "shape": "status",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "hybrid_answer_composer": {
+        "answer_intent": {
+          "answer_intent": "STATUS",
+          "answer_mode": "CANONICAL_DATA",
+          "confidence": "HIGH",
+          "reason_codes": [
+            "STRUCTURED_DATA_ROLE"
+          ]
+        },
+        "canonical": {
+          "answer": "Flows: weRetail Events - May 2026 (enabled); weRetail CRM - May 2026 (enabled); weRetail CRM - Apr 2026 (enabled).",
+          "caveat_roles": [],
+          "missing_roles": [],
+          "rendered_roles": [
+            "ENTITY",
+            "STATUS"
+          ],
+          "source_facts": {
+            "items": [
+              "weRetail Events - May 2026 (enabled)",
+              "weRetail CRM - May 2026 (enabled)",
+              "weRetail CRM - Apr 2026 (enabled)"
+            ]
+          }
+        },
+        "concept": null,
+        "fallback_used": true,
+        "final_answer": "Based on the evidence provided, there are no failed dataflow runs to report. The SQL query returned zero rows, and the API returned usable supporting evidence.",
+        "mixed": null,
+        "selected_source": "LEGACY_SAFE_RENDERER",
+        "selection_codes": [
+          "SELECT_LEGACY_STRUCTURED_DEFAULT",
+          "REJECT_HYBRID_UNSUPPORTED",
+          "STATUS_COVERED",
+          "STATUS_FILTER_COVERED"
+        ],
+        "verification": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [
+              "SQL_EMPTY"
+            ],
+            "api_error_scopes": [],
+            "counts": [
+              "0",
+              "35"
+            ],
+            "dates": [
+              "0",
+              "1779980511706",
+              "acp_foundation_connectors@adobeid",
+              "acp_foundation_connectors",
+              "1774771058",
+              "1779980467177",
+              "1774771047",
+              "1779980454985",
+              "1774771016",
+              "1774771038458"
+            ],
+            "evidence_strings": [
+              "{'started': 1774771013847, 'updated': 0, 'operation': 'create'}",
+              "b8a294a3-65c0-4b65-b624-2f3cd3a717e9",
+              "/runs?property=flowid==d02b782b-e586-454a-82df-7927d4d27a7c",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "failed",
+              "1779980367567",
+              "[{'id': '548f761b-7d72-4c64-b586-c529a3e8abc0', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "['499cbb3f-5545-47f2-8790-2e1a30caf50d']",
+              "[{'name': 'mapping', 'params': {'mappingid': '68badcd72b6145bfbe5a291b909e0471', 'mappingversion': 0}}]",
+              "1779980452804",
+              "{'id': '08ff3866-9f23-4563-86ec-050c126a5ef3', 'state': 'failed', 'startedatutc': 1779980223497, 'completedatutc': 1779980424016}",
+              "{'items': 35}",
+              "fab28110-5467-4860-93e9-6f74f44730f8",
+              "['weretail events - may 2026', 'mapping', 'weretail crm - may 2026', 'weretail crm - apr 2026', 'weretail events - apr 2026']",
+              "[{'id': 'c18ecf8d-aade-4ca3-b358-d7f1d31bdc36', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "1774770942339",
+              "{'mappingid': '5021ac3ee2604889972da4e401530dfe', 'mappingversion': 0}",
+              "1779980511706",
+              "acp_foundation_connectors@adobeid",
+              "1779980190431",
+              "9cba6001f7d04e1c94f0fc3e7519811c",
+              "{'started': 1774770984991, 'updated': 0, 'operation': 'create'}",
+              "5a161a32-2af2-455a-80b8-64e3d4316dc7",
+              "6c4ddfb5459c477ba86b3790550fa592",
+              "499cbb3f-5545-47f2-8790-2e1a30caf50d",
+              "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "[redacted]",
+              "5d6b3a9f-b35a-4395-bd4d-6c4030705e96",
+              "1774770972",
+              "/runs?property=flowid==6fa00cbc-9fe9-41e7-82d9-84329b3d3c95",
+              "02b2763c-7743-4dea-9b9c-b05a9b1b4297",
+              "['fab28110-5467-4860-93e9-6f74f44730f8']",
+              "\"20014b50-0000-0200-0000-6a1858a40000\"",
+              "{'started': 1774770942339, 'updated': 0, 'operation': 'create'}",
+              "[{'id': 'c2bf77ce-e543-48f5-bb29-ba4c54f39e0d', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "1774771047",
+              "{'id': '5d6b3a9f-b35a-4395-bd4d-6c4030705e96', 'state': 'failed', 'startedatutc': 1779980212478, 'completedatutc': 1779980387163}",
+              "{'starttime': '1774770972', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "['548f761b-7d72-4c64-b586-c529a3e8abc0']",
+              "[{'id': 'a9c8c667-f2ec-479c-922e-17378a200fec', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "6fcbcfc3-c838-46f6-bf83-d92e065a049a",
+              "{'id': '162bd5e1-5076-412e-9b3d-db53f3ddc32c', 'state': 'failed', 'startedatutc': 1779980180337, 'completedatutc': 1779980358997}",
+              "[{'id': '2f7b56ab-21d6-4c01-9a89-b8dcc20394b7', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "1779980373901",
+              "08ff3866-9f23-4563-86ec-050c126a5ef3",
+              "1774771058",
+              "\"2001404b-0000-0200-0000-6a1858590000\"",
+              "[{'id': '3ff4fd93-24f8-434b-9c16-a89c2539090f', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "{'id': '64b20f8c-a18d-492e-9358-ac4716533e20', 'state': 'failed', 'startedatutc': 1779980277609, 'completedatutc': 1779980489347}",
+              "[{'name': 'mapping', 'params': {'mappingid': '80966eb2727d4f61a2adcf895851cfea', 'mappingversion': 0}}]",
+              "acp_foundation_connectors",
+              "[{'id': 'b8a294a3-65c0-4b65-b624-2f3cd3a717e9', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "1779980448667",
+              "[{'id': '499cbb3f-5545-47f2-8790-2e1a30caf50d', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "weretail events - may 2026",
+              "[{'id': '6fcbcfc3-c838-46f6-bf83-d92e065a049a', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "64b20f8c-a18d-492e-9358-ac4716533e20",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': '499cbb3f-5545-47f2-8790-2e1a30caf50d', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': 'ce68b838-2dab-49ce-b821-22d645f2b8c3', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "1774771038458",
+              "1779980381339",
+              "/data/foundation/flowservice/flows",
+              "1774771033",
+              "state eq 'failed'",
+              "35",
+              "[{'id': 'b571c9f1-81d9-4251-9a8c-e353d6871d57', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "['e7d9a1a4-5155-4317-85ae-03962acd9fc9']",
+              "1779980212478",
+              "['06858175-3e8d-4c6a-bf4c-a14fb5d28364']",
+              "minute",
+              "[{'id': '1a037467-9e81-48b4-9115-18f6dc3808f8', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "80966eb2727d4f61a2adcf895851cfea",
+              "1779980223497",
+              "1774770982",
+              "184498ca-6481-4d6d-9d74-125084ce25fa",
+              "50",
+              "{'mappingid': '68badcd72b6145bfbe5a291b909e0471', 'mappingversion': 0}",
+              "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "[{'id': 'ddb0210a-d592-4e5f-abae-092cd61d6ec5', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "/runs?property=flowid==a18b8831-2b89-4a0f-bdfe-5d5f66555d43",
+              "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "mapping",
+              "5a776f0c-3e68-45de-a14e-1713df4ab980",
+              "{'started': 1774771027820, 'updated': 0, 'operation': 'create'}",
+              "d9760bed-d80b-4c65-9fea-16cc04773ed6",
+              "1a037467-9e81-48b4-9115-18f6dc3808f8",
+              "1774770952538",
+              "1774770929374",
+              "7495d6ee-5524-4dde-a38f-17f4fb4ebeae",
+              "06858175-3e8d-4c6a-bf4c-a14fb5d28364",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': 'c2bf77ce-e543-48f5-bb29-ba4c54f39e0d', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': '3ff4fd93-24f8-434b-9c16-a89c2539090f', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "ccbe21e6693750d80a495fbc@techacct.adobe.com",
+              "1779980377131",
+              "{'starttime': '1774770993', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "weretail events - apr 2026",
+              "[{'name': 'mapping', 'params': {'mappingid': '86f94fe7dfdf4080b8a0a581d6567725', 'mappingversion': 0}}]",
+              "{'started': 1774770963098, 'updated': 0, 'operation': 'create'}",
+              "68badcd72b6145bfbe5a291b909e0471",
+              "/runs?property=flowid==f115f216-cfcd-4601-8824-424bcc3b2a3d",
+              "/runs?property=flowid==ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "e7d9a1a4-5155-4317-85ae-03962acd9fc9",
+              "['a9c8c667-f2ec-479c-922e-17378a200fec']",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': 'ddb0210a-d592-4e5f-abae-092cd61d6ec5', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': 'fab28110-5467-4860-93e9-6f74f44730f8', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "0675108f-da37-4d6c-a4a2-e9c8edf3de65",
+              "{'issourceflow': true}",
+              "{'starttime': '1774771033', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "weretail crm - feb 2026",
+              "{'mappingid': '37d94dfe778e4e968a9fe48d3a9ede5e', 'mappingversion': 0}",
+              "c604ff05-7f1a-43c0-8e18-33bf874cb11c",
+              "177d0cbf-b385-4398-af82-229e46a907e8",
+              "{'createdat': '1774771038458', 'updatedat': '1779980511706', 'starttime': '1774771058', 'updated': '0'}",
+              "92cdff23-57c1-4f44-8ad8-181842526e9e",
+              "15",
+              "['c18ecf8d-aade-4ca3-b358-d7f1d31bdc36']",
+              "true",
+              "[{'name': 'mapping', 'params': {'mappingid': '5021ac3ee2604889972da4e401530dfe', 'mappingversion': 0}}]",
+              "weretail events - feb 2026",
+              "c18ecf8d-aade-4ca3-b358-d7f1d31bdc36",
+              "1774770963098",
+              "1774771027820",
+              "b571c9f1-81d9-4251-9a8c-e353d6871d57",
+              "17627e5fe2d14aa28e6644dc50f5b0b9",
+              "0",
+              "{'started': 1774770996628, 'updated': 0, 'operation': 'create'}",
+              "{'id': '15b4dcae-2ac8-444f-9e89-1486eeaaa386', 'state': 'failed', 'startedatutc': 1779980252164, 'completedatutc': 1779980429200}",
+              "1779980252164",
+              "[{'id': 'd9760bed-d80b-4c65-9fea-16cc04773ed6', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "1779980429200",
+              "enabled",
+              "['c2bf77ce-e543-48f5-bb29-ba4c54f39e0d']",
+              "162bd5e1-5076-412e-9b3d-db53f3ddc32c",
+              "[\"['0675108f-da37-4d6c-a4a2-e9c8edf3de65']\", \"['ddb0210a-d592-4e5f-abae-092cd61d6ec5']\", \"['6fcbcfc3-c838-46f6-bf83-d92e065a049a']\", \"['e7d9a1a4-5155-4317-85ae-03962acd9fc9']\", \"['2f7b56ab-21d6-4c01-9a89-b8dcc20394b7']\", \"['c2bf77ce-e543-48f5-bb29-ba4c54f39e0d']\", \"['98ae3d50-5c5f-440f-8759-76df4d0d39b8']\", \"['b8a294a3-65c0-4b65-b624-2f3cd3a717e9']\", \"['a9c8c667-f2ec-479c-922e-17378a200fec']\", \"['499cbb3f-5545-47f2-8790-2e1a30caf50d']\", \"['44db84aa-079a-4868-bb7f-1be11f3f235b']\", \"['fa9d5e71-cbad-499a-be11-1f4786b6ac53']\", \"['f1372172-3772-4059-a94e-d45b0b4e8c6e']\", \"['facfac56-c7d5-4bea-8f4d-5a2a5bd92a65']\", \"['ad0eaefb-f7cd-4137-914a-a6e065501b70']\", \"['ab2b219a-8bba-4977-9a7b-5b34f19d0cf7']\", \"['efd8fa4a-01cd-4448-960a-7050ed0e9a8c']\", \"['aba2dc46-c9cb-4e45-a65d-3c37dc36c1e1']\", \"['c895f456-6df1-4853-8538-3824d6d746f7']\", \"['4271f2bd-db42-4f56-a1d8-b5947cd03c6d']\", \"['cf357dd2-5306-4188-85b9-351d01b7ddf2']\", \"['b8be7022-a695-440c-83a5-cb119dd460c8']\", \"['16c0b8ff-6ab3-418d-8903-91269454224d']\", \"['93e70946-0e7f-4ac9-9b3c-91f0d9097896']\", \"['3e2b77f5-3f39-41a3-b770-b1c4c9aa1b91']\", \"['4e0f4d0a-0d4d-45f1-a67c-dcacbf8caf18']\", \"['6347547d-8581-4afc-956a-e0e4490d3cdf']\", \"['725847e8-3b78-4386-ba9d-f6c4f21096bd']\", \"['b7d7aaaa-ada3-4a9b-8ec6-ac1dd881f4d0']\", \"['00aa9181-f81f-41d2-ab5c-1ba2ed0131a1']\", \"['0a162126-d447-4bbe-8d46-9e5c144232db']\", \"['d59ae275-6cd7-4e7b-bcab-fd0e02495cc0']\", \"['6f9bd792-e1f2-4adf-b09f-b246358a3ce6']\", \"['f300dd42-b80f-46eb-89e5-334973a2db2b']\", \"['4e01c1bc-d4e6-482d-bc27-21db96bc8ac4']\"]",
+              "weretail events - mar 2026",
+              "a18b8831-2b89-4a0f-bdfe-5d5f66555d43",
+              "{'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}",
+              "1779980454985",
+              "[{'name': 'mapping', 'params': {'mappingid': '9cc1ff713e7c4986b6ec294a302e1186', 'mappingversion': 0}}]",
+              "ce68b838-2dab-49ce-b821-22d645f2b8c3",
+              "[{'type': 'profile', 'extensions': {}}]",
+              "['891ffffa-1267-4bfb-a60b-2f872b1fc5b1']",
+              "1774771013847",
+              "9efa36ae-a2a4-464e-b14e-7a8e8a28f011",
+              "1779980424016",
+              "1779980169217",
+              "1779980346517",
+              "1779980201987",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': 'b8a294a3-65c0-4b65-b624-2f3cd3a717e9', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': 'c18ecf8d-aade-4ca3-b358-d7f1d31bdc36', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': '0675108f-da37-4d6c-a4a2-e9c8edf3de65', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': '1a037467-9e81-48b4-9115-18f6dc3808f8', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "['b571c9f1-81d9-4251-9a8c-e353d6871d57']",
+              "1779980401929",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': '6fcbcfc3-c838-46f6-bf83-d92e065a049a', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': 'b571c9f1-81d9-4251-9a8c-e353d6871d57', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "\"20010051-0000-0200-0000-6a1858b30000\"",
+              "{'started': 1774771038458, 'updated': 0, 'operation': 'create'}",
+              "{'id': '177d0cbf-b385-4398-af82-229e46a907e8', 'state': 'failed', 'startedatutc': 1779980201987, 'completedatutc': 1779980373901}",
+              "891ffffa-1267-4bfb-a60b-2f872b1fc5b1",
+              "{'mappingid': '9cba6001f7d04e1c94f0fc3e7519811c', 'mappingversion': 0}",
+              "\"20018c4b-0000-0200-0000-6a18585d0000\"",
+              "['b8a294a3-65c0-4b65-b624-2f3cd3a717e9']",
+              "[{'type': 'experienceevent', 'extensions': {}}]",
+              "weretail events - jan 2026",
+              "\"2001104d-0000-0200-0000-6a1858710000\"",
+              "1.0",
+              "[{'id': '98ae3d50-5c5f-440f-8759-76df4d0d39b8', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "1774770962",
+              "1779980467177",
+              "1774771016",
+              "{'id': '9efa36ae-a2a4-464e-b14e-7a8e8a28f011', 'state': 'failed', 'startedatutc': 1779980234582, 'completedatutc': 1779980423665}",
+              "1779980234582",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': '2f7b56ab-21d6-4c01-9a89-b8dcc20394b7', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': '891ffffa-1267-4bfb-a60b-2f872b1fc5b1', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "37d94dfe778e4e968a9fe48d3a9ede5e",
+              "{'mappingid': 'c55813b98cbb4bb485d89ba0c700763e', 'mappingversion': 0}",
+              "/runs?property=flowid==5a161a32-2af2-455a-80b8-64e3d4316dc7",
+              "[{'name': 'mapping', 'params': {'mappingid': 'c790c64a77ad49779ac5e7cf4bad92c7', 'mappingversion': 0}}]",
+              "{'id': '9753525b-82c7-4dce-8a9b-5ccfce2b9876', 'version': '1.0'}",
+              "6fa00cbc-9fe9-41e7-82d9-84329b3d3c95",
+              "f971dedc-8837-4234-94c9-8074f372636e",
+              "{'mappingid': 'c790c64a77ad49779ac5e7cf4bad92c7', 'mappingversion': 0}",
+              "86f94fe7dfdf4080b8a0a581d6567725",
+              "\"20016f4c-0000-0200-0000-6a18586b0000\"",
+              "['0675108f-da37-4d6c-a4a2-e9c8edf3de65']",
+              "98ae3d50-5c5f-440f-8759-76df4d0d39b8",
+              "['d9760bed-d80b-4c65-9fea-16cc04773ed6']",
+              "[{'id': '891ffffa-1267-4bfb-a60b-2f872b1fc5b1', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "{'started': 1774770974300, 'updated': 0, 'operation': 'create'}",
+              "a9c8c667-f2ec-479c-922e-17378a200fec",
+              "profile",
+              "1779980387163",
+              "['enabled', 'failed', 'inprogress', 'success', 'partialsuccess']",
+              "create",
+              "c55813b98cbb4bb485d89ba0c700763e",
+              "/runs?property=flowid==f971dedc-8837-4234-94c9-8074f372636e",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': 'a9c8c667-f2ec-479c-922e-17378a200fec', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': '548f761b-7d72-4c64-b586-c529a3e8abc0', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "15b4dcae-2ac8-444f-9e89-1486eeaaa386",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': 'e7d9a1a4-5155-4317-85ae-03962acd9fc9', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': '06858175-3e8d-4c6a-bf4c-a14fb5d28364', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "\"20011450-0000-0200-0000-6a1858a00000\"",
+              "['2f7b56ab-21d6-4c01-9a89-b8dcc20394b7']",
+              "1779980358997",
+              "3ff4fd93-24f8-434b-9c16-a89c2539090f",
+              "\"2001544a-0000-0200-0000-6a1858480000\"",
+              "{'started': 1774770929374, 'updated': 0, 'operation': 'create'}",
+              "{'starttime': '1774771058', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "weretail crm - mar 2026",
+              "1774771004",
+              "{'mappingid': '9cc1ff713e7c4986b6ec294a302e1186', 'mappingversion': 0}",
+              "548f761b-7d72-4c64-b586-c529a3e8abc0",
+              "1774770996628",
+              "{'id': '7495d6ee-5524-4dde-a38f-17f4fb4ebeae', 'state': 'failed', 'startedatutc': 1779980266275, 'completedatutc': 1779980446726}",
+              "{'properties': {'issourceflow': true}, 'sourceconnections': [{'id': '98ae3d50-5c5f-440f-8759-76df4d0d39b8', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}], 'targetconnections': [{'id': 'd9760bed-d80b-4c65-9fea-16cc04773ed6', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]}",
+              "ecadc60c-7455-4d87-84dc-2a0e293d997b",
+              "9cc1ff713e7c4986b6ec294a302e1186",
+              "{'mappingid': '80966eb2727d4f61a2adcf895851cfea', 'mappingversion': 0}",
+              "2f7b56ab-21d6-4c01-9a89-b8dcc20394b7",
+              "{'starttime': '1774771004', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "ddb0210a-d592-4e5f-abae-092cd61d6ec5",
+              "{'starttime': '1774771016', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "{'starttime': '1774770982', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "{'mappingid': '86f94fe7dfdf4080b8a0a581d6567725', 'mappingversion': 0}",
+              "[{'id': '0675108f-da37-4d6c-a4a2-e9c8edf3de65', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "experienceevent",
+              "['ddb0210a-d592-4e5f-abae-092cd61d6ec5']",
+              "/runs?property=flowid==5a776f0c-3e68-45de-a14e-1713df4ab980",
+              "1779980446726",
+              "920a46e3-003b-436f-81df-4a4e2aa398df",
+              "{'id': '92cdff23-57c1-4f44-8ad8-181842526e9e', 'state': 'failed', 'startedatutc': 1779980190431, 'completedatutc': 1779980367567}",
+              "['ce68b838-2dab-49ce-b821-22d645f2b8c3']",
+              "{'starttime': '1774770949', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "1779980423665",
+              "[{'name': 'mapping', 'params': {'mappingid': '9cba6001f7d04e1c94f0fc3e7519811c', 'mappingversion': 0}}]",
+              "[{'id': 'ce68b838-2dab-49ce-b821-22d645f2b8c3', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "{'mappingid': '17627e5fe2d14aa28e6644dc50f5b0b9', 'mappingversion': 0}",
+              "weretail crm - may 2026",
+              "{'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}",
+              "\"20011153-0000-0200-0000-6a1858df0000\"",
+              "[{'name': 'mapping', 'params': {'mappingid': 'c55813b98cbb4bb485d89ba0c700763e', 'mappingversion': 0}}]",
+              "1774770949",
+              "{'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}",
+              "9753525b-82c7-4dce-8a9b-5ccfce2b9876",
+              "weretail crm - jan 2026",
+              "1779980266275",
+              "1774770974300",
+              "[{'name': 'mapping', 'params': {'mappingid': '37d94dfe778e4e968a9fe48d3a9ede5e', 'mappingversion': 0}}]",
+              "1779980360849",
+              "{'id': '02b2763c-7743-4dea-9b9c-b05a9b1b4297', 'state': 'failed', 'startedatutc': 1779980169217, 'completedatutc': 1779980346517}",
+              "1779980489347",
+              "['1a037467-9e81-48b4-9115-18f6dc3808f8']",
+              "\"20016c50-0000-0200-0000-6a1858a60000\"",
+              "{'started': 1774770952538, 'updated': 0, 'operation': 'create'}",
+              "[{'id': 'e7d9a1a4-5155-4317-85ae-03962acd9fc9', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}, 'baseconnection': {'id': '184498ca-6481-4d6d-9d74-125084ce25fa', 'connectionspec': {'id': 'ecadc60c-7455-4d87-84dc-2a0e293d997b', 'version': '1.0'}}}]",
+              "c2bf77ce-e543-48f5-bb29-ba4c54f39e0d",
+              "1774770984991",
+              "1774770993",
+              "/runs?property=flowid==96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "['6fcbcfc3-c838-46f6-bf83-d92e065a049a']",
+              "1779980395575",
+              "['3ff4fd93-24f8-434b-9c16-a89c2539090f']",
+              "1779980180337",
+              "['a18b8831-2b89-4a0f-bdfe-5d5f66555d43', '87891e4066602d250a495f91@adobeorg', '9753525b-82c7-4dce-8a9b-5ccfce2b9876', '0675108f-da37-4d6c-a4a2-e9c8edf3de65', '1a037467-9e81-48b4-9115-18f6dc3808f8']",
+              "f115f216-cfcd-4601-8824-424bcc3b2a3d",
+              "[{'id': 'fab28110-5467-4860-93e9-6f74f44730f8', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "1779980277609",
+              "[{'id': '06858175-3e8d-4c6a-bf4c-a14fb5d28364', 'connectionspec': {'id': 'c604ff05-7f1a-43c0-8e18-33bf874cb11c', 'version': '1.0'}}]",
+              "{'starttime': '1774771047', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "/runs?property=flowid==920a46e3-003b-436f-81df-4a4e2aa398df",
+              "c790c64a77ad49779ac5e7cf4bad92c7",
+              "[{'name': 'mapping', 'params': {'mappingid': '17627e5fe2d14aa28e6644dc50f5b0b9', 'mappingversion': 0}}]",
+              "['98ae3d50-5c5f-440f-8759-76df4d0d39b8']",
+              "5021ac3ee2604889972da4e401530dfe",
+              "{'starttime': '1774770962', 'frequency': 'minute', 'interval': '15', 'backfill': true}",
+              "weretail crm - apr 2026"
+            ],
+            "ids": [
+              "a18b8831-2b89-4a0f-bdfe-5d5f66555d43",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "9753525b-82c7-4dce-8a9b-5ccfce2b9876",
+              "0675108f-da37-4d6c-a4a2-e9c8edf3de65",
+              "ecadc60c-7455-4d87-84dc-2a0e293d997b",
+              "184498ca-6481-4d6d-9d74-125084ce25fa",
+              "1a037467-9e81-48b4-9115-18f6dc3808f8",
+              "c604ff05-7f1a-43c0-8e18-33bf874cb11c",
+              "64b20f8c-a18d-492e-9358-ac4716533e20",
+              "5a776f0c-3e68-45de-a14e-1713df4ab980",
+              "ddb0210a-d592-4e5f-abae-092cd61d6ec5",
+              "fab28110-5467-4860-93e9-6f74f44730f8",
+              "7495d6ee-5524-4dde-a38f-17f4fb4ebeae",
+              "ad0f30ac-1d5b-45bb-88db-7ce357b59dc0",
+              "6fcbcfc3-c838-46f6-bf83-d92e065a049a",
+              "b571c9f1-81d9-4251-9a8c-e353d6871d57",
+              "9efa36ae-a2a4-464e-b14e-7a8e8a28f011",
+              "d02b782b-e586-454a-82df-7927d4d27a7c",
+              "e7d9a1a4-5155-4317-85ae-03962acd9fc9",
+              "06858175-3e8d-4c6a-bf4c-a14fb5d28364",
+              "15b4dcae-2ac8-444f-9e89-1486eeaaa386",
+              "96dbf952-6ecd-4728-ab92-188a2e77abb0",
+              "2f7b56ab-21d6-4c01-9a89-b8dcc20394b7",
+              "891ffffa-1267-4bfb-a60b-2f872b1fc5b1",
+              "08ff3866-9f23-4563-86ec-050c126a5ef3",
+              "920a46e3-003b-436f-81df-4a4e2aa398df",
+              "c2bf77ce-e543-48f5-bb29-ba4c54f39e0d",
+              "3ff4fd93-24f8-434b-9c16-a89c2539090f",
+              "5d6b3a9f-b35a-4395-bd4d-6c4030705e96",
+              "f971dedc-8837-4234-94c9-8074f372636e",
+              "98ae3d50-5c5f-440f-8759-76df4d0d39b8",
+              "d9760bed-d80b-4c65-9fea-16cc04773ed6",
+              "177d0cbf-b385-4398-af82-229e46a907e8",
+              "f115f216-cfcd-4601-8824-424bcc3b2a3d",
+              "b8a294a3-65c0-4b65-b624-2f3cd3a717e9",
+              "c18ecf8d-aade-4ca3-b358-d7f1d31bdc36",
+              "92cdff23-57c1-4f44-8ad8-181842526e9e",
+              "6fa00cbc-9fe9-41e7-82d9-84329b3d3c95",
+              "a9c8c667-f2ec-479c-922e-17378a200fec",
+              "548f761b-7d72-4c64-b586-c529a3e8abc0",
+              "162bd5e1-5076-412e-9b3d-db53f3ddc32c",
+              "5a161a32-2af2-455a-80b8-64e3d4316dc7",
+              "499cbb3f-5545-47f2-8790-2e1a30caf50d",
+              "ce68b838-2dab-49ce-b821-22d645f2b8c3",
+              "02b2763c-7743-4dea-9b9c-b05a9b1b4297",
+              "6c4ddfb5459c477ba86b3790550fa592",
+              "17627e5fe2d14aa28e6644dc50f5b0b9",
+              "5021ac3ee2604889972da4e401530dfe",
+              "c55813b98cbb4bb485d89ba0c700763e",
+              "87891e4066602d250a495f91@adobeorg"
+            ],
+            "live_empty_scopes": [
+              "local snapshot"
+            ],
+            "missing_roles": [],
+            "names": [
+              "weretail events - may 2026",
+              "mapping",
+              "weretail crm - may 2026",
+              "weretail crm - apr 2026",
+              "weretail events - apr 2026",
+              "weretail events - mar 2026",
+              "weretail crm - mar 2026",
+              "weretail events - feb 2026",
+              "weretail crm - feb 2026",
+              "weretail events - jan 2026",
+              "weretail crm - jan 2026"
+            ],
+            "relationships": [],
+            "statuses": [
+              "enabled",
+              "failed",
+              "inprogress",
+              "succeeded",
+              "partialsuccess"
+            ]
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 2,
+            "claims": [
+              {
+                "hardness": "HARD",
+                "span": "failed",
+                "text": "failed",
+                "type": "STATUS",
+                "value": "failed"
+              },
+              {
+                "hardness": "HARD",
+                "span": "there are no failed dataflow runs to report",
+                "text": "there are no failed dataflow runs to report",
+                "type": "NO_DATA",
+                "value": "there are no failed dataflow runs to report"
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "failed",
+                  "text": "failed",
+                  "type": "STATUS",
+                  "value": "failed"
+                },
+                "reason": "status",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "there are no failed dataflow runs to report",
+                  "text": "there are no failed dataflow runs to report",
+                  "type": "NO_DATA",
+                  "value": "there are no failed dataflow runs to report"
+                },
+                "reason": "sql_empty_query_scoped",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "HARD",
+              "span": "failed",
+              "text": "failed",
+              "type": "STATUS",
+              "value": "failed"
+            },
+            {
+              "hardness": "HARD",
+              "span": "there are no failed dataflow runs to report",
+              "text": "there are no failed dataflow runs to report",
+              "type": "NO_DATA",
+              "value": "there are no failed dataflow runs to report"
+            }
+          ],
+          "unsupported_claims": []
+        }
+      },
+      "kind": "answer_diagnostics",
+      "llm_answer_attempted": false,
+      "llm_answer_generation_skipped": false,
+      "rewrite_applied": false,
+      "selected_candidate_type": "LEGACY_SAFE_RENDERER",
+      "selection_reason": "Selected intent-aware hybrid answer using runtime AnswerSlots/EvidenceBus only; SQL/API execution path is unchanged by the answer composer.",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "statuses",
+        "timestamps",
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_pagination",
+        "api_parser_modes",
+        "api_items"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY_HYBRID_ANSWER",
+  "timings": {
+    "answer_time": 0.03229983290657401,
+    "execution_time": 1.387268208898604,
+    "planning_time": 0.002027750015258789,
+    "preprocessing_time": 0.0022850832901895046
+  },
+  "tool_call_count": 2
+}

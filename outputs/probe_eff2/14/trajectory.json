@@ -1,0 +1,261 @@
+{
+  "answer_time": 7.62502895668149e-06,
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 1420,
+  "execution_time": 0.0013987499987706542,
+  "final_answer": "Based on the evidence provided, no entities were created by download. The SQL query returned zero rows, and live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me all entities created by download",
+  "planning_time": 6.920797750353813e-05,
+  "preprocessing_time": 0.0013863339554518461,
+  "query_id": "probe_eff2_14",
+  "route_type": "SQL_ONLY",
+  "runtime": 0.0032469999860040843,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "JOURNEY_CAMPAIGN",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "published journeys"
+            }
+          ],
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey",
+          "path_params": [],
+          "risk_notes": [
+            "Journey status names can differ between database snapshots and live API state."
+          ],
+          "use_when": "List or inspect Journey Optimizer journeys/campaigns, statuses, published/live/inactive/draft state."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "destination flows"
+            }
+          ],
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows",
+          "path_params": [],
+          "risk_notes": [
+            "Flow lists are paginated and may need property filters for production use."
+          ],
+          "use_when": "List destination/dataflow/activation flows and flow metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "failed flow runs"
+            }
+          ],
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs",
+          "path_params": [],
+          "risk_notes": [
+            "Run windows and sorting must be explicit for time-sensitive questions."
+          ],
+          "use_when": "Inspect dataflow run status, failed/succeeded runs, and recent execution state."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "SQL_ONLY"
+    },
+    {
+      "estimated_tokens": 965,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe_eff2/14/metadata.json",
+      "prompt_tokens": 1384
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then apply evidence policy before API verification. API decision: API_REQUIRED (Query family requires Adobe API evidence.).",
+      "steps": [
+        {
+          "action": "sql",
+          "allow_full_result": false,
+          "family": "collection_created_by",
+          "headers": {},
+          "method": null,
+          "params": {},
+          "purpose": "Ground names/IDs in local snapshot before API verification.",
+          "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'",
+          "url": null,
+          "warnings": []
+        },
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "family": "audit_create_events",
+          "headers": {},
+          "method": "GET",
+          "params": {
+            "limit": "20",
+            "property": "action==create"
+          },
+          "purpose": "API parameter template: audit_create_events.",
+          "sql": null,
+          "url": "/data/foundation/audit/events",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": true,
+        "ok": true,
+        "original_sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'",
+        "row_count": 0,
+        "rows": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "sql": "SELECT * FROM (SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%') AS _dashagent_limited_result LIMIT 50"
+      },
+      "sql": "SELECT DISTINCT C.\"COLLECTIONID\" AS collection_id, C.\"NAME\" AS collection_name, C.\"CREATEDTIME\" AS created_time FROM \"dim_collection\" AS C WHERE C.\"CREATEDBY\" ILIKE '%download%'",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "20",
+        "property": "action==create"
+      },
+      "result": {
+        "dry_run": true,
+        "endpoint": "/data/foundation/audit/events",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {
+          "limit": "20",
+          "property": "action==create"
+        },
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/data/foundation/audit/events"
+      },
+      "url": "/data/foundation/audit/events",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 7.62502895668149e-06,
+    "execution_time": 0.0013987499987706542,
+    "planning_time": 6.920797750353813e-05,
+    "preprocessing_time": 0.0013863339554518461
+  },
+  "tool_call_count": 2
+}

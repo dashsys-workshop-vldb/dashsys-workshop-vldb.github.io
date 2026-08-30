@@ -1,0 +1,134 @@
+{
+  "report": "final_two_rows_grounding_fix",
+  "packaged_default": "SQL_FIRST_API_VERIFY",
+  "v2_promoted": false,
+  "files_changed": [
+    "dashagent/executor.py",
+    "dashagent/final_answer_claim_extractor.py",
+    "dashagent/llm_final_answer_composer.py",
+    "tests/test_llm_owned_v2_workflow.py",
+    "tests/test_llm_final_answer_composer.py",
+    "tests/test_v2_structured_tool_output.py"
+  ],
+  "root_causes": {
+    "birthday_message_published": {
+      "failure_class": "mechanical_dependency_placeholder_resolution",
+      "evidence": "The LLM plan used {{t1_lookup_journey_id.CAMPAIGNID}} after the first SQL pass returned CAMPAIGNID; the previous resolver only accepted {{pass.result.field}}.",
+      "fix": "Support shorthand {{pass_id.field}} as a mechanical alias and perform case-insensitive lookup against completed pass rows.",
+      "backend_semantic_planning_used": false
+    },
+    "mixed_inactive_journeys": {
+      "failure_class": "final_answer_semantic_gate_false_positive_and_prompt_bloat",
+      "evidence": "The gate treated conceptual active/inactive wording and Journey Optimizer as unsupported runtime claims.",
+      "fix": "Allow conceptual active/inactive contrast, treat product phrases as generic context, compact result-bundle/pass previews, and bound final-answer max tokens.",
+      "backend_semantic_planning_used": false
+    }
+  },
+  "latest_smoke": {
+    "row_count": 7,
+    "passed_count": 7,
+    "failed_count": 0,
+    "timeout_count": 0,
+    "unsupported_claims": 0,
+    "no_tool_fp": 0,
+    "final_semantic_gate_initial_failures": 0,
+    "final_semantic_gate_final_failures": 0,
+    "raw_sql_fallback_used_count": 0,
+    "runtime_fact_count": 9,
+    "local_snapshot_fact_count": 9,
+    "live_api_fact_count": 0,
+    "sql_calls": 6,
+    "api_calls": 2,
+    "rows": [
+      {
+        "prompt_id": "pure_concept_schema",
+        "pass": true,
+        "sql_calls": 0,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0
+      },
+      {
+        "prompt_id": "pure_meta_list_schemas",
+        "pass": true,
+        "sql_calls": 0,
+        "api_calls": 0,
+        "runtime_fact_count": 0,
+        "final_semantic_gate_final_failures": 0
+      },
+      {
+        "prompt_id": "ambiguous_user_schemas",
+        "pass": true,
+        "sql_calls": 1,
+        "api_calls": 0,
+        "runtime_fact_count": 3,
+        "final_semantic_gate_final_failures": 0
+      },
+      {
+        "prompt_id": "local_schema_count",
+        "pass": true,
+        "sql_calls": 1,
+        "api_calls": 0,
+        "runtime_fact_count": 1,
+        "final_semantic_gate_final_failures": 0
+      },
+      {
+        "prompt_id": "birthday_message_published",
+        "pass": true,
+        "sql_calls": 2,
+        "api_calls": 0,
+        "runtime_fact_count": 2,
+        "final_answer": "The journey \"Birthday Message\" was published on 2026-03-31T06:07:32.838462639Z.",
+        "final_semantic_gate_final_failures": 0
+      },
+      {
+        "prompt_id": "mixed_inactive_journeys",
+        "pass": true,
+        "sql_calls": 1,
+        "api_calls": 1,
+        "runtime_fact_count": 2,
+        "caveat_or_error_only_count": 1,
+        "final_semantic_gate_final_failures": 0
+      },
+      {
+        "prompt_id": "compare_local_live_birthday_status",
+        "pass": true,
+        "sql_calls": 1,
+        "api_calls": 1,
+        "runtime_fact_count": 1,
+        "caveat_or_error_only_count": 1,
+        "final_semantic_gate_final_failures": 0
+      }
+    ]
+  },
+  "validation": {
+    "focused_pytest": "74 passed",
+    "full_pytest": "1138 passed, 1 skipped",
+    "check_submission_ready_ok": true,
+    "default_strategy": "SQL_FIRST_API_VERIFY",
+    "query_output_count": 73,
+    "secret_scan_ok": true,
+    "sdk_usage_runtime_llm_direct_http_hits": 0,
+    "git_diff_check": "passed"
+  },
+  "gates": {
+    "semantic_route_promotion_gate": {
+      "promotion_allowed": false,
+      "recommendation": "keep_shadow_only"
+    },
+    "integrated_robustness_gate": {
+      "recommendation": "promote_efficiency_recovery_fix",
+      "note": "Separate packaged-efficiency recommendation, not V2 promotion."
+    },
+    "hidden_style_eval": {
+      "passed_cases": 48,
+      "failed_cases": 0
+    }
+  },
+  "decision": {
+    "safe_to_keep": true,
+    "safe_to_commit": true,
+    "safe_to_benchmark": "focused smoke yes; full V2 strict dev eval still needs hang diagnostics",
+    "safe_to_promote_v2": false
+  }
+}

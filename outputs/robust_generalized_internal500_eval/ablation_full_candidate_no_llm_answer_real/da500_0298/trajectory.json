@@ -1,0 +1,609 @@
+{
+  "answer_time": 0.0,
+  "api_call_count": 0,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview.",
+        "query_id": "da500_0298",
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-27T20:52:31.668880+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query",
+            "query_id",
+            "strategy"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-27T20:52:31.668891+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-27T20:52:31.668895+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview."
+      },
+      "output": {
+        "confidence": 0.88,
+        "matched_rules": {
+          "items": [
+            "sql_plus_api:current"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "SQL_PLUS_API",
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": true,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-27T20:52:31.668924+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview."
+      },
+      "output": {
+        "confidence": 0.88,
+        "is_simple": false,
+        "reason": "Live/status keyword(s) require SQL grounding plus API verification: current.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-27T20:52:31.668941+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_objective_prompt_features",
+      "correctness_role": "keeps semantic pre-routing separate from SQL/API planning and answer generation",
+      "duration_ms": 0.0,
+      "effect": "records fact-only prompt cues for semantic routing diagnostics",
+      "efficiency_role": "uses compact symbolic features before any optional LLM classification",
+      "input_summary": {
+        "query": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview."
+      },
+      "output": {
+        "count": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "date": {
+          "items": [
+            "WHEN"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "fields": {
+          "items": [
+            "NAME"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "norm": "find local segment names, then use the current endpoint only when it adds requested evidence. apply sql first and verify only when needed for the monitoring overview.",
+        "p": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview.",
+        "rel": {
+          "items": [
+            "USES"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "retr": {
+          "items": [
+            "LIST",
+            "FIND"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "status": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "truncated_fields": 12
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective prompt feature extraction",
+      "timestamp": "2026-05-27T20:52:31.669055+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_parse",
+      "correctness_role": "prevents keyword-only no-tool blocking or allowing decisions",
+      "duration_ms": 0.0,
+      "effect": "separates operation role, target grounding, instance level, and evidence need before route selection",
+      "efficiency_role": "adds compact parse metadata without executing tools",
+      "input_summary": {
+        "feature_codes": {
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "date": {
+            "items": [
+              "WHEN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "fields": {
+            "items": [
+              "NAME"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "norm": "find local segment names, then use the current endpoint only when it adds requested evidence. apply sql first and verify only when needed for the monitoring overview.",
+          "p": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview.",
+          "rel": {
+            "items": [
+              "USES"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "retr": {
+            "items": [
+              "LIST",
+              "FIND"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 12
+        }
+      },
+      "output": {
+        "capability": {
+          "api_families": {
+            "items": [
+              "UPS_AUDIENCES",
+              "SEGMENT_DEFINITIONS"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "api_match": true,
+          "sql_match": true
+        },
+        "confidence": 0.65,
+        "evidence_need": "NONE",
+        "filters": {
+          "status": null
+        },
+        "no_tool_safe": true,
+        "operation": "RELATIONSHIP",
+        "supporting_spans": {
+          "items": [
+            "find",
+            "when",
+            "segment"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "target": {
+          "grounding": "CONCEPTUAL_OBJECT",
+          "instance_level": false,
+          "object_family": "SEGMENT",
+          "text": "segment"
+        },
+        "truncated_fields": 3
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic role parse",
+      "timestamp": "2026-05-27T20:52:31.669354+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_intent_decision",
+      "correctness_role": "keeps no-tool candidates explicit for verifier review",
+      "duration_ms": 0.0,
+      "effect": "records semantic intent decision without generating SQL, API calls, or answers",
+      "efficiency_role": "measures whether conceptual false positives could avoid tools in a future gate",
+      "input_summary": {
+        "feature_codes": {
+          "count": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "date": {
+            "items": [
+              "WHEN"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "fields": {
+            "items": [
+              "NAME"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "norm": "find local segment names, then use the current endpoint only when it adds requested evidence. apply sql first and verify only when needed for the monitoring overview.",
+          "p": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview.",
+          "rel": {
+            "items": [
+              "USES"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "retr": {
+            "items": [
+              "LIST",
+              "FIND"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "status": {
+            "items": [],
+            "total_items": 0,
+            "truncated_items": false
+          },
+          "truncated_fields": 12
+        }
+      },
+      "output": {
+        "api": false,
+        "codes": {
+          "items": [
+            "FALLBACK",
+            "SEMANTIC_PARSE_NO_TOOL"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "conf": 0.82,
+        "intent": "CONCEPT",
+        "need": "NONE",
+        "no_tool": true,
+        "sql": false
+      },
+      "stage": "semantic routing shadow",
+      "technique": "compact SemanticIntentDecision classification",
+      "timestamp": "2026-05-27T20:52:31.669365+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_routing_anti_hallucination_gate",
+      "correctness_role": "prevents LLM semantic hints from overriding objective data cues",
+      "duration_ms": 0.0,
+      "effect": "blocks unsupported no-tool or capability claims and records one-revision fallback state",
+      "efficiency_role": "limits revision feedback to compact codes and keeps packaged execution unchanged",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        }
+      },
+      "output": {
+        "preview": "{\"initial_gate\": {\"ok\": false, \"block\": {\"items\": [\"UNSUPPORTED_NO_TOOL\"], \"total_items\": 1, \"truncated_items\": false}, \"support\": {\"intent\": false, \"need\": false, \"caps\": true}}, \"final_gate\": {\"ok\": false, \"block\": {\"items\": [\"UNSUPPORTED_NO_TOOL\"], \"total_items\": 1, \"truncated_items\": false}, \"support\": {\"intent\": false, \"need\": false, \"caps\": true}}, \"initial_decision\": {\"intent\": \"CONCEPT\", \"need\": \"NONE\", \"no_tool\": true, \"sql\": false, \"api\": false, \"conf\": 0.82, \"codes\": {\"items\": [\"FALLBACK\", \"SEMANTIC_PARSE_NO_TOOL\"], \"total_items\": 2, \"truncated_items\": false}}, \"final_decision\": {\"intent\": \"CONCEPT\", \"need\": \"NONE\", \"no_tool\": true, \"sql\": false, \"api\": false, \"conf\": 0.82, \"codes\": {\"items\": [\"FALLBACK\", \"SEMANTIC_PARSE_NO_TOOL\"], \"total_items\": 2, \"truncated_items\": false}}, \"revision_attempted\": false, \"revision_success\": false, \"fallback_action\": \"EVIDENCE_PIPELINE\", \"feedback\": {\"prev\": {\"intent\": \"CONCEPT\", \"need\": \"NONE\", \"no_tool\": true, \"sql\": false, \"api\": false, \"...",
+        "truncated": true
+      },
+      "stage": "semantic routing shadow",
+      "technique": "objective support check for semantic intent",
+      "timestamp": "2026-05-27T20:52:31.669367+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_consistency_verifier",
+      "correctness_role": "blocks real instance-level data requests without treating every cue word as retrieval",
+      "duration_ms": 0.0,
+      "effect": "allows no-tool only when semantic roles are conceptual, meta-language, or out-of-domain",
+      "efficiency_role": "keeps safe conceptual prompts from entering the evidence pipeline",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        },
+        "semantic_parse": {
+          "capability": {
+            "api_families": {
+              "items": [
+                "UPS_AUDIENCES",
+                "SEGMENT_DEFINITIONS"
+              ],
+              "total_items": 2,
+              "truncated_items": false
+            },
+            "api_match": true,
+            "sql_match": true
+          },
+          "confidence": 0.65,
+          "evidence_need": "NONE",
+          "filters": {
+            "status": null
+          },
+          "no_tool_safe": true,
+          "operation": "RELATIONSHIP",
+          "supporting_spans": {
+            "items": [
+              "find",
+              "when",
+              "segment"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "target": {
+            "grounding": "CONCEPTUAL_OBJECT",
+            "instance_level": false,
+            "object_family": "SEGMENT",
+            "text": "segment"
+          },
+          "truncated_fields": 3
+        }
+      },
+      "output": {
+        "allow_no_tool": true,
+        "consistency_codes": {
+          "items": [
+            "KEYWORD_ONLY_BLOCK_AVOIDED",
+            "SEMANTIC_NO_TOOL_CONSISTENT"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "ok": true
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic parse and route consistency verifier",
+      "timestamp": "2026-05-27T20:52:31.669369+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_no_tool_safety_verifier",
+      "correctness_role": "blocks concrete data prompts from direct LLM handling while allowing keyword decoys",
+      "duration_ms": 0.0,
+      "effect": "records the semantic consistency result in the legacy no-tool safety checkpoint slot",
+      "efficiency_role": "estimates safe no-tool savings without changing packaged behavior",
+      "input_summary": {
+        "semantic_intent": {
+          "api": false,
+          "codes": {
+            "items": [
+              "FALLBACK",
+              "SEMANTIC_PARSE_NO_TOOL"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "conf": 0.82,
+          "intent": "CONCEPT",
+          "need": "NONE",
+          "no_tool": true,
+          "sql": false
+        }
+      },
+      "output": {
+        "action": "ALLOW_NO_TOOL",
+        "allow_no_tool": true,
+        "capability_match_score": 1.0,
+        "clear_safe_api_family": false,
+        "evidence_need_score": 0.98,
+        "has_concrete_data_signal": true,
+        "no_tool_safety_score": 0.02,
+        "semantic_consistency_codes": {
+          "items": [
+            "KEYWORD_ONLY_BLOCK_AVOIDED",
+            "SEMANTIC_NO_TOOL_CONSISTENT"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "semantic routing shadow",
+      "technique": "semantic consistency compatibility no-tool view",
+      "timestamp": "2026-05-27T20:52:31.669371+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_semantic_route_decision_ladder",
+      "correctness_role": "never applies semantic routing to the packaged plan in shadow mode",
+      "duration_ms": 0.0,
+      "effect": "records the shadow action that would be considered by a future promotion gate",
+      "efficiency_role": "estimates tool-call and context-token tradeoffs",
+      "input_summary": {
+        "shadow_only": false
+      },
+      "output": {
+        "action": "LLM_SAFE_DIRECT",
+        "context_token_cost": 294,
+        "low_low_case": false,
+        "promotion_allowed": false,
+        "shadow_only": false,
+        "tier_used": 0
+      },
+      "stage": "semantic routing shadow",
+      "technique": "uncertainty escalation ladder",
+      "timestamp": "2026-05-27T20:52:31.669373+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_real_behavior_applied_trial",
+      "correctness_role": "falls back to SQL_FIRST_API_VERIFY unless all no-tool safety checks pass",
+      "duration_ms": 0.0,
+      "effect": "applies a semantic no-tool shortcut only in explicit real benchmark trial modes",
+      "efficiency_role": "measures real tool-call savings for conceptual false-positive routes",
+      "input_summary": {
+        "trial_mode": "ablation_full_candidate_no_llm_answer_real"
+      },
+      "output": {
+        "applied": true,
+        "decision": "LLM_SAFE_DIRECT",
+        "decision_family": "SEMANTIC_NO_TOOL",
+        "fallback": false,
+        "record": true,
+        "semantic_confidence": 0.82,
+        "shadow_only": false,
+        "trial_mode": "ablation_full_candidate_no_llm_answer_real",
+        "truncated_fields": 2
+      },
+      "stage": "isolated applied trial",
+      "technique": "semantic no-tool applied trial",
+      "timestamp": "2026-05-27T20:52:31.669460+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "does not invent SQL/API evidence, counts, IDs, statuses, or timestamps",
+      "duration_ms": 0.0,
+      "effect": "returns a no-tool conceptual answer only after semantic safety gates pass",
+      "efficiency_role": "uses zero SQL/API calls for the isolated trial row",
+      "output": {
+        "answer_length": 131,
+        "final_answer": "A segment is a rule-defined audience group used to select profiles that meet specific traits, behaviors, or eligibility conditions.",
+        "final_token_estimate": 23
+      },
+      "stage": "final response",
+      "technique": "semantic no-tool applied trial answer",
+      "timestamp": "2026-05-27T20:52:31.669911+00:00"
+    }
+  ],
+  "domain_type": "CONCEPTUAL",
+  "errors": [],
+  "estimated_tokens": 301,
+  "execution_time": 0.0,
+  "final_answer": "A segment is a rule-defined audience group used to select profiles that meet specific traits, behaviors, or eligibility conditions.",
+  "original_query": "Find local segment names, then use the current endpoint only when it adds requested evidence. Apply SQL first and verify only when needed for the monitoring overview.",
+  "planning_time": 0.0,
+  "preprocessing_time": 0.0,
+  "query_id": "da500_0298",
+  "route_type": "LLM_SAFE_DIRECT",
+  "runtime": 0.008692167233675718,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "api_policy": "API_OPTIONAL",
+      "confidence": 0.88,
+      "kind": "prompt_router",
+      "matched_rules": [
+        "sql_plus_api:current"
+      ],
+      "mode": "SQL_PLUS_API",
+      "reason": "Live/status keyword(s) require SQL grounding plus API verification: current.",
+      "recommended_strategy": "SQL_FIRST_API_VERIFY",
+      "requires_api": true,
+      "requires_database": true,
+      "risk": "medium"
+    },
+    {
+      "estimated_tokens": 250,
+      "kind": "metadata",
+      "metadata_path": "outputs/robust_generalized_internal500_eval/ablation_full_candidate_no_llm_answer_real/da500_0298/metadata.json",
+      "prompt_tokens": 740
+    },
+    {
+      "applied": true,
+      "blockers": [],
+      "decision": "LLM_SAFE_DIRECT",
+      "decision_family": "SEMANTIC_NO_TOOL",
+      "evidence_need_score": 0.98,
+      "fallback": false,
+      "kind": "real_behavior_applied_trial",
+      "record": true,
+      "semantic_confidence": 0.82,
+      "shadow_only": false,
+      "trial_mode": "ablation_full_candidate_no_llm_answer_real"
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {},
+  "tool_call_count": 0
+}

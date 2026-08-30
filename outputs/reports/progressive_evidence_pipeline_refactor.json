@@ -1,0 +1,129 @@
+{
+  "report_type": "progressive_evidence_pipeline_refactor",
+  "scope": "ROBUST_GENERALIZED_HARNESS_CANDIDATE implementation only",
+  "promotion_decision": "not_run",
+  "benchmark_conclusion": "not_run",
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "default_changed": false,
+  "final_submission_format_changed": false,
+  "progressive_evidence_policy": {
+    "implemented": true,
+    "path": "dashagent/progressive_evidence_policy.py",
+    "decision_fields": [
+      "entry_action",
+      "confidence",
+      "reason_codes",
+      "risk_codes",
+      "allowed_early_exit",
+      "requires_evidence_pipeline",
+      "safe_api_probe",
+      "metrics"
+    ]
+  },
+  "early_routing": {
+    "llm_semantic_routing_kept": true,
+    "semantic_parse_kept": true,
+    "restricted_to_safe_exits": true,
+    "data_like_prompts_enter_evidence_pipeline": true,
+    "checkpoint_added": "checkpoint_progressive_evidence_policy"
+  },
+  "no_tool_false_positive_guards": {
+    "supported_data_object_blocked": true,
+    "instance_level_blocked": true,
+    "data_operations_blocked": true,
+    "requested_fields_blocked": true,
+    "live_current_platform_api_cues_blocked": true,
+    "explicit_api_family_blocked": true,
+    "mixed_conceptual_data_blocked": true,
+    "status_date_entity_filters_blocked": true,
+    "ambiguous_parse_with_data_signal_blocked": true
+  },
+  "api_required_preservation": {
+    "early_no_tool_blocked": true,
+    "early_sql_only_blocked": true,
+    "post_sql_llm_first_decision_preserved_after_evidence": true,
+    "risk_fallback_preserves_high_risk_api": true,
+    "unsafe_api_caveats_not_no_data": true
+  },
+  "safe_api_probe": {
+    "tightened": true,
+    "requires_single_high_confidence_family": true,
+    "requires_safe_get": true,
+    "blocks_unresolved_path_params": true,
+    "blocks_conceptual_meta_prompts": true,
+    "blocks_ambiguous_family": true
+  },
+  "answer_grounding": {
+    "path_compatible": true,
+    "llm_generated_answer_kept": true,
+    "claim_verifier_kept": true,
+    "empty_llm_answer_fallback_added": true
+  },
+  "smoke_results": [
+    {
+      "query_id": "progressive_concept_smoke",
+      "query": "List three reasons why schemas matter.",
+      "entry_action": "LLM_DIRECT",
+      "requires_evidence_pipeline": false,
+      "tool_calls": 0,
+      "answer_length": 140
+    },
+    {
+      "query_id": "progressive_data_smoke",
+      "query": "Show inactive journeys.",
+      "entry_action": "EVIDENCE_PIPELINE",
+      "requires_evidence_pipeline": true,
+      "tool_calls": 2,
+      "answer_length": 367
+    },
+    {
+      "query_id": "progressive_live_count_smoke",
+      "query": "How many current schemas are in Adobe Experience Platform?",
+      "entry_action": "EVIDENCE_PIPELINE",
+      "requires_evidence_pipeline": true,
+      "tool_calls": 2,
+      "answer_length": 140
+    },
+    {
+      "query_id": "progressive_meta_smoke",
+      "query": "What does 'inactive journey' mean?",
+      "entry_action": "LLM_DIRECT",
+      "requires_evidence_pipeline": false,
+      "tool_calls": 0,
+      "answer_length": 120
+    }
+  ],
+  "validation": {
+    "pytest_targeted": {
+      "command": "python3 -m pytest -q tests/test_robust_generalized_candidate.py tests/test_semantic_parse_and_verifier.py tests/test_post_sql_llm_first_decision.py tests/test_evidence_grounded_final_answer_verifier.py tests/test_evidence_grounded_llm_answer_generator.py",
+      "status": "passed",
+      "summary": "62 passed in 9.21s"
+    },
+    "check_submission_ready": {
+      "command": "python3 scripts/check_submission_ready.py",
+      "status": "passed",
+      "ok": true,
+      "default_strategy": "SQL_FIRST_API_VERIFY",
+      "query_output_count": 73
+    },
+    "hardcode_fake_score_audit": {
+      "command": "python3 scripts/audit_hardcoded_runtime_and_score_paths.py",
+      "status": "passed",
+      "unsafe_runtime_hardcode_count": 0,
+      "unsafe_fake_score_count": 0
+    },
+    "targeted_secret_scan": {
+      "status": "passed",
+      "hit_count": 0
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  },
+  "known_todos": [
+    "Run controlled eval and ablation later; no promotion judgment was made in this pass.",
+    "Track no-tool false positives, API-required underuse, SAFE_API_PROBE family errors, post-SQL revision/fallback counts, and answer verifier counts in real-agent runs.",
+    "Consider a dedicated first-evidence-source executor refactor if future eval shows current SQL-first planning is too rigid inside EVIDENCE_PIPELINE."
+  ]
+}

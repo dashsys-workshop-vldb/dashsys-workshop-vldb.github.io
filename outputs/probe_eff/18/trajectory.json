@@ -1,0 +1,217 @@
+{
+  "answer_time": 1.2707954738289118e-05,
+  "api_call_count": 1,
+  "domain_type": "UNKNOWN",
+  "errors": [],
+  "estimated_tokens": 1103,
+  "execution_time": 0.0001912500010803342,
+  "final_answer": "Details for the tag named 'cool' require live API evidence. Live API verification was not executed because Adobe credentials are unavailable.",
+  "original_query": "Show me the details of the tag named 'cool'.",
+  "planning_time": 2.8333975933492184e-05,
+  "preprocessing_time": 0.0010785000049509108,
+  "query_id": "probe_eff_18",
+  "route_type": "API_ONLY",
+  "runtime": 0.0022430000244639814,
+  "sql_call_count": 0,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "JOURNEY_CAMPAIGN",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "published journeys"
+            }
+          ],
+          "id": "journey_list",
+          "method": "GET",
+          "path": "/ajo/journey",
+          "path_params": [],
+          "risk_notes": [
+            "Journey status names can differ between database snapshots and live API state."
+          ],
+          "use_when": "List or inspect Journey Optimizer journeys/campaigns, statuses, published/live/inactive/draft state."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "audiences with profile counts"
+            }
+          ],
+          "id": "ups_audiences",
+          "method": "GET",
+          "path": "/data/core/ups/audiences",
+          "path_params": [],
+          "risk_notes": [
+            "Audience APIs can be paginated; avoid assuming first page is exhaustive."
+          ],
+          "use_when": "List or look up Real-Time CDP audiences and audience metadata/counts."
+        },
+        {
+          "common_params": {
+            "limit": 50,
+            "start": 0
+          },
+          "domains": [
+            "SEGMENT_AUDIENCE"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "segment definition by name"
+            }
+          ],
+          "id": "segment_definitions",
+          "method": "GET",
+          "path": "/data/core/ups/segment/definitions",
+          "path_params": [],
+          "risk_notes": [
+            "Definition IDs and audience IDs are related but not always identical."
+          ],
+          "use_when": "Look up segment definitions, names, statuses, and segment metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "destination flows"
+            }
+          ],
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows",
+          "path_params": [],
+          "risk_notes": [
+            "Flow lists are paginated and may need property filters for production use."
+          ],
+          "use_when": "List destination/dataflow/activation flows and flow metadata."
+        },
+        {
+          "common_params": {
+            "limit": 50
+          },
+          "domains": [
+            "DESTINATION_DATAFLOW",
+            "STATUS_MONITORING"
+          ],
+          "examples": [
+            {
+              "params": {
+                "limit": 50
+              },
+              "query": "failed flow runs"
+            }
+          ],
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs",
+          "path_params": [],
+          "risk_notes": [
+            "Run windows and sorting must be explicit for time-sensitive questions."
+          ],
+          "use_when": "Inspect dataflow run status, failed/succeeded runs, and recent execution state."
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_blueprint",
+        "dim_campaign",
+        "dim_collection",
+        "dim_connector"
+      ],
+      "confidence": 0.2,
+      "domain_type": "UNKNOWN",
+      "kind": "route",
+      "reason": "Keyword routing found no domain keyword.",
+      "route_type": "API_ONLY"
+    },
+    {
+      "estimated_tokens": 1419,
+      "kind": "metadata",
+      "metadata_path": "[REDACTED]/Desktop/dashsys-workshop-vldb/outputs/probe_eff/18/metadata.json",
+      "prompt_tokens": 1925
+    },
+    {
+      "kind": "plan",
+      "rationale": "Use SQL first for entity grounding, then apply evidence policy before API verification. API decision: API_REQUIRED (Route is API-only.). Fast path: tag_details_by_id.",
+      "steps": [
+        {
+          "action": "api",
+          "allow_full_result": false,
+          "family": "tag_details_by_id",
+          "headers": {},
+          "method": "GET",
+          "params": {},
+          "purpose": "API parameter template: tag_details_by_id.",
+          "sql": null,
+          "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+          "warnings": []
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {},
+      "result": {
+        "dry_run": true,
+        "endpoint": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+        "error": "Adobe credentials unavailable; API call not executed.",
+        "headers": {},
+        "method": "GET",
+        "ok": false,
+        "params": {},
+        "result_preview": null,
+        "status_code": null,
+        "url": "https://platform.adobe.io/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818"
+      },
+      "url": "/unifiedtags/tags/51175a7f-aa60-4533-bef1-717b3cef7818",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY",
+  "timings": {
+    "answer_time": 1.2707954738289118e-05,
+    "execution_time": 0.0001912500010803342,
+    "planning_time": 2.8333975933492184e-05,
+    "preprocessing_time": 0.0010785000049509108
+  },
+  "tool_call_count": 1
+}

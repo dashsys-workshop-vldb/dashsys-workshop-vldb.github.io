@@ -1,0 +1,29 @@
+{
+  "created_at": "2026-05-27T14:58:23.831248+00:00",
+  "follow_up_work": [
+    "Stabilize strict evaluator efficiency measurement or gate on correctness/tool behavior separately from transient runtime variance.",
+    "Rerun promotion review only after a fresh SQL_FIRST baseline is reproducible within a narrow tolerance."
+  ],
+  "packaged_default_strategy": "SQL_FIRST_API_VERIFY",
+  "report_type": "final_gate_safe_fixes_to_keep",
+  "safe_fixes_retained": [
+    {
+      "fix": "APIValidator unresolved query-parameter placeholder blocking",
+      "reason": "Prevents invalid API calls with placeholder params from reaching Adobe; current strict correctness/API/answer scores did not regress under normal token-reduction runs.",
+      "retain": true,
+      "score_tradeoff": "No behavior-score drop observed; may still be logged as failed API evidence for audit rather than sent over network."
+    },
+    {
+      "fix": "Token reduction preserves unresolved-parameter warnings",
+      "reason": "Required by readiness audit to distinguish blocked unresolved params from silent omission.",
+      "retain": true,
+      "score_tradeoff": "No isolated warning-preservation score drop observed; disabling the full token-reduction feature is a broader behavior change and lowers score."
+    },
+    {
+      "fix": "COMBINED_SAFE_DETERMINISTIC_PROMOTION_CANDIDATE trial wiring",
+      "reason": "Useful isolated trial strategy, but not packaged default after final-gate baseline drift.",
+      "retain": true,
+      "score_tradeoff": "Keep trial-only until baseline stability is re-established."
+    }
+  ]
+}

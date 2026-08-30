@@ -1,0 +1,1850 @@
+{
+  "answer_time": 3.131182416342199,
+  "api_call_count": 1,
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint_01_raw_query",
+      "correctness_role": "keeps later normalization from changing the user-facing question",
+      "duration_ms": 0.0,
+      "effect": "preserves the original query for reproducibility",
+      "efficiency_role": "starts one trace without extra tool calls",
+      "output": {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
+        "query_id": "example_005",
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "stage": "input",
+      "technique": "raw user query capture",
+      "timestamp": "2026-05-28T02:46:16.441461+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_runtime_leakage_guard",
+      "correctness_role": "prevents gold/category/tags/oracle/expected-trace leakage into runtime decisions",
+      "duration_ms": 0.0,
+      "effect": "asserts that candidate runtime receives only prompt/runtime fields, not evaluator metadata",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "output": {
+        "category_tags_visible": false,
+        "expected_trace_visible": false,
+        "oracle_sql_visible": false,
+        "prompt_id_specific_branching": false,
+        "query_id_specific_branching": false,
+        "runtime_gold_visible": false,
+        "runtime_input_fields": {
+          "items": [
+            "query"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "runtime safety",
+      "technique": "runtime input isolation guard",
+      "timestamp": "2026-05-28T02:46:16.441481+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_score_provenance_guard",
+      "correctness_role": "prevents simulated or gold-visible scores from being treated as runtime evidence",
+      "duration_ms": 0.0,
+      "effect": "marks candidate runs as real-agent runtime executions without promotion judgment",
+      "efficiency_role": "adds no tool calls",
+      "input_summary": {
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "output": {
+        "organizer_equivalent": false,
+        "promotion_eligible": false,
+        "promotion_judgment_run": false,
+        "real_agent_execution": true,
+        "runtime_gold_visible": false,
+        "score_source": "runtime_candidate",
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER",
+        "synthetic_trace": false
+      },
+      "stage": "runtime safety",
+      "technique": "score provenance guard",
+      "timestamp": "2026-05-28T02:46:16.441486+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_00_prompt_router",
+      "correctness_role": "routes data questions to evidence tools instead of unsupported direct answers",
+      "duration_ms": 0.0,
+      "effect": "chooses whether the prompt can be answered directly or needs SQL/API evidence",
+      "efficiency_role": "allows clearly conceptual prompts to avoid unnecessary SQL/API calls",
+      "input_summary": {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
+      },
+      "output": {
+        "confidence": 0.9,
+        "matched_rules": {
+          "items": [
+            "api_only:sandbox"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "mode": "API_ONLY",
+        "reason": "API/platform family keyword(s): sandbox.",
+        "recommended_strategy": "SQL_FIRST_API_VERIFY",
+        "requires_api": true,
+        "requires_database": false,
+        "risk": "medium",
+        "truncated_fields": 1
+      },
+      "stage": "prompt routing",
+      "technique": "LLM_DIRECT / LOCAL_DB_ONLY / SQL_PLUS_API / API_ONLY routing policy",
+      "timestamp": "2026-05-28T02:46:16.441530+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_simple_prompt_gate",
+      "correctness_role": "prevents direct answers for data questions that need SQL/API evidence",
+      "duration_ms": 0.0,
+      "effect": "lets an LLM wrapper answer conceptual questions directly while sending evidence questions to the backend",
+      "efficiency_role": "can skip the data pipeline only for safe conceptual prompts",
+      "input_summary": {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
+      },
+      "output": {
+        "confidence": 0.9,
+        "is_simple": false,
+        "reason": "API/platform family keyword(s): sandbox.",
+        "suggested_action": "USE_DATA_PIPELINE"
+      },
+      "stage": "input routing",
+      "technique": "simple prompt gate",
+      "timestamp": "2026-05-28T02:46:16.441553+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_02_query_normalization",
+      "correctness_role": "improves template and route matching across wording variants",
+      "duration_ms": 0.0,
+      "effect": "creates matching-friendly text while preserving the original query",
+      "efficiency_role": "reduces repeated fuzzy matching work downstream",
+      "input_summary": {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
+      },
+      "output": {
+        "matching_text": "export a list of all destination in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinati [truncated]",
+        "normalized_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
+        "rewrites": {
+          "items": [
+            "important_plurals->singular"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "normalization",
+      "technique": "data cleaning / query normalization",
+      "timestamp": "2026-05-28T02:46:16.441670+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_03_query_tokens",
+      "correctness_role": "grounds names, IDs, dates, metrics, and statuses before planning",
+      "duration_ms": 0.0,
+      "effect": "extracts reusable query fields for routing, planning, and answers",
+      "efficiency_role": "avoids reparsing the query in later modules",
+      "input_summary": {
+        "normalized_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]"
+      },
+      "output": {
+        "domains": {
+          "items": [
+            "destination_dataflow"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "quoted_entities": {
+          "items": [
+            "modified"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "tokenization",
+      "technique": "domain-aware tokenization/entity extraction",
+      "timestamp": "2026-05-28T02:46:16.441757+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_04_relevance_scoring",
+      "correctness_role": "keeps high-signal tables and endpoints near the planner",
+      "duration_ms": 0.0,
+      "effect": "selects a smaller, more relevant schema/API context",
+      "efficiency_role": "reduces metadata and prompt tokens when compact metadata is enabled",
+      "input_summary": {
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "modified"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "top_answer_families": {
+          "items": [
+            "segment_destination"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "top_apis": {
+          "items": [
+            "export_batch_files"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_join_hints": {
+          "items": [
+            "br_campaign_segment.SEGMENTID->hkg_br_base_segment_used_by_dependent_segment.SEGMENTID"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "top_tables": {
+          "items": [
+            "dim_connector"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        }
+      },
+      "stage": "context selection",
+      "technique": "attention-style relevance scoring",
+      "timestamp": "2026-05-28T02:46:16.441951+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_value_entity_retrieval",
+      "correctness_role": "helps identify exact names, IDs, statuses, and metrics for SQL/API grounding",
+      "duration_ms": 0.0,
+      "effect": "grounds query entities against sampled local DB values before planning",
+      "efficiency_role": "uses a cached bounded value index with per-query scan and wall-time budgets",
+      "input_summary": {
+        "query_values": {
+          "items": [
+            {
+              "kind": "quoted_entity",
+              "text": "modified"
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "retrieval_ms": 10.289
+      },
+      "output": {
+        "active": true,
+        "cache_hit": true,
+        "cache_key": "1350a886af1bf7e1",
+        "cache_key_algorithm": "sha256",
+        "cache_path": "[REDACTED]/outputs/cache/value_index_1350a886af1bf7e1.json",
+        "cache_reproducible": true,
+        "match_count": 0,
+        "query_value_count": 1,
+        "truncated_fields": 8
+      },
+      "stage": "query understanding",
+      "technique": "CHESS-style value/entity retrieval",
+      "timestamp": "2026-05-28T02:46:16.442366+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_query_decomposition",
+      "correctness_role": "helps SQL/API planning preserve requested constraints",
+      "duration_ms": 0.0,
+      "effect": "breaks complex prompts into entities, filters, joins, and answer-shape constraints",
+      "efficiency_role": "skips simple queries and uses no LLM/tool calls",
+      "input_summary": {
+        "query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destinat [truncated]",
+        "tokens": {
+          "domains": {
+            "items": [
+              "destination_dataflow"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "quoted_entities": {
+            "items": [
+              "modified"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        }
+      },
+      "output": {
+        "active": true,
+        "expected_answer_shape": "table_or_list",
+        "required_entities": {
+          "items": [
+            "modified"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "required_sorting": {
+          "items": [
+            "sort_or_recent"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sub_questions": {
+          "items": [
+            "Ground named entities and identifiers."
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "query understanding",
+      "technique": "DIN-SQL-style deterministic query decomposition",
+      "timestamp": "2026-05-28T02:46:16.442388+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_05_query_analysis",
+      "correctness_role": "aligns routing, metadata, planning, and reporting decisions",
+      "duration_ms": 0.0,
+      "effect": "computes shared query understanding once",
+      "efficiency_role": "avoids repeated template and routing analysis",
+      "input_summary": {
+        "domain_type": "DESTINATION_DATAFLOW",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "answer_family": "destination_export",
+        "api_templates": {
+          "items": [
+            "recent_destination_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "confidence": 0.8,
+        "domain_type": "DESTINATION_DATAFLOW",
+        "fast_path": "destination_export_recent+recent_destination_flows",
+        "route_type": "SQL_THEN_API",
+        "sql_template": "destination_export_recent",
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "stage": "routing",
+      "technique": "branch prediction / QueryAnalysis",
+      "timestamp": "2026-05-28T02:46:16.442393+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_06_lookup_path",
+      "correctness_role": "guides relationship-heavy SQL/API selection",
+      "duration_ms": 0.0,
+      "effect": "predicts the relevant table/join/API path",
+      "efficiency_role": "filters unrelated schema and endpoint candidates",
+      "input_summary": {
+        "answer_family": "destination_export",
+        "domain_type": "DESTINATION_DATAFLOW"
+      },
+      "output": {
+        "api_families": {
+          "items": [
+            "destination_flows"
+          ],
+          "total_items": 3,
+          "truncated_items": false
+        },
+        "api_mode": "optional",
+        "family": "destination_dataflow",
+        "required_ids": {
+          "items": [
+            "target_id"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        },
+        "tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "path prediction",
+      "technique": "TLB-style lookup path prediction",
+      "timestamp": "2026-05-28T02:46:16.442396+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_07_context_card",
+      "correctness_role": "keeps required tables, columns, joins, and API candidates visible",
+      "duration_ms": 0.0,
+      "effect": "packs family-relevant context into metadata.json and the filled prompt",
+      "efficiency_role": "limits context size for non-baseline strategies",
+      "input_summary": {
+        "broad_context": false,
+        "lookup_path": "destination_dataflow"
+      },
+      "output": {
+        "estimated_metadata_tokens": 525,
+        "prompt_tokens": 1110,
+        "selected_apis": {
+          "items": [
+            "flowservice_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "selected_card_name": "destination_dataflow",
+        "selected_columns": {
+          "dim_target": {
+            "items": [
+              "TARGETID"
+            ],
+            "total_items": 8,
+            "truncated_items": true
+          }
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "metadata packing",
+      "technique": "huge-page-style compact context card",
+      "timestamp": "2026-05-28T02:46:16.443915+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_08_candidate_plans",
+      "correctness_role": "prefers validated, family-matched plans",
+      "duration_ms": 0.0,
+      "effect": "selects one plan before execution",
+      "efficiency_role": "does not execute losing candidate plans",
+      "input_summary": {
+        "base_step_count": 2,
+        "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER"
+      },
+      "output": {
+        "candidate_plan_names": {
+          "items": [
+            "generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "reason_selected": "highest pre-execution validation/relevance/cost score",
+        "scores": {
+          "generic_sql_first": 14.2425
+        },
+        "selected_plan": "generic_sql_first"
+      },
+      "stage": "planning",
+      "technique": "pre-execution plan ensemble",
+      "timestamp": "2026-05-28T02:46:16.446492+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_09_plan_optimization",
+      "correctness_role": "drops unresolved placeholder calls unless explicitly warned",
+      "duration_ms": 0.0,
+      "effect": "removes duplicate, skippable, or unsafe calls before validation",
+      "efficiency_role": "enforces a bounded plan before execution",
+      "input_summary": {
+        "original_step_count": 2
+      },
+      "output": {
+        "call_budget_applied": false,
+        "optimized_step_count": 2,
+        "optimizer_actions": {
+          "items": [
+            "ensemble selected generic_sql_first"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "original_step_count": 2,
+        "removed_api_skip_calls": 0,
+        "removed_duplicate_calls": 0,
+        "unresolved_placeholders_removed": 0
+      },
+      "stage": "optimization",
+      "technique": "compiler-style plan optimization",
+      "timestamp": "2026-05-28T02:46:16.446500+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_10_evidence_policy",
+      "correctness_role": "keeps API calls for API-only/live families",
+      "duration_ms": 0.0,
+      "effect": "decides when API evidence is required, optional, or unnecessary",
+      "efficiency_role": "skips or caps API calls when SQL evidence is enough",
+      "input_summary": {
+        "answer_family": "destination_export",
+        "route_type": "SQL_THEN_API"
+      },
+      "output": {
+        "allowed_api_families": {
+          "items": [
+            "recent_destination_flows"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "max_api_calls": 1,
+        "mode": "API_OPTIONAL",
+        "reason": "Live/platform verification may improve the answer."
+      },
+      "stage": "evidence policy",
+      "technique": "API_REQUIRED/API_OPTIONAL/API_SKIP policy",
+      "timestamp": "2026-05-28T02:46:16.446503+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_11_call_budget",
+      "correctness_role": "preserves required grounding steps",
+      "duration_ms": 0.0,
+      "effect": "keeps tool calls within per-family limits",
+      "efficiency_role": "prevents accidental extra SQL/API calls",
+      "input_summary": {
+        "planned_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "family": "destination_export_recent",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "final_planned_calls": 2,
+        "max_api_calls": 1,
+        "max_sql_calls": 1,
+        "max_total_tool_calls": 2,
+        "planned_api_calls": 1,
+        "planned_sql_calls": 1
+      },
+      "stage": "efficiency control",
+      "technique": "tool-call budgeting",
+      "timestamp": "2026-05-28T02:46:16.446519+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_gated_sql_candidate_selection",
+      "correctness_role": "selects only validator- and AST-passing SQL candidates",
+      "duration_ms": 0.0,
+      "effect": "validates hard-case SQL candidates before execution without executing losing candidates",
+      "efficiency_role": "executes only one selected candidate in packaged SQL_FIRST_API_VERIFY mode",
+      "input_summary": {
+        "trigger_reasons": {
+          "items": [
+            "complex_query_decomposition"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "metrics": {
+        "candidate_count": 1,
+        "cost_estimate": 1
+      },
+      "output": {
+        "preview": "{\"active\": true, \"hard_case_triggered\": true, \"trigger_reasons\": {\"items\": [\"complex_query_decomposition\"], \"total_items\": 1, \"truncated_items\": [truncated]",
+        "truncated": true
+      },
+      "stage": "planning",
+      "technique": "hard-case gated SQL candidate validation",
+      "timestamp": "2026-05-28T02:46:16.448495+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_12_validation",
+      "correctness_role": "blocks unsafe SQL and unknown/unresolved API calls",
+      "duration_ms": 0.0,
+      "effect": "records whether planned SQL/API calls were safe to execute",
+      "efficiency_role": "prevents wasted execution on invalid calls",
+      "input_summary": {
+        "optimized_steps": {
+          "items": [
+            {
+              "action": "sql",
+              "family": "destination_export_recent",
+              "purpose": "Fast-path SQL grounding.",
+              "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS [truncated]"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "output": {
+        "api_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "sql_validation_status": {
+          "items": [
+            {
+              "errors": {
+                "items": [],
+                "total_items": 0,
+                "truncated_items": false
+              },
+              "ok": true
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQL/API safety validation",
+      "timestamp": "2026-05-28T02:46:16.857236+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_sql_ast_validation",
+      "correctness_role": "detects unsafe SQL and schema mismatches with parser-backed structure",
+      "duration_ms": 0.0,
+      "effect": "adds AST-level table and column extraction after existing SQL validation",
+      "efficiency_role": "provides precise feedback without extra SQL tool calls",
+      "input_summary": {
+        "sql_call_count": 1
+      },
+      "output": {
+        "destructive_sql_detected": false,
+        "parsed_ok": true,
+        "selected_columns": {
+          "items": [
+            "D.CONNECTIONSPECID"
+          ],
+          "total_items": 10,
+          "truncated_items": true
+        },
+        "selected_tables": {
+          "items": [
+            "dim_target"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "summaries": {
+          "items": [
+            {
+              "destructive_sql_detected": false,
+              "enabled": true,
+              "normalized_sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS [truncated]",
+              "parsed_ok": true,
+              "selected_columns": {
+                "items": [
+                  "D.DESCRIPTION",
+                  "D.STATE",
+                  "D.INTERVAL"
+                ],
+                "total_items": 10,
+                "truncated_items": true
+              },
+              "selected_tables": {
+                "items": [
+                  "dim_target"
+                ],
+                "total_items": 1,
+                "truncated_items": false
+              }
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "validation",
+      "technique": "SQLGlot AST-based SQL validation and extraction",
+      "timestamp": "2026-05-28T02:46:16.857259+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_13_tool_execution",
+      "correctness_role": "records row counts, dry-run state, and API status for final answer grounding",
+      "duration_ms": 0.0,
+      "effect": "captures the actual SQL/API evidence gathered by the backend",
+      "efficiency_role": "makes tool-call count and result previews explicit",
+      "input_summary": {
+        "validated_step_count": 2
+      },
+      "output": {
+        "preview": "{\"sql_calls_executed\": 1, \"api_calls_executed\": 1, \"dry_run_status\": false, \"row_counts\": {\"items\": [1], \"total_items\": 1, \"truncated_items\": fa [truncated]",
+        "truncated": true
+      },
+      "stage": "execution",
+      "technique": "SQL/API tool execution",
+      "timestamp": "2026-05-28T02:46:16.857469+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_14_evidence_bus",
+      "correctness_role": "passes exact IDs, names, counts, timestamps, and statuses without text guessing",
+      "duration_ms": 0.0,
+      "effect": "forwards structured facts to API params and answer slots",
+      "efficiency_role": "avoids repeated lookup or reparsing work",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "evidence": {
+          "api_ids": {
+            "items": [
+              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+            ],
+            "total_items": 5,
+            "truncated_items": true
+          },
+          "api_names": {
+            "items": [
+              "Activate segments to S3 Feed"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "api_statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 2,
+            "truncated_items": false
+          },
+          "counts": {
+            "items": [
+              {
+                "items": 1
+              }
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "ids": {
+            "id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+            "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+          },
+          "names": {
+            "items": [
+              "Activate segments to S3 Feed"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "statuses": {
+            "items": [
+              "enabled"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "timestamps": {
+            "items": [
+              "2026-03-29T07:54:13.000+00:00"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "truncated_fields": 6
+        }
+      },
+      "stage": "evidence forwarding",
+      "technique": "operand forwarding / EvidenceBus",
+      "timestamp": "2026-05-28T02:46:16.857475+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_quality_classifier",
+      "correctness_role": "keeps SQL zero rows, live_empty, API errors, and required API missing distinct",
+      "duration_ms": 0.0,
+      "effect": "classifies SQL/API evidence quality before answer rendering",
+      "efficiency_role": "uses executed tool payloads without extra calls",
+      "input_summary": {
+        "api_required": false,
+        "tool_result_count": 2
+      },
+      "output": {
+        "api": {
+          "items": [
+            "API_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        },
+        "api_error_is_unavailable": false,
+        "live_empty_scoped": false,
+        "sql": {
+          "items": [
+            "SQL_DIRECT_ANSWER"
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "SQL/API evidence quality classification",
+      "timestamp": "2026-05-28T02:46:16.857491+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_answer_builder",
+      "correctness_role": "uses exact available values and scoped caveats without inventing missing roles",
+      "duration_ms": 0.0,
+      "effect": "renders final answer from EvidenceBus-derived answer slots and evidence quality classes",
+      "efficiency_role": "uses no extra SQL/API/LLM calls",
+      "input_summary": {
+        "api_required": false,
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}.",
+        "evidence_quality": {
+          "api": {
+            "items": [
+              "API_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          },
+          "api_error_is_unavailable": false,
+          "live_empty_scoped": false,
+          "sql": {
+            "items": [
+              "SQL_DIRECT_ANSWER"
+            ],
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "renderer": {
+          "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}.",
+          "rendered_fields": {
+            "items": [
+              "id"
+            ],
+            "total_items": 4,
+            "truncated_items": true
+          },
+          "shape": "list",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "EvidenceBus-centered grounded answer builder",
+      "timestamp": "2026-05-28T02:46:16.867600+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_candidate_selector",
+      "correctness_role": "selects only verifier-safe answers using AnswerSlots/EvidenceBus coverage, not gold labels",
+      "duration_ms": 0.0,
+      "effect": "restores strong same-evidence rendering when LLM wording omits requested roles",
+      "efficiency_role": "uses local scoring without extra SQL/API calls",
+      "input_summary": {
+        "candidate_count": 3,
+        "unsupported_claims": 0
+      },
+      "output": {
+        "preview": "{\"selected_answer\": \"Based on the evidence provided, 1 destination was found. The most recent is \\\"Activate segments to S3 Feed\\\" (amazon-s3 tar [truncated]",
+        "truncated": true
+      },
+      "stage": "answer selection",
+      "technique": "runtime evidence coverage answer selection",
+      "timestamp": "2026-05-28T02:46:19.978805+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_15_answer_slots",
+      "correctness_role": "makes final response generation evidence-grounded",
+      "duration_ms": 0.0,
+      "effect": "turns raw tool results into typed evidence fields",
+      "efficiency_role": "keeps answer context compact",
+      "input_summary": {
+        "tool_result_count": 2
+      },
+      "output": {
+        "answer_intent": "WHEN",
+        "discrepancy_flags": {
+          "sql_api_discrepancy": false
+        },
+        "dry_run_flags": {
+          "dry_run": false
+        },
+        "slots": {
+          "answer_family": "destination_export",
+          "api_error": false,
+          "api_item_count": 1,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "modified"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 14,
+            "truncated_items": true
+          },
+          "sql_row_count": 1,
+          "truncated_fields": 10
+        }
+      },
+      "stage": "answer synthesis",
+      "technique": "structured answer slot extraction",
+      "timestamp": "2026-05-28T02:46:19.979192+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_answer_slot_renderer",
+      "correctness_role": "makes omitted or unavailable roles explicit",
+      "duration_ms": 0.0,
+      "effect": "records how requested fields were rendered from answer slots",
+      "efficiency_role": "avoids LLM answer rewriting in the candidate path",
+      "input_summary": {
+        "slots": {
+          "answer_family": "destination_export",
+          "api_error": false,
+          "api_item_count": 1,
+          "discrepancy": false,
+          "dry_run": false,
+          "entity_names": {
+            "items": [
+              "modified"
+            ],
+            "total_items": 3,
+            "truncated_items": false
+          },
+          "slots_present": {
+            "items": [
+              "entity_names"
+            ],
+            "total_items": 14,
+            "truncated_items": true
+          },
+          "sql_row_count": 1,
+          "truncated_fields": 10
+        }
+      },
+      "output": {
+        "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}.",
+        "rendered_fields": {
+          "items": [
+            "id"
+          ],
+          "total_items": 4,
+          "truncated_items": true
+        },
+        "shape": "list",
+        "unsupported_claims_count": 0
+      },
+      "stage": "answer synthesis",
+      "technique": "deterministic answer-slot rendering",
+      "timestamp": "2026-05-28T02:46:19.979209+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_extractor",
+      "correctness_role": "keeps style flexible while making factual boundaries explicit",
+      "duration_ms": 0.0,
+      "effect": "extracts only hard factual claim candidates from free-form answer wording",
+      "efficiency_role": "uses deterministic text scanning with no tool calls",
+      "input_summary": {
+        "final_answer_length": 295
+      },
+      "output": {
+        "claim_count": 2,
+        "claims": {
+          "items": [
+            {
+              "hardness": "HARD",
+              "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "type": "ID",
+              "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer verification",
+      "technique": "final-answer factual claim extraction",
+      "timestamp": "2026-05-28T02:46:19.979213+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_claim_matcher",
+      "correctness_role": "blocks invented counts, IDs, statuses, dates, relationships, and over-broad no-data claims",
+      "duration_ms": 0.0,
+      "effect": "matches hard claims against EvidenceBus and AnswerSlots allowed facts",
+      "efficiency_role": "uses local normalized indexes without extra tools",
+      "input_summary": {
+        "allowed_fact_index_fields": {
+          "items": [
+            "counts"
+          ],
+          "total_items": 11,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "matches": {
+          "items": [
+            {
+              "claim": {
+                "hardness": "HARD",
+                "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                "type": "ID",
+                "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+              },
+              "reason": "id",
+              "status": "SUPPORTED"
+            }
+          ],
+          "total_items": 2,
+          "truncated_items": false
+        }
+      },
+      "stage": "answer verification",
+      "technique": "allowed-fact deterministic claim matching",
+      "timestamp": "2026-05-28T02:46:19.979218+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_evidence_grounded_final_answer_verifier",
+      "correctness_role": "prevents factual overreach without enforcing deterministic template text",
+      "duration_ms": 0.0,
+      "effect": "accepts natural wording only when factual claims stay inside allowed evidence",
+      "efficiency_role": "falls back locally when no safe LLM answer is available",
+      "input_summary": {
+        "llm_backend_used": true
+      },
+      "output": {
+        "action": "ACCEPT",
+        "fallback_used": false,
+        "ok": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false
+      },
+      "stage": "answer verification",
+      "technique": "flexible wording bounded-fact final-answer verifier",
+      "timestamp": "2026-05-28T02:46:19.979223+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_llm_answer_rewrite_feedback",
+      "correctness_role": "keeps rewrite feedback fact-only and excludes gold/category/oracle metadata",
+      "duration_ms": 0.0,
+      "effect": "records blocked claims and allowed facts for one bounded rewrite attempt",
+      "efficiency_role": "uses at most one rewrite attempt before deterministic fallback",
+      "input_summary": {
+        "rewrite_attempted": false
+      },
+      "stage": "answer verification",
+      "technique": "compact rewrite feedback for failed grounded answer verification",
+      "timestamp": "2026-05-28T02:46:19.979227+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_minimal_correction_feedback",
+      "correctness_role": "keeps free wording while preventing factual overreach",
+      "duration_ms": 0.0,
+      "effect": "sends only blocked claims and relevant allowed facts to the rewrite LLM",
+      "efficiency_role": "avoids resending full evidence cards on rewrite",
+      "input_summary": {
+        "rewrite_attempted": false
+      },
+      "stage": "answer verification",
+      "technique": "minimal correction feedback for final-answer rewrite",
+      "timestamp": "2026-05-28T02:46:19.979230+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_rewrite_result",
+      "correctness_role": "does not keep unsupported rewritten answers",
+      "duration_ms": 0.0,
+      "effect": "records whether one rewrite fixed verifier conflicts",
+      "efficiency_role": "limits correction to one rewrite",
+      "input_summary": {
+        "first_pass_ok": true
+      },
+      "output": {
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "unsupported_after_revision": 0
+      },
+      "stage": "answer verification",
+      "technique": "single final-answer rewrite result",
+      "timestamp": "2026-05-28T02:46:19.979234+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_final_answer_fallback_if_any",
+      "correctness_role": "preserves unsupported-claims target",
+      "duration_ms": 0.0,
+      "effect": "falls back to deterministic AnswerSlotRenderer when bounded LLM wording fails",
+      "efficiency_role": "uses no extra tool calls",
+      "input_summary": {
+        "fallback_used": false
+      },
+      "output": {
+        "fallback_used": false,
+        "semantic_certainty_claimed": false
+      },
+      "stage": "answer verification",
+      "technique": "deterministic final-answer fallback",
+      "timestamp": "2026-05-28T02:46:19.979237+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_16_answer_verification",
+      "correctness_role": "blocks unsupported numbers, entities, timestamps, statuses, and dry-run API confirmation",
+      "duration_ms": 0.0,
+      "effect": "checks final-answer claims against SQL/API evidence",
+      "efficiency_role": "rewrites safely without extra tool calls",
+      "input_summary": {
+        "claim_count": 5,
+        "slots_present": {
+          "items": [
+            "entity_names"
+          ],
+          "total_items": 14,
+          "truncated_items": true
+        }
+      },
+      "output": {
+        "errors": {
+          "items": [],
+          "total_items": 0,
+          "truncated_items": false
+        },
+        "rewrite_applied": false,
+        "supported_claims_count": 5,
+        "unsupported_claims_count": 0,
+        "verifier_passed": true
+      },
+      "stage": "answer verification",
+      "technique": "claim verification / groundedness checking",
+      "timestamp": "2026-05-28T02:46:19.979248+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_17_answer_reranking",
+      "correctness_role": "prefers verifier-passing and intent-matched answers",
+      "duration_ms": 0.0,
+      "effect": "selects the safest answer from same-evidence candidates",
+      "efficiency_role": "uses no additional SQL/API/LLM calls",
+      "input_summary": {
+        "answer_family": "destination_export"
+      },
+      "output": {
+        "candidate_count": 3,
+        "selected_candidate_type": "LEGACY_SAFE_RENDERER",
+        "selection_reason": "Selected the verifier-safe same-evidence answer with the best runtime role coverage; no benchmark gold/category/oracle fields are used."
+      },
+      "stage": "answer selection",
+      "technique": "deterministic answer reranking",
+      "timestamp": "2026-05-28T02:46:19.979252+00:00"
+    },
+    {
+      "checkpoint_id": "checkpoint_18_final_answer",
+      "correctness_role": "final answer remains tied to evidence and caveats",
+      "duration_ms": 0.0,
+      "effect": "returns the final concise answer to the agent harness",
+      "efficiency_role": "keeps response concise",
+      "input_summary": {
+        "verifier_passed": true
+      },
+      "output": {
+        "answer_length": 295,
+        "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modificatio [truncated]",
+        "final_token_estimate": 70
+      },
+      "stage": "final response",
+      "technique": "concise grounded final response",
+      "timestamp": "2026-05-28T02:46:19.979328+00:00"
+    },
+    {
+      "active": true,
+      "checkpoint_id": "checkpoint_official_token_reduction",
+      "correctness_impact_expected": false,
+      "estimated_tokens_after": 1333,
+      "estimated_tokens_before": 1536,
+      "expected_savings": 203,
+      "packaged_execution_changed": false,
+      "reduced_fields": [
+        "steps[0].candidate_tables",
+        "steps[1].decomposition",
+        "steps[2].metadata_path",
+        "steps[3].rationale",
+        "steps[3].steps"
+      ]
+    }
+  ],
+  "domain_type": "DESTINATION_DATAFLOW",
+  "errors": [],
+  "estimated_tokens": 1333,
+  "execution_time": 0.4071445828303695,
+  "final_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. The API returned usable supporting evidence.",
+  "original_query": "Export a list of all destinations in the b2b-prod sandbox, sorted by most recently modified, including all columns associated with each destination, and include the 'modified' column for validation.",
+  "planning_time": 0.004578125197440386,
+  "preprocessing_time": 0.0023609581403434277,
+  "query_id": "example_005",
+  "route_type": "SQL_THEN_API",
+  "runtime": 3.57175562530756,
+  "sql_call_count": 1,
+  "steps": [
+    {
+      "candidate_apis": [
+        {
+          "id": "flowservice_flows",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/flows"
+        },
+        {
+          "id": "flowservice_runs",
+          "method": "GET",
+          "path": "/data/foundation/flowservice/runs"
+        },
+        {
+          "id": "audit_events",
+          "method": "GET",
+          "path": "/data/foundation/audit/events"
+        }
+      ],
+      "candidate_tables": [
+        "br_campaign_segment",
+        "dim_connector",
+        "dim_target"
+      ],
+      "confidence": 0.6499999999999999,
+      "domain_type": "DESTINATION_DATAFLOW",
+      "kind": "route",
+      "reason": "Keyword routing using DESTINATION_DATAFLOW:1, RELATIONSHIP_TRAVERSAL:1.",
+      "route_type": "SQL_THEN_API"
+    },
+    {
+      "decomposition": {
+        "expected_answer_shape": "table_or_list",
+        "sub_question_count": 2
+      },
+      "kind": "nlp",
+      "relevance": {
+        "apis": [
+          "export_batch_files",
+          "export_batch_failed"
+        ],
+        "lookup_paths": [
+          "destination_dataflow",
+          "batch"
+        ],
+        "tables": [
+          "dim_connector",
+          "dim_target"
+        ]
+      },
+      "rewrites": [
+        "important_plurals->singular"
+      ],
+      "tokens": {
+        "domains": [
+          "destination_dataflow"
+        ],
+        "quoted_entities": [
+          "modified"
+        ]
+      },
+      "value_retrieval": {
+        "budget_exceeded": true,
+        "match_count": 0,
+        "matches": [],
+        "retrieval_ms": 10.289
+      }
+    },
+    {
+      "estimated_tokens": 525,
+      "kind": "metadata",
+      "metadata_path": "metadata.json",
+      "prompt_tokens": 1110
+    },
+    {
+      "kind": "plan",
+      "optimizer_actions": [
+        "ensemble selected generic_sql_first"
+      ],
+      "rationale": "SQL-first evidence policy: API_OPTIONAL. Live/platform verification may improve [truncated]",
+      "steps": [
+        {
+          "action": "sql",
+          "family": "destination_export_recent",
+          "sql_recorded_in_sql_call": true
+        },
+        {
+          "action": "api",
+          "family": "recent_destination_flows",
+          "method": "GET",
+          "params": {
+            "limit": "50",
+            "property": "inheritedAttributes.properties.isDestinationFlow==true",
+            "sort": "updatedTime:desc"
+          },
+          "url": "/data/foundation/flowservice/flows"
+        }
+      ],
+      "strategy": "SQL_FIRST_API_VERIFY"
+    },
+    {
+      "kind": "optimizer",
+      "plan_ensemble": {
+        "candidate_scores": {
+          "generic_sql_first": 14.2425
+        },
+        "candidate_tool_calls": {
+          "generic_sql_first": 2
+        },
+        "selected": "generic_sql_first"
+      }
+    },
+    {
+      "kind": "sql_call",
+      "result": {
+        "error": null,
+        "limited": false,
+        "ok": true,
+        "row_count": 1,
+        "rows": {
+          "items": [
+            {
+              "DESCRIPTION": "This operation creates a dataflow S3 Feed",
+              "STATE": "enabled",
+              "connection_spec_id": "4890fc95-5a1f-4983-94bb-e060c08e3f81",
+              "created_time": "2026-03-29T07:54:13.000+00:00",
+              "dataflow_name": "Activate segments to S3 Feed",
+              "modified": "2026-04-14T16:15:03.000+00:00",
+              "target_id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "target_name": "amazon-s3",
+              "truncated_fields": 2
+            }
+          ],
+          "total_items": 1,
+          "truncated_items": false
+        }
+      },
+      "sql": "SELECT D.\"TARGETID\" AS target_id, D.\"DATAFLOWNAME\" AS dataflow_name, D.\"NAME\" AS target_name, D.\"DESCRIPTION\", D.\"STATE\", D.\"CONNECTIONSPECID\" AS connection_spec_id, D.\"CREATEDTIME\" AS created_time, D.\"UPDATEDTIME\" AS modified, D.\"INTERVAL\", D.\"FREQUENCY\" FROM \"dim_target\" AS D ORDER BY D.\"UPDATEDTIME\" DESC LIMIT 50",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "headers": {},
+      "kind": "api_call",
+      "method": "GET",
+      "params": {
+        "limit": "50",
+        "property": "inheritedAttributes.properties.isDestinationFlow==true",
+        "sort": "updatedTime:desc"
+      },
+      "result": {
+        "dry_run": false,
+        "endpoint": "/data/foundation/flowservice/flows",
+        "error": null,
+        "method": "GET",
+        "ok": true,
+        "params": {
+          "limit": "50",
+          "property": "inheritedAttributes.properties.isDestinationFlow==true",
+          "sort": "updatedTime:desc"
+        },
+        "result_preview": {
+          "items": {
+            "items": {
+              "items": [
+                {
+                  "createdAt": 1774770853226,
+                  "createdBy": "CCBE21E6693750D80A495FBC@techacct.adobe.com",
+                  "createdClient": "6c4ddfb5459c477ba86b3790550fa592",
+                  "id": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                  "name": "Activate segments to S3 Feed",
+                  "state": "enabled",
+                  "truncated_fields": 1,
+                  "updatedAt": 1779898310205,
+                  "updatedBy": "acp_foundation_connectors@AdobeID"
+                }
+              ],
+              "total_items": 1,
+              "truncated_items": false
+            },
+            "total_items": 1,
+            "truncated_items": false
+          }
+        },
+        "truncated_fields": 3,
+        "url": "[REDACTED]/data/foundation/flowservice/flows"
+      },
+      "url": "/data/foundation/flowservice/flows",
+      "validation": {
+        "errors": [],
+        "ok": true,
+        "repaired": false,
+        "warnings": []
+      }
+    },
+    {
+      "answer_candidate_selector": {
+        "candidates": [
+          {
+            "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}",
+            "coverage_codes": [
+              "NAME_COVERED"
+            ],
+            "coverage_score": 1.95,
+            "covered_roles": [
+              "name"
+            ],
+            "missing_roles": [
+              "date"
+            ],
+            "source": "LLM_EVIDENCE_GROUNDED",
+            "unsupported_claims": 0,
+            "verification": {
+              "action": "ACCEPT",
+              "ok": true,
+              "unsupported_claims_count": 0
+            }
+          },
+          {
+            "answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. The API returned usable supporting evidence.",
+            "coverage_codes": [
+              "DATE_COVERED",
+              "NAME_COVERED"
+            ],
+            "coverage_score": 6.0,
+            "covered_roles": [
+              "date",
+              "name"
+            ],
+            "missing_roles": [],
+            "source": "LEGACY_SAFE_RENDERER",
+            "unsupported_claims": 0,
+            "verification": {
+              "errors": [],
+              "ok": true,
+              "unsupported_claims_count": 0
+            }
+          },
+          {
+            "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}.",
+            "coverage_codes": [
+              "NAME_COVERED"
+            ],
+            "coverage_score": 1.95,
+            "covered_roles": [
+              "name"
+            ],
+            "missing_roles": [
+              "date"
+            ],
+            "source": "DETERMINISTIC_FALLBACK",
+            "unsupported_claims": 0,
+            "verification": {
+              "errors": [],
+              "ok": true,
+              "unsupported_claims_count": 0
+            }
+          }
+        ],
+        "coverage_score": 6.0,
+        "selected_answer": "Based on the evidence provided, 1 destination was found. The most recent is \"Activate segments to S3 Feed\" (amazon-s3 target) with a modification timestamp of 2026-04-14 16:15:03.000 UTC. Live API evidence is needed to validate the requested sandbox. The API returned usable supporting evidence.",
+        "selected_source": "LEGACY_SAFE_RENDERER",
+        "selection_codes": [
+          "SELECT_LEGACY_LLM_OMITS_ROLE",
+          "DATE_COVERAGE_ADVANTAGE",
+          "DATE_COVERED",
+          "NAME_COVERED"
+        ],
+        "unsupported_claims": 0
+      },
+      "answer_family": "destination_export",
+      "answer_intent": "WHEN",
+      "candidate_count": 3,
+      "completeness_missing_fields": [],
+      "evidence_grounded_answer_builder": {
+        "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}.",
+        "evidence_quality": {
+          "api": [
+            "API_DIRECT_ANSWER"
+          ],
+          "api_error_is_unavailable": false,
+          "caveats": [],
+          "conflict": [],
+          "live_empty_scoped": false,
+          "sql": [
+            "SQL_DIRECT_ANSWER"
+          ]
+        },
+        "renderer": {
+          "answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}.",
+          "caveats": [],
+          "missing_fields": [],
+          "rendered_fields": [
+            "id",
+            "name",
+            "status",
+            "timestamp"
+          ],
+          "shape": "list",
+          "unsupported_claims_count": 0
+        },
+        "unsupported_claims_count": 0
+      },
+      "evidence_grounded_llm_answer_generator": {
+        "debug": {
+          "backend_available": true,
+          "backend_fallback_attempts": [
+            {
+              "available": true,
+              "category": "LLM_BACKEND_AUTH_FAILED",
+              "client_class": "OpenRouterLLMClient",
+              "content_length": 0,
+              "llm_client_name": "openrouter",
+              "raw_response_error_category": "auth_or_401",
+              "raw_response_ok": false,
+              "source": "primary"
+            },
+            {
+              "available": true,
+              "category": null,
+              "client_class": "OpenAILLMClient",
+              "content_length": 101,
+              "llm_client_name": "openai",
+              "raw_response_error_category": null,
+              "raw_response_ok": true,
+              "source": "fallback"
+            }
+          ],
+          "backend_fallback_used": true,
+          "estimated_prompt_tokens": 2164,
+          "exception_class": null,
+          "exception_message": null,
+          "extracted_content_length": 101,
+          "finish_reason": "stop",
+          "llm_client_class": "OpenAILLMClient",
+          "llm_client_name": "openai",
+          "llm_request_built": true,
+          "max_answer_tokens": 2048,
+          "raw_response_error_category": null,
+          "raw_response_error_present": false,
+          "raw_response_ok": true,
+          "raw_response_present": true,
+          "raw_response_shape": {
+            "choices_type": null,
+            "content_type": "str",
+            "keys": [
+              "backend_type",
+              "base_url",
+              "content",
+              "error",
+              "finish_reason",
+              "message",
+              "model",
+              "ok",
+              "provider",
+              "raw_preview",
+              "sdk_path_used",
+              "skipped"
+            ],
+            "output_text_present": false,
+            "output_type": null,
+            "type": "dict"
+          },
+          "request_message_count": 2
+        },
+        "fallback_used": false,
+        "feedback": {},
+        "final_answer": "Results: {id=139bece0-5266-46bd-8ed3-fc1dd5eb5dd4, name=Activate segments to S3 Feed, status=enabled}",
+        "first_pass_ok": true,
+        "generator_category": null,
+        "generator_error": null,
+        "llm_backend_used": true,
+        "rewrite_attempted": false,
+        "rewrite_success": false,
+        "verification": {
+          "action": "ACCEPT",
+          "allowed_fact_index": {
+            "allowed_caveats": [],
+            "api_error_scopes": [],
+            "counts": [
+              "1"
+            ],
+            "dates": [
+              "2026-03-29t07:54:13.000+00:00",
+              "2026-04-14t16:15:03.000+00:00",
+              "1774770868256",
+              "2026-03-29",
+              "1779898310205",
+              "acp_foundation_connectors@adobeid",
+              "acp_foundation_connectors",
+              "16:00",
+              "1774770856",
+              "1774770853226"
+            ],
+            "evidence_strings": [
+              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "{'path': 'person.name.firstname', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'person.name.firstname', 'destination': 'person.name.firstname', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'person.name.firstname', 'destinationxdmpath': 'person.name.firstname'}}",
+              "1779898307744",
+              "acp_foundation_connectors",
+              "exists",
+              "1774770855957",
+              "1",
+              "{'isdestinationflow': true}",
+              "bc463881-c428-4ae6-b0e2-9bbb92a8c366",
+              "add",
+              "[{'id': '0f0d4404-fa7f-4f20-ba78-d693ac060de1', 'connectionspec': {'id': '4890fc95-5a1f-4983-94bb-e060c08e3f81', 'version': '1.0'}, 'baseconnection': {'id': '2816f8dc-e40d-4047-ba0a-787e1a8cabbd', 'connectionspec': {'id': '4890fc95-5a1f-4983-94bb-e060c08e3f81', 'version': '1.0'}}}]",
+              "2816f8dc-e40d-4047-ba0a-787e1a8cabbd",
+              "updatedtime:desc",
+              "{'type': 'profilefragments', 'id': 'ups'}",
+              "100.0",
+              "['efd8fa4a-01cd-4448-960a-7050ed0e9a8c']",
+              "['0f0d4404-fa7f-4f20-ba78-d693ac060de1']",
+              "1774770856",
+              "50",
+              "{'selectors': [{'type': 'json_path', 'value': {'path': 'person.name.firstname', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'person.name.firstname', 'destination': 'person.name.firstname', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'person.name.firstname', 'destinationxdmpath': 'person.name.firstname'}}}, {'type': 'json_path', 'value': {'path': 'personalemail.address', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'personalemail.address', 'destination': 'personalemail.address', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'personalemail.address', 'destinationxdmpath': 'personalemail.address'}}}]}",
+              "profilefragments",
+              "enabled",
+              "{'id': '8a9c3494-9708-43d7-ae3f-cda01e5030e1', 'version': '1.0'}",
+              "1774770868256",
+              "['activate segments to s3 feed', 'generaltransform', 'gender: male']",
+              "person.name.firstname",
+              "platform_segment",
+              "16:00",
+              "personalemail.address",
+              "true",
+              "{'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'startdate': '2026-03-29', 'starttime': '16:00'}}}",
+              "1779898290693",
+              "/transformations/0/params/segmentselectors/selectors/-",
+              "efd8fa4a-01cd-4448-960a-7050ed0e9a8c",
+              "{'operator': 'exists', 'path': 'personalemail.address'}",
+              "gender: male",
+              "8a9c3494-9708-43d7-ae3f-cda01e5030e1",
+              "daily_full_export",
+              "update",
+              "modified",
+              "2026-03-29t07:54:13.000+00:00",
+              "[{'type': 'json_path', 'value': {'path': 'person.name.firstname', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'person.name.firstname', 'destination': 'person.name.firstname', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'person.name.firstname', 'destinationxdmpath': 'person.name.firstname'}}}, {'type': 'json_path', 'value': {'path': 'personalemail.address', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'personalemail.address', 'destination': 'personalemail.address', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'personalemail.address', 'destinationxdmpath': 'personalemail.address'}}}]",
+              "0f0d4404-fa7f-4f20-ba78-d693ac060de1",
+              "{'sourcetype': 'text/x.schema-path', 'source': 'personalemail.address', 'destination': 'personalemail.address', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'personalemail.address', 'destinationxdmpath': 'personalemail.address'}",
+              "{'segmentselectors': {'selectors': [{'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'triggertype': 'scheduled', 'startdate': '2026-03-29', 'starttime': '16:00'}, 'createtime': '1774770856', 'updatetime': '1774770856'}}]}, 'profileselectors': {'selectors': [{'type': 'json_path', 'value': {'path': 'person.name.firstname', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'person.name.firstname', 'destination': 'person.name.firstname', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'person.name.firstname', 'destinationxdmpath': 'person.name.firstname'}}}, {'type': 'json_path', 'value': {'path': 'personalemail.address', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'personalemail.address', 'destination': 'personalemail.address', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'personalemail.address', 'destinationxdmpath': 'personalemail.address'}}}]}}",
+              "{'sourcetype': 'text/x.schema-path', 'source': 'person.name.firstname', 'destination': 'person.name.firstname', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'person.name.firstname', 'destinationxdmpath': 'person.name.firstname'}",
+              "{'id': '4890fc95-5a1f-4983-94bb-e060c08e3f81', 'version': '1.0'}",
+              "{'value': 'completed', 'properties': none, 'errors': []}",
+              "[redacted]",
+              "/runs?property=flowid==139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "{'path': 'personalemail.address', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'personalemail.address', 'destination': 'personalemail.address', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'personalemail.address', 'destinationxdmpath': 'personalemail.address'}}",
+              "\"1301e9ca-0000-0200-0000-6a1717c60000\"",
+              "f6b93428-c021-4058-a1a2-77c277aab564",
+              "{'operator': 'exists', 'path': 'person.name.firstname'}",
+              "/data/foundation/flowservice/flows",
+              "2026-03-29",
+              "[{'name': 'generaltransform', 'params': {'segmentselectors': {'selectors': [{'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'triggertype': 'scheduled', 'startdate': '2026-03-29', 'starttime': '16:00'}, 'createtime': '1774770856', 'updatetime': '1774770856'}}]}, 'profileselectors': {'selectors': [{'type': 'json_path', 'value': {'path': 'person.name.firstname', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'person.name.firstname', 'destination': 'person.name.firstname', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'person.name.firstname', 'destinationxdmpath': 'person.name.firstname'}}}, {'type': 'json_path', 'value': {'path': 'personalemail.address', 'operator': 'exists', 'mapping': {'sourcetype': 'text/x.schema-path', 'source': 'personalemail.address', 'destination': 'personalemail.address', 'identity': false, 'primaryidentity': false, 'functionversion': 0, 'sourceattribute': 'personalemail.address', 'destinationxdmpath': 'personalemail.address'}}}]}}}]",
+              "{'type': 'json_path', 'value': {'operator': 'exists', 'path': 'personalemail.address'}}",
+              "0",
+              "ccbe21e6693750d80a495fbc@techacct.adobe.com",
+              "%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%",
+              "inheritedattributes.properties.isdestinationflow==true",
+              "{'items': 1}",
+              "[{'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'triggertype': 'scheduled', 'startdate': '2026-03-29', 'starttime': '16:00'}, 'createtime': '1774770856', 'updatetime': '1774770856'}}]",
+              "{'properties': {'isdestinationflow': true}, 'sourceconnections': [{'id': 'efd8fa4a-01cd-4448-960a-7050ed0e9a8c', 'connectionspec': {'id': '8a9c3494-9708-43d7-ae3f-cda01e5030e1', 'version': '1.0'}, 'baseconnection': {'id': 'f58e2926-fa08-4664-a0ed-57e1a6cb15a7', 'connectionspec': {'id': '8a9c3494-9708-43d7-ae3f-cda01e5030e1', 'version': '1.0'}}, 'typeinfo': {'type': 'profilefragments', 'id': 'ups'}}], 'targetconnections': [{'id': '0f0d4404-fa7f-4f20-ba78-d693ac060de1', 'connectionspec': {'id': '4890fc95-5a1f-4983-94bb-e060c08e3f81', 'version': '1.0'}, 'baseconnection': {'id': '2816f8dc-e40d-4047-ba0a-787e1a8cabbd', 'connectionspec': {'id': '4890fc95-5a1f-4983-94bb-e060c08e3f81', 'version': '1.0'}}}]}",
+              "false",
+              "daily",
+              "{'selectors': [{'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'triggertype': 'scheduled', 'startdate': '2026-03-29', 'starttime': '16:00'}, 'createtime': '1774770856', 'updatetime': '1774770856'}}]}",
+              "/transformations/0/params/profileselectors/selectors/-",
+              "1774770853226",
+              "json_path",
+              "{'id': '2816f8dc-e40d-4047-ba0a-787e1a8cabbd', 'connectionspec': {'id': '4890fc95-5a1f-4983-94bb-e060c08e3f81', 'version': '1.0'}}",
+              "f58e2926-fa08-4664-a0ed-57e1a6cb15a7",
+              "{'id': 'bc463881-c428-4ae6-b0e2-9bbb92a8c366', 'version': '1.0'}",
+              "acp_foundation_connectors@adobeid",
+              "ups",
+              "{'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'triggertype': 'scheduled', 'startdate': '2026-03-29', 'starttime': '16:00'}, 'createtime': '1774770856', 'updatetime': '1774770856'}",
+              "{'frequency': 'daily', 'triggertype': 'scheduled', 'startdate': '2026-03-29', 'starttime': '16:00'}",
+              "scheduled",
+              "['enabled', 'failed']",
+              "d8208a66-6f9d-4f5f-a82b-2ca7d39a131a",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "{'started': 1774770855957, 'updated': 1774770868256, 'percentcompleted': 100.0, 'status': {'value': 'completed', 'properties': none, 'errors': []}, 'ops': [{'op': 'add', 'path': '/transformations/0/params/segmentselectors/selectors/-', 'value': {'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'startdate': '2026-03-29', 'starttime': '16:00'}}}}, {'op': 'add', 'path': '/transformations/0/params/profileselectors/selectors/-', 'value': {'type': 'json_path', 'value': {'operator': 'exists', 'path': 'person.name.firstname'}}}, {'op': 'add', 'path': '/transformations/0/params/profileselectors/selectors/-', 'value': {'type': 'json_path', 'value': {'operator': 'exists', 'path': 'personalemail.address'}}}], 'operation': 'update'}",
+              "[{'id': 'efd8fa4a-01cd-4448-960a-7050ed0e9a8c', 'connectionspec': {'id': '8a9c3494-9708-43d7-ae3f-cda01e5030e1', 'version': '1.0'}, 'baseconnection': {'id': 'f58e2926-fa08-4664-a0ed-57e1a6cb15a7', 'connectionspec': {'id': '8a9c3494-9708-43d7-ae3f-cda01e5030e1', 'version': '1.0'}}, 'typeinfo': {'type': 'profilefragments', 'id': 'ups'}}]",
+              "{'createdat': '1774770853226', 'updatedat': '1779898310205', 'updated': '1774770868256'}",
+              "{'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'startdate': '2026-03-29', 'starttime': '16:00'}}",
+              "amazon-s3",
+              "4890fc95-5a1f-4983-94bb-e060c08e3f81",
+              "{'id': 'd8208a66-6f9d-4f5f-a82b-2ca7d39a131a', 'state': 'failed', 'startedatutc': 1779898290693, 'completedatutc': 1779898307744}",
+              "activate segments to s3 feed",
+              "text/x.schema-path",
+              "{'frequency': 'daily', 'startdate': '2026-03-29', 'starttime': '16:00'}",
+              "{'type': 'json_path', 'value': {'operator': 'exists', 'path': 'person.name.firstname'}}",
+              "1779898310205",
+              "['139bece0-5266-46bd-8ed3-fc1dd5eb5dd4', '87891e4066602d250a495f91@adobeorg', 'bc463881-c428-4ae6-b0e2-9bbb92a8c366', 'efd8fa4a-01cd-4448-960a-7050ed0e9a8c', '0f0d4404-fa7f-4f20-ba78-d693ac060de1']",
+              "{'id': 'f58e2926-fa08-4664-a0ed-57e1a6cb15a7', 'connectionspec': {'id': '8a9c3494-9708-43d7-ae3f-cda01e5030e1', 'version': '1.0'}}",
+              "6c4ddfb5459c477ba86b3790550fa592",
+              "2026-04-14t16:15:03.000+00:00",
+              "generaltransform",
+              "this operation creates a dataflow s3 feed",
+              "failed",
+              "completed",
+              "[{'op': 'add', 'path': '/transformations/0/params/segmentselectors/selectors/-', 'value': {'type': 'platform_segment', 'value': {'id': 'f6b93428-c021-4058-a1a2-77c277aab564', 'name': 'gender: male', 'filenametemplate': '%destination_name%_%segment_id%_%datetime(yyyymmdd_hhmmss)%', 'exportmode': 'daily_full_export', 'schedule': {'frequency': 'daily', 'startdate': '2026-03-29', 'starttime': '16:00'}}}}, {'op': 'add', 'path': '/transformations/0/params/profileselectors/selectors/-', 'value': {'type': 'json_path', 'value': {'operator': 'exists', 'path': 'person.name.firstname'}}}, {'op': 'add', 'path': '/transformations/0/params/profileselectors/selectors/-', 'value': {'type': 'json_path', 'value': {'operator': 'exists', 'path': 'personalemail.address'}}}]",
+              "[\"['efd8fa4a-01cd-4448-960a-7050ed0e9a8c']\"]",
+              "1.0"
+            ],
+            "ids": [
+              "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "4890fc95-5a1f-4983-94bb-e060c08e3f81",
+              "a30a9c4e-327a-4d60-8a9c-4e327a6d60dd",
+              "bc463881-c428-4ae6-b0e2-9bbb92a8c366",
+              "efd8fa4a-01cd-4448-960a-7050ed0e9a8c",
+              "8a9c3494-9708-43d7-ae3f-cda01e5030e1",
+              "f58e2926-fa08-4664-a0ed-57e1a6cb15a7",
+              "ups",
+              "0f0d4404-fa7f-4f20-ba78-d693ac060de1",
+              "2816f8dc-e40d-4047-ba0a-787e1a8cabbd",
+              "f6b93428-c021-4058-a1a2-77c277aab564",
+              "d8208a66-6f9d-4f5f-a82b-2ca7d39a131a",
+              "6c4ddfb5459c477ba86b3790550fa592",
+              "87891e4066602d250a495f91@adobeorg"
+            ],
+            "live_empty_scopes": [],
+            "missing_roles": [],
+            "names": [
+              "modified",
+              "amazon-s3",
+              "activate segments to s3 feed",
+              "generaltransform",
+              "gender: male"
+            ],
+            "relationships": [],
+            "statuses": [
+              "enabled",
+              "failed"
+            ]
+          },
+          "ambiguous_claims": [],
+          "claim_extractor": {
+            "claim_count": 2,
+            "claims": [
+              {
+                "hardness": "HARD",
+                "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                "type": "ID",
+                "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+              },
+              {
+                "hardness": "HARD",
+                "span": "S3 Feed",
+                "text": "S3 Feed",
+                "type": "ENTITY_NAME",
+                "value": "S3 Feed"
+              }
+            ]
+          },
+          "claim_matcher": {
+            "matches": [
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                  "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+                  "type": "ID",
+                  "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+                },
+                "reason": "id",
+                "status": "SUPPORTED"
+              },
+              {
+                "claim": {
+                  "hardness": "HARD",
+                  "span": "S3 Feed",
+                  "text": "S3 Feed",
+                  "type": "ENTITY_NAME",
+                  "value": "S3 Feed"
+                },
+                "reason": "entity_name",
+                "status": "SUPPORTED"
+              }
+            ]
+          },
+          "needs_caveat_claims": [],
+          "ok": true,
+          "over_specified_claims": [],
+          "supported_claims": [
+            {
+              "hardness": "HARD",
+              "span": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "text": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4",
+              "type": "ID",
+              "value": "139bece0-5266-46bd-8ed3-fc1dd5eb5dd4"
+            },
+            {
+              "hardness": "HARD",
+              "span": "S3 Feed",
+              "text": "S3 Feed",
+              "type": "ENTITY_NAME",
+              "value": "S3 Feed"
+            }
+          ],
+          "unsupported_claims": []
+        }
+      },
+      "kind": "answer_diagnostics",
+      "llm_answer_attempted": true,
+      "llm_answer_generation_skipped": false,
+      "rewrite_applied": false,
+      "selected_candidate_type": "LEGACY_SAFE_RENDERER",
+      "selection_reason": "Selected the verifier-safe same-evidence answer with the best runtime role coverage; no benchmark gold/category/oracle fields are used.",
+      "slots_present": [
+        "entity_names",
+        "entity_ids",
+        "counts",
+        "statuses",
+        "timestamps",
+        "sql_row_count",
+        "api_item_count",
+        "live_api_evidence_available",
+        "api_evidence_state",
+        "answer_slot_source",
+        "api_pagination",
+        "api_parser_modes",
+        "first_rows",
+        "api_items"
+      ],
+      "unsupported_claims_count": 0,
+      "verifier_passed": true
+    }
+  ],
+  "strategy": "SQL_FIRST_API_VERIFY_LLM_ANSWER_VERIFIER",
+  "timings": {
+    "answer_time": 3.131182416342199,
+    "execution_time": 0.4071445828303695,
+    "planning_time": 0.004578125197440386,
+    "preprocessing_time": 0.0023609581403434277
+  },
+  "tool_call_count": 2
+}

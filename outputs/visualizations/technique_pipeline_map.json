@@ -1,0 +1,1543 @@
+{
+  "groups": {
+    "Evidence / context / optimization": [
+      {
+        "affects": [
+          "accuracy",
+          "observability"
+        ],
+        "changed_artifact": "SQL candidate diagnostics",
+        "downstream_effect": "Tests AST quality as a tie-break for SQL candidates.",
+        "group": "Evidence / context / optimization",
+        "input": "candidate SQL",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": 0.0,
+          "runtime_delta": 0.0,
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0.0,
+          "token_delta": 0.0,
+          "tool_call_delta": 0.0
+        },
+        "output": "AST validation/ranking diagnostics",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/ast_guided_sql_candidate_canary.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "AST-guided SQL candidate canary",
+        "why": "Kept shadow-only because no alternatives existed."
+      },
+      {
+        "affects": [
+          "efficiency",
+          "observability"
+        ],
+        "changed_artifact": "retrieval optimization",
+        "downstream_effect": "Caches deterministic retrieval/index artifacts.",
+        "group": "Evidence / context / optimization",
+        "input": "schema and value retrieval keys",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "cache hits or regenerated values",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "rows",
+            "path": "outputs/candidate_context_report.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "cache",
+        "why": "Infrastructure; no standalone score claim."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "efficiency",
+          "observability"
+        ],
+        "changed_artifact": "planning optimization",
+        "downstream_effect": "Limits SQL/API calls for efficiency and trajectory stability.",
+        "group": "Evidence / context / optimization",
+        "input": "planned steps and route policy",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "call budget decision",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary.by_strategy.SQL_FIRST_API_VERIFY.avg_tool_call_count",
+            "path": "outputs/eval_results_strict.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "call budget",
+        "why": "Keeps tool calls within packaged efficiency target."
+      },
+      {
+        "affects": [
+          "efficiency"
+        ],
+        "changed_artifact": "context optimization",
+        "downstream_effect": "Tests smaller context windows under strict gates.",
+        "group": "Evidence / context / optimization",
+        "input": "candidate context",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "compact candidate context",
+        "runtime_badge": "\ud83d\udfe1 isolated_trial",
+        "runtime_path": "isolated_trial",
+        "source_reports": [
+          {
+            "field": "compact_context_enabled",
+            "path": "outputs/accuracy_promotion_decision_report.json"
+          }
+        ],
+        "status": "default_off",
+        "status_badge": "\u26aa default_off",
+        "technique_name": "compact context experiment",
+        "why": "Not promoted under current safety constraints."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "efficiency"
+        ],
+        "changed_artifact": "context selection",
+        "downstream_effect": "Summarizes schema/API/domain hints for compact prompts.",
+        "group": "Evidence / context / optimization",
+        "input": "schema/API metadata and query analysis",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "context cards",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "path": "outputs/eval/*/sql_first_api_verify/metadata.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "context cards",
+        "why": "Core compact context mechanism."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "observability"
+        ],
+        "changed_artifact": "endpoint routing diagnostics",
+        "downstream_effect": "Shadow-tests deterministic preference for high-confidence ranked endpoint family.",
+        "group": "Evidence / context / optimization",
+        "input": "ranked and selected endpoint families",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0,
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "divergence report",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/endpoint_family_tiebreak_v2_shadow.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "endpoint-family tie-break v2",
+        "why": "Kept shadow-only because projected positive delta rows = 0."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "evidence gating",
+        "downstream_effect": "Decides when SQL/API evidence is sufficient or API is required.",
+        "group": "Evidence / context / optimization",
+        "input": "route, SQL results, API policy",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "evidence sufficiency decision",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "checkpoints",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "evidence policy",
+        "why": "Promoted core safety/answerability gate."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "evidence collection",
+        "downstream_effect": "Carries SQL/API/local evidence into answer synthesis.",
+        "group": "Evidence / context / optimization",
+        "input": "tool results and local evidence",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "structured evidence records",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "steps",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "evidence_bus",
+        "why": "Safety layer for supportable answers."
+      },
+      {
+        "affects": [
+          "efficiency"
+        ],
+        "changed_artifact": "planning optimization",
+        "downstream_effect": "Handles simple deterministic query families with low overhead.",
+        "group": "Evidence / context / optimization",
+        "input": "query analysis and schema/API hints",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "fast-path plan or no-op",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/eval_results_strict.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "fast paths",
+        "why": "Efficiency-oriented infrastructure."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "diagnostics",
+        "downstream_effect": "Reports whether real Adobe credentials and live API payload readiness exist.",
+        "group": "Evidence / context / optimization",
+        "input": "environment credential visibility and trajectories",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "live readiness report",
+        "runtime_badge": "\ud83d\udd35 diagnostic_report",
+        "runtime_path": "diagnostic_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/live_mode_readiness_report.json"
+          }
+        ],
+        "status": "diagnostic_only",
+        "status_badge": "\ud83d\udd35 diagnostic_only",
+        "technique_name": "live-mode readiness diagnostics",
+        "why": "Credential visibility is false, so this remains diagnostic."
+      },
+      {
+        "affects": [
+          "observability"
+        ],
+        "changed_artifact": "evidence retrieval",
+        "downstream_effect": "Builds Parquet-derived evidence objects for grounding.",
+        "group": "Evidence / context / optimization",
+        "input": "DBSnapshot parquet data and schema metadata",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0.0,
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "provenance-safe evidence objects",
+        "runtime_badge": "\ud83d\udd35 diagnostic_report",
+        "runtime_path": "diagnostic_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/local_index_candidate_eval.json"
+          }
+        ],
+        "status": "diagnostic_only",
+        "status_badge": "\ud83d\udd35 diagnostic_only",
+        "technique_name": "local knowledge index",
+        "why": "Coverage exists, but score impact is currently 0."
+      },
+      {
+        "affects": [
+          "efficiency"
+        ],
+        "changed_artifact": "planning optimization",
+        "downstream_effect": "Deduplicates and budgets plan steps before execution.",
+        "group": "Evidence / context / optimization",
+        "input": "planned steps",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "optimized plan",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "steps",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "plan optimizer",
+        "why": "Efficiency and safety support for packaged strategy."
+      },
+      {
+        "affects": [
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "repair diagnostics",
+        "downstream_effect": "Evaluates repaired plans without enabling repair execution.",
+        "group": "Evidence / context / optimization",
+        "input": "current plan and repaired candidate",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "shadow repair score comparison",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/shadow_repair_eval.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "shadow repair",
+        "why": "Not promoted because repaired candidates did not pass gates."
+      }
+    ],
+    "Planning / execution": [
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "API planning",
+        "downstream_effect": "Generate endpoint-catalog-valid API calls.",
+        "group": "Planning / execution",
+        "input": "endpoint catalog, route policy, grounded IDs",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "method/path/params",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary.by_strategy.SQL_FIRST_API_VERIFY.avg_api_score",
+            "path": "outputs/eval_results_strict.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "API templates",
+        "why": "Reusable endpoint templates drive current API score."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "SQL planning",
+        "downstream_effect": "Generate validated SQL for recurring local-data query families.",
+        "group": "Planning / execution",
+        "input": "schema metadata and query analysis",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "read-only SQL",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary.by_strategy.SQL_FIRST_API_VERIFY.avg_sql_score",
+            "path": "outputs/eval_results_strict.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "SQL templates",
+        "why": "Reusable templates are part of current SQL score."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "efficiency"
+        ],
+        "changed_artifact": "pre-execution guard",
+        "downstream_effect": "Conservatively skips API only when SQL fully answers and API score is not needed.",
+        "group": "Planning / execution",
+        "input": "route policy, SQL evidence, strict diagnostics",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "API_SKIP decision metadata",
+        "runtime_badge": "\ud83d\udfe1 isolated_trial",
+        "runtime_path": "isolated_trial",
+        "source_reports": [
+          {
+            "field": "summary.sql_only_skip_guard_rows",
+            "path": "outputs/live_mode_readiness_report.json"
+          }
+        ],
+        "status": "default_off",
+        "status_badge": "\u26aa default_off",
+        "technique_name": "SQL-only API-skip guard",
+        "why": "Not promoted; conservative guard available behind flag only."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "strategy",
+        "downstream_effect": "Grounds with local SQL first, then verifies with API where needed.",
+        "group": "Planning / execution",
+        "input": "metadata/context and route policy",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": 0.0,
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0.0,
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "SQL/API execution plan",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary.by_strategy.SQL_FIRST_API_VERIFY",
+            "path": "outputs/eval_results_strict.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "SQL_FIRST_API_VERIFY",
+        "why": "Best current strict score and correctness among packaged strategies."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "observability"
+        ],
+        "changed_artifact": "answer synthesis",
+        "downstream_effect": "Tests concise answer-shape rewrites with row-level A/B diagnostics.",
+        "group": "Planning / execution",
+        "input": "baseline answer and evidence",
+        "measured_effect": {
+          "answer_score_delta": -0.1162,
+          "api_score_delta": "unavailable",
+          "correctness_delta": 0.0006,
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0.0006,
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "candidate answer",
+        "runtime_badge": "\ud83d\udfe1 isolated_trial",
+        "runtime_path": "isolated_trial",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/answer_shape_v2_ab_eval.json"
+          }
+        ],
+        "status": "default_off",
+        "status_badge": "\u26aa default_off",
+        "technique_name": "answer-shape v2",
+        "why": "Not a packaged default; isolated trial was below 0.75 target."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "candidate search",
+        "downstream_effect": "Generates deterministic alternative plans for isolated search.",
+        "group": "Planning / execution",
+        "input": "query, schema metadata, endpoint catalog",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "candidate SQL/API/answer plans",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/execution_candidate_search.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "candidate generation",
+        "why": "No broad runtime promotion; used for diagnostics/trials."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety"
+        ],
+        "changed_artifact": "API validation",
+        "downstream_effect": "Defines allowed Adobe API endpoints and validation metadata.",
+        "group": "Planning / execution",
+        "input": "endpoint templates and planned API calls",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "catalog validation result",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "api validation",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "endpoint catalog",
+        "why": "Safety boundary for API calls."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "endpoint ranking",
+        "downstream_effect": "Ranks endpoint families from reusable intent features.",
+        "group": "Planning / execution",
+        "input": "query tokens and endpoint metadata",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "ranked endpoint families",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/endpoint_family_tiebreak_v2_shadow.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "endpoint family ranker",
+        "why": "Ranking is used; broader tie-break changes were not promoted."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "endpoint/schema routing",
+        "downstream_effect": "Shadow-tests reusable endpoint/schema routing rules.",
+        "group": "Planning / execution",
+        "input": "query vocabulary, catalog metadata, path shapes",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": 0.0,
+          "runtime_delta": 0.0,
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0.0,
+          "token_delta": 0.0,
+          "tool_call_delta": 0.0
+        },
+        "output": "candidate reranking diagnostics",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/endpoint_schema_rule_canary.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "endpoint-schema rule candidates",
+        "why": "Kept shadow-only because measurable improvement was false."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety"
+        ],
+        "changed_artifact": "candidate search",
+        "downstream_effect": "Scores isolated candidates and selects only safe improvements.",
+        "group": "Planning / execution",
+        "input": "candidate plans and strict offline scores",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "safe candidate bundle",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/execution_candidate_search.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "execution-based candidate selector",
+        "why": "Kept isolated unless trial gates pass."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "observability"
+        ],
+        "changed_artifact": "execution",
+        "downstream_effect": "Runs validated SQL/API calls and records trajectory evidence.",
+        "group": "Planning / execution",
+        "input": "selected plan",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "tool results, evidence, trajectory",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "executor",
+        "why": "Required packaged runtime component."
+      },
+      {
+        "affects": [
+          "efficiency"
+        ],
+        "changed_artifact": "context optimization",
+        "downstream_effect": "Reduces context/token cost while preserving packaged behavior.",
+        "group": "Planning / execution",
+        "input": "metadata and prompt context",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "reduced prompt/context tokens",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/official_token_reduction_promotion_report.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "official-token reduction",
+        "why": "Promoted because strict score tied/improved safely with large token reduction."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "planning",
+        "downstream_effect": "Builds constrained SQL/API steps from route and context.",
+        "group": "Planning / execution",
+        "input": "route, metadata, templates",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "candidate plan",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "steps",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "planner",
+        "why": "Core packaged execution path."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety"
+        ],
+        "changed_artifact": "answer synthesis",
+        "downstream_effect": "Creates evidence-cited dry-run-safe answer rewrites.",
+        "group": "Planning / execution",
+        "input": "recorded evidence, endpoint params, dry-run labels",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "supportable answer candidates",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/supportable_answer_rewrite_eval.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "supportable answer rewriter",
+        "why": "Safe rows feed isolated trials; not final promoted behavior."
+      }
+    ],
+    "Query understanding / routing": [
+      {
+        "affects": [
+          "efficiency"
+        ],
+        "changed_artifact": "context selection",
+        "downstream_effect": "Builds compact per-query metadata/context for planning.",
+        "group": "Query understanding / routing",
+        "input": "candidate tables, APIs, context cards",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "metadata.json and filled system prompt context",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "path": "outputs/eval/*/sql_first_api_verify/metadata.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "metadata_selector",
+        "why": "Needed to keep prompt context compact and deterministic."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "planning",
+        "downstream_effect": "Deduplicates and selects a single plan from deterministic planning candidates.",
+        "group": "Query understanding / routing",
+        "input": "candidate plans",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "one selected plan",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "steps",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "plan_ensemble",
+        "why": "Preserves deterministic single-plan execution."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "efficiency"
+        ],
+        "changed_artifact": "routing",
+        "downstream_effect": "Fast prompt-level route gate for SQL/API need and risk.",
+        "group": "Query understanding / routing",
+        "input": "raw query",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "route policy and requires_api decision",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "checkpoint_00_prompt_router",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "prompt_router",
+        "why": "Promoted as routing safety layer."
+      },
+      {
+        "affects": [
+          "accuracy"
+        ],
+        "changed_artifact": "query analysis",
+        "downstream_effect": "Classifies route type, answer shape, and domain family.",
+        "group": "Query understanding / routing",
+        "input": "query tokens and schema/API hints",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "route_type, domain_type, answer intent",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/hidden_style_eval.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "query_analysis",
+        "why": "Core deterministic intent layer."
+      },
+      {
+        "affects": [
+          "observability"
+        ],
+        "changed_artifact": "query understanding",
+        "downstream_effect": "Canonicalizes user text before routing and retrieval.",
+        "group": "Query understanding / routing",
+        "input": "raw query",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "normalized query and rewrite hints",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "checkpoints",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "query_normalizer",
+        "why": "Deterministic preprocessing; retained as core routing support."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "efficiency"
+        ],
+        "changed_artifact": "query understanding",
+        "downstream_effect": "Extracts tokens, quoted entities, and intent words for downstream ranking.",
+        "group": "Query understanding / routing",
+        "input": "normalized query",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "tokens and quoted entities",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "checkpoints",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "query_tokens",
+        "why": "Low-cost deterministic signal used by ranking and templates."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "efficiency"
+        ],
+        "changed_artifact": "candidate ranking",
+        "downstream_effect": "Ranks schema/API candidates using query-token overlap and metadata relevance.",
+        "group": "Query understanding / routing",
+        "input": "tokens, schema metadata, endpoint metadata",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "candidate relevance scores",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary.by_strategy.SQL_FIRST_API_VERIFY",
+            "path": "outputs/eval_results_strict.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "relevance_scorer",
+        "why": "Core ranking signal; effects are embedded in current packaged metrics."
+      },
+      {
+        "affects": [
+          "observability"
+        ],
+        "changed_artifact": "prompt routing",
+        "downstream_effect": "Checkpointed gate that sends evidence questions into the backend pipeline.",
+        "group": "Query understanding / routing",
+        "input": "raw prompt",
+        "measured_effect": {},
+        "output": "USE_DATA_PIPELINE or direct-answer decision",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "path": "outputs/eval/example_011/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "simple_prompt_gate",
+        "why": "Part of the packaged prompt routing path."
+      }
+    ],
+    "Safety / evaluation": [
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "isolated candidate search",
+        "downstream_effect": "Uses LLM proposals only for evidence-cited answer rewrites.",
+        "group": "Safety / evaluation",
+        "input": "baseline answer and local evidence registry",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "candidate rewrites with claim citations",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/llm_answer_rewrite_search.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "OpenRouter LLM rewrite search",
+        "why": "Kept shadow-only; safe rows = 0."
+      },
+      {
+        "affects": [
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "shadow LLM baseline evaluation",
+        "downstream_effect": "Provider-agnostic SDK baseline for OpenAI-compatible and Anthropic LLM comparisons.",
+        "group": "Safety / evaluation",
+        "input": "dev prompts plus configured SDK backend metadata",
+        "measured_effect": {
+          "recommendation": "keep_shadow_only",
+          "strict_score": -0.0224
+        },
+        "output": "shadow baseline trajectories and strict comparison reports",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "path": "outputs/llm_baseline_eval_report.json"
+          },
+          {
+            "path": "outputs/llm_strict_baseline_eval.json"
+          },
+          {
+            "path": "outputs/llm_hidden_style_diagnostic.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "SDK LLM baseline framework",
+        "why": "Current SDK LLM baseline is a comparison framework; deterministic SQL_FIRST_API_VERIFY remains packaged."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "answer synthesis",
+        "downstream_effect": "Ranks candidate answer phrasings when alternatives are available.",
+        "group": "Safety / evaluation",
+        "input": "candidate answers",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "selected answer",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "answer checkpoints",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "answer reranker",
+        "why": "Used as packaged answer-selection support."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "answer validation",
+        "downstream_effect": "Checks final answer support and consistency.",
+        "group": "Safety / evaluation",
+        "input": "final answer and evidence",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "verification result",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "checkpoint_16_answer_verification",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "answer verifier",
+        "why": "Core answer safety check."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "isolated trial",
+        "downstream_effect": "Runs isolated packaged-style trials over safe candidate bundles.",
+        "group": "Safety / evaluation",
+        "input": "safe candidate bundle",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": 0.0067,
+          "runtime_delta": -0.001,
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": 0.0067,
+          "token_delta": -3.6571,
+          "tool_call_delta": 0.0
+        },
+        "output": "best isolated score and gate results",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/autonomous_packaged_trial.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "autonomous packaged trials",
+        "why": "Best isolated score improved but target 0.75 was not reached."
+      },
+      {
+        "affects": [
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "evaluation gate",
+        "downstream_effect": "Checks paraphrase/hidden-style routing robustness.",
+        "group": "Safety / evaluation",
+        "input": "hidden-style cases",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "pass/fail and stability metrics",
+        "runtime_badge": "\ud83d\udd35 diagnostic_report",
+        "runtime_path": "diagnostic_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/hidden_style_eval.json"
+          }
+        ],
+        "status": "diagnostic_only",
+        "status_badge": "\ud83d\udd35 diagnostic_only",
+        "technique_name": "hidden-style eval",
+        "why": "Prevents weakening schema/family routing robustness; current report passes 48/48."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "safety gate",
+        "downstream_effect": "Rejects query-id, exact-query, gold-path, or answer-memorization behavior.",
+        "group": "Safety / evaluation",
+        "input": "candidate triggers and reports",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "leakage pass/fail flags",
+        "runtime_badge": "\ud83d\udd35 diagnostic_report",
+        "runtime_path": "diagnostic_report",
+        "source_reports": [
+          {
+            "field": "summary.leakage_check_passed",
+            "path": "outputs/endpoint_schema_rule_canary.json"
+          }
+        ],
+        "status": "diagnostic_only",
+        "status_badge": "\ud83d\udd35 diagnostic_only",
+        "technique_name": "leakage / robustness checks",
+        "why": "Required gate for all accuracy experiments."
+      },
+      {
+        "affects": [
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "packaging gate",
+        "downstream_effect": "Verifies packaged outputs and final submission readiness.",
+        "group": "Safety / evaluation",
+        "input": "final submission artifacts",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "readiness result",
+        "runtime_badge": "\ud83d\udd35 diagnostic_report",
+        "runtime_path": "diagnostic_report",
+        "source_reports": [
+          {
+            "field": "final_recommendation",
+            "path": "outputs/winner_readiness_report.json"
+          }
+        ],
+        "status": "diagnostic_only",
+        "status_badge": "\ud83d\udd35 diagnostic_only",
+        "technique_name": "package readiness checks",
+        "why": "Final readiness gate remains passing in winner report."
+      },
+      {
+        "affects": [
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "packaging gate",
+        "downstream_effect": "Prevents credential leakage in packaged outputs/reports.",
+        "group": "Safety / evaluation",
+        "input": "repo outputs and final submission",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "no_secret_scan result",
+        "runtime_badge": "\ud83d\udd35 diagnostic_report",
+        "runtime_path": "diagnostic_report",
+        "source_reports": [
+          {
+            "field": "packaged",
+            "path": "outputs/winner_readiness_report.json"
+          }
+        ],
+        "status": "diagnostic_only",
+        "status_badge": "\ud83d\udd35 diagnostic_only",
+        "technique_name": "secret scan",
+        "why": "Required readiness gate."
+      },
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "answer candidate safety",
+        "downstream_effect": "Validates claim citations, dry-run unavailable wording, and SQL/API hash invariance.",
+        "group": "Safety / evaluation",
+        "input": "candidate rewrites",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "safe/unsafe rewrite labels",
+        "runtime_badge": "\ud83d\udfe1 shadow_report",
+        "runtime_path": "shadow_report",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/evidence_answer_candidate_eval.json"
+          }
+        ],
+        "status": "shadow_only",
+        "status_badge": "\ud83d\udfe1 shadow_only",
+        "technique_name": "supportable dry-run rewrite validation",
+        "why": "Safe rows feed isolated trials only."
+      }
+    ],
+    "Safety / robustness / evaluation": [
+      {
+        "affects": [
+          "accuracy",
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "answer analysis",
+        "downstream_effect": "Extracts answer shape, requested facts, and diagnostic slots.",
+        "group": "Safety / robustness / evaluation",
+        "input": "query and answer evidence",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "answer intent/slots/claims",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "summary",
+            "path": "outputs/score_component_error_report.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "answer claims / slots / intent / diagnostics",
+        "why": "Supports evidence-bound answer generation."
+      },
+      {
+        "affects": [
+          "safety",
+          "observability"
+        ],
+        "changed_artifact": "observability",
+        "downstream_effect": "Records execution checkpoints for explainability and auditability.",
+        "group": "Safety / robustness / evaluation",
+        "input": "pipeline stage outputs",
+        "measured_effect": {
+          "answer_score_delta": "unavailable",
+          "api_score_delta": "unavailable",
+          "correctness_delta": "unavailable",
+          "runtime_delta": "unavailable",
+          "sql_score_delta": "unavailable",
+          "strict_score_delta": "unavailable",
+          "token_delta": "unavailable",
+          "tool_call_delta": "unavailable"
+        },
+        "output": "trajectory checkpoint list",
+        "runtime_badge": "\ud83d\udfe2 packaged",
+        "runtime_path": "packaged",
+        "source_reports": [
+          {
+            "field": "checkpoints",
+            "path": "outputs/eval/*/sql_first_api_verify/trajectory.json"
+          }
+        ],
+        "status": "promoted_default",
+        "status_badge": "\ud83d\udfe2 promoted_default",
+        "technique_name": "trajectory checkpoints",
+        "why": "Core observability surface used by these visualizations."
+      }
+    ]
+  },
+  "page": "technique_pipeline_map",
+  "pipeline_mermaid": "\nflowchart LR\n  A[\"Raw prompt\"] --> B[\"\ud83d\udfe2 prompt_router\"]\n  B --> C[\"\ud83d\udfe2 simple_prompt_gate\"]\n  C --> D[\"\ud83d\udfe2 query_normalizer\"]\n  D --> E[\"\ud83d\udfe2 query_tokens\"]\n  E --> F[\"\ud83d\udfe2 query_analysis\"]\n  F --> G[\"\ud83d\udfe2 metadata_selector\"]\n  G --> H[\"\ud83d\udfe2 SQL_FIRST_API_VERIFY\"]\n  H --> I[\"\ud83d\udfe2 SQL templates\"]\n  H --> J[\"\ud83d\udfe2 API templates\"]\n  I --> K[\"\ud83d\udfe2 executor\"]\n  J --> K\n  K --> L[\"\ud83d\udfe2 evidence_bus\"]\n  L --> M[\"\ud83d\udfe2 answer verifier\"]\n  M --> N[\"Final answer\"]\n  G -.shadow.-> O[\"\ud83d\udfe1 endpoint-family tie-break v2\"]\n  L -.shadow.-> P[\"\ud83d\udfe1 supportable answer rewriter\"]\n  P -.isolated.-> Q[\"\ud83d\udfe1 OpenRouter LLM rewrite search\"]\n  N -.diagnostic.-> R[\"\ud83d\udd35 hidden-style eval\"]\n  N -.diagnostic.-> S[\"\ud83d\udd35 package readiness checks\"]\n"
+}
