@@ -71,7 +71,7 @@
   - "Environment that agents run within"
   - "Providing safety through data systems"
 
-- ✅ **Yunyao Li**: "Rethinking Data Systems" - DIRECT FIT
+- ✅ **Yunyao Li**: "From Knowledge to Action: Building Human-AI Systems for the Agentic Enterprise" - DIRECT FIT
   - "How agents change way data is constructed, represented, accessed"
   - "Data systems to ground and govern agent reasoning"
   - "Are today's abstractions still the right ones?"
@@ -165,7 +165,7 @@
 
 **THIS IS THE MISSING BRIDGE!**
 
-✅ **Yunyao Li** - "Rethinking Data Systems for Agentic Enterprise"
+✅ **Yunyao Li** - "From Knowledge to Action: Building Human-AI Systems for the Agentic Enterprise"
 > "How agents change way data and knowledge are constructed, represented, accessed, and evolved; how data systems can ground and govern agent reasoning"
 
 **ALSO THE MISSING BRIDGE!**
